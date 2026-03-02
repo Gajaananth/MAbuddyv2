@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Send, Terminal, Shield, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, Lock, RefreshCcw } from 'lucide-react';
+import { Send, Terminal, Shield, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, Lock, RefreshCcw, Bird } from 'lucide-react';
 import { chatService, memoryService } from '../services/api';
 import type { Message } from '../types';
 
@@ -248,10 +248,10 @@ const ChatPage: React.FC = () => {
             <header className="mb-4 sm:mb-6 md:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-3 sm:py-4 xl:py-6 gap-3 sm:gap-4 md:gap-6 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0">
                 <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 xl:w-20 xl:h-20 rounded-lg sm:rounded-xl md:rounded-2xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent relative shadow-2xl shadow-nova-accent/5 shrink-0">
-                        <Terminal size={18} className="sm:hidden" />
-                        <Terminal size={24} className="hidden sm:block md:hidden" />
-                        <Terminal size={32} className="hidden md:block xl:hidden" />
-                        <Terminal size={40} className="hidden xl:block" />
+                        <Bird size={18} className="sm:hidden" />
+                        <Bird size={24} className="hidden sm:block md:hidden" />
+                        <Bird size={32} className="hidden md:block xl:hidden" />
+                        <Bird size={40} className="hidden xl:block" />
                         <div className="absolute -bottom-0.5 -right-0.5 md:-bottom-1 md:-right-1 xl:-bottom-1.5 xl:-right-1.5 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 md:w-5 md:h-5 xl:w-6 xl:h-6 bg-nova-accent rounded-full border-2 md:border-4 border-nova-bg animate-pulse"></div>
                     </div>
                     <div className="space-y-0.5 sm:space-y-1 min-w-0">
@@ -290,7 +290,7 @@ const ChatPage: React.FC = () => {
             <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-4 sm:space-y-6 scroll-smooth custom-scrollbar pb-4 min-h-0">
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center min-h-[60%] text-center space-y-4 sm:space-y-6 opacity-40 px-4">
-                        <Shield size={48} className="text-nova-accent sm:size-64 xl:scale-110 xl:mb-6" />
+                        <Bird size={48} className="text-nova-accent sm:size-64 xl:scale-110 xl:mb-6" />
                         <div className="max-w-xl md:max-w-2xl xl:max-w-3xl">
                             <h3 className="text-xs sm:text-sm font-bold text-white mb-1 sm:mb-2 uppercase tracking-wider opacity-80">Zium Nova Initialized</h3>
                             <p className="text-[10px] sm:text-xs md:text-sm leading-relaxed text-nova-text-dim">Speak minimally. I analyze market trends, evaluate agent trust, and build ethical income strategies. Provide signal.</p>

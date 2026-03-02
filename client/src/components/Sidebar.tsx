@@ -9,6 +9,7 @@ import {
     Database,
     ShieldAlert,
     Terminal,
+    Bird,
     X
 } from 'lucide-react';
 
@@ -42,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <div className="p-6 sm:p-10 flex items-center justify-between">
                     <div className="flex items-center gap-3 sm:gap-5">
                         <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-nova-accent flex items-center justify-center nova-accent-glow shrink-0">
-                            <ShieldAlert className="text-nova-bg" size={24} />
+                            <Bird className="text-nova-bg" size={24} />
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl sm:text-3xl font-black tracking-tighter text-white truncate">ZIUM <span className="text-nova-accent">NOVA</span></h1>

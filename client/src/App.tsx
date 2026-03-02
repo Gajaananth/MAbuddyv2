@@ -8,7 +8,7 @@ import AgentsPage from './pages/AgentsPage';
 import MemoryPage from './pages/MemoryPage';
 import IntelligenceDashboard from './pages/IntelligenceDashboard';
 import NotificationPanel from './components/NotificationPanel';
-import { Menu } from 'lucide-react';
+import { Menu, Bird } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoginPage from './pages/LoginPage';
@@ -49,7 +49,10 @@ function App() {
                     >
                       <Menu size={24} />
                     </button>
-                    <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase truncate">Zium <span className="text-nova-accent">Nova</span></h1>
+                    <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase truncate flex items-center gap-2">
+                      <Bird size={20} className="text-nova-accent" />
+                      <div>Zium <span className="text-nova-accent">Nova</span></div>
+                    </h1>
                   </div>
                   <div className="scale-90 origin-right">
                     <NotificationPanel />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, MessageSquare, Shield, Zap, Clock } from 'lucide-react';
+import { TrendingUp, MessageSquare, Shield, Zap, Clock, Bird } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useLiveTime } from '../hooks/useLiveTime';
 import { memoryService } from '../services/api';
@@ -47,9 +47,10 @@ const Dashboard: React.FC = () => {
 
             <header className="flex flex-col xl:flex-row justify-start items-start gap-6 sm:gap-10 xl:gap-20 w-full relative">
                 <div className="space-y-2 sm:space-y-4 flex-shrink min-w-0">
-                    <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-[1.1] sm:leading-none uppercase break-words">
-                        Command <br className="sm:hidden" />
-                        <span className="nova-gradient-text">Dashboard</span>
+                    <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-[1.1] sm:leading-none uppercase break-words flex items-center gap-3">
+                        <Bird size={32} className="text-nova-accent hidden sm:block" />
+                        <Bird size={24} className="text-nova-accent sm:hidden" />
+                        <div>Command <br className="sm:hidden" /> <span className="nova-gradient-text">Dashboard</span></div>
                     </h2>
                     <p className="text-nova-text-dim max-w-xl text-xs sm:text-sm md:text-base leading-relaxed font-bold opacity-70">
                         Observe. Analyze. Act only when trust and fairness are guaranteed.

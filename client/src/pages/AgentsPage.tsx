@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Plus, Globe, Activity, Award, UserCheck } from 'lucide-react';
+import { Shield, Plus, Globe, Activity, Award, UserCheck, Bird } from 'lucide-react';
 import { agentService } from '../services/api';
 import type { Agent } from '../types';
 
@@ -106,7 +106,7 @@ const AgentsPage: React.FC = () => {
 
                         <div className="flex items-start gap-6 relative z-10">
                             <div className="w-20 h-20 rounded-2xl bg-nova-accent/10 border-2 border-nova-accent/20 flex items-center justify-center text-nova-accent shadow-inner">
-                                {agent.name.includes('Nova') ? <Shield size={40} /> : <UserCheck size={40} />}
+                                {agent.name.includes('Nova') ? <Bird size={40} /> : <UserCheck size={40} />}
                             </div>
 
                             <div className="flex-1 space-y-4">
