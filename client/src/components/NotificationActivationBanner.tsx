@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BellRing, BellOff, Shield, Smartphone, AlertTriangle } from 'lucide-react';
+import { BellRing, BellOff, Bird, Smartphone, AlertTriangle } from 'lucide-react';
 import {
     isPushSupported,
     isIOS,
@@ -130,7 +130,7 @@ const NotificationActivationBanner: React.FC = () => {
                 <div className="px-6 py-5 flex items-center justify-between glass bg-nova-accent/[0.03]">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center">
-                            <Shield size={20} className="text-nova-accent" />
+                            <Bird size={20} className="text-nova-accent" />
                         </div>
                         <div>
                             <p className="text-sm font-bold text-white">Intelligence alerts are disabled.</p>

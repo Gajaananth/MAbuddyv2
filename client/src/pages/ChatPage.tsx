@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Send, Terminal, Shield, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, Lock, RefreshCcw, Bird } from 'lucide-react';
+import { Send, Terminal, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, Lock, RefreshCcw, Bird } from 'lucide-react';
 import { chatService, memoryService } from '../services/api';
 import type { Message } from '../types';
 
@@ -258,7 +258,7 @@ const ChatPage: React.FC = () => {
                         <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight uppercase truncate">Zium Intelligence</h2>
                         <div className="flex items-center gap-2 sm:gap-3">
                             <p className="text-[8px] sm:text-[10px] md:text-sm font-bold text-nova-text-dim flex items-center gap-1 sm:gap-1.5 opacity-80">
-                                <Shield size={10} className="text-nova-accent shrink-0" />
+                                <Bird size={10} className="text-nova-accent shrink-0" />
                                 <span className="hidden xs:inline">Silent Beast</span> <span className="hidden sm:inline">Protocol</span> v2.1
                             </p>
                             <span className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-white/20"></span>
@@ -508,7 +508,7 @@ const ChatPage: React.FC = () => {
                 <div className="mt-2 sm:mt-3 flex flex-col sm:flex-row justify-between px-1 gap-2">
                     <div className="flex gap-3 sm:gap-4">
                         <div className="flex items-center gap-1 group cursor-help">
-                            <Shield size={9} className="text-nova-accent" />
+                            <Bird size={9} className="text-nova-accent" />
                             <span className="text-[8px] text-nova-text-dim group-hover:text-nova-accent uppercase font-black">Filtered</span>
                         </div>
                         <div className="flex items-center gap-1 group cursor-help">

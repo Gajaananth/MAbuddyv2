@@ -25,8 +25,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { name: 'Trends', icon: <TrendingUp size={26} />, path: '/trends' },
         { name: 'Agents', icon: <Users size={26} />, path: '/agents' },
         { name: 'Memory', icon: <Database size={26} />, path: '/memory' },
-        { name: 'Intelligence', icon: <ShieldAlert size={26} />, path: '/intelligence' },
-        { name: 'Security', icon: <ShieldAlert size={26} />, path: '/security' },
+        { name: 'Intelligence', icon: <Bird size={26} />, path: '/intelligence' },
+        { name: 'Security', icon: <Bird size={26} />, path: '/security' },
     ];
 
     return (
@@ -98,7 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                 <span className="text-nova-accent">LIVE</span>
                             </div>
                             <div className="flex justify-between text-xs sm:text-sm font-black text-nova-text-dim">
-                                <span>Trust Shield</span>
+                                <span>Falcon Protocol</span>
                                 <span className="text-nova-accent">ARMED</span>
                             </div>
                         </div>

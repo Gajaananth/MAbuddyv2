@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, MessageSquare, Shield, Zap, Clock, Bird } from 'lucide-react';
+import { TrendingUp, MessageSquare, Zap, Clock, Bird } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useLiveTime } from '../hooks/useLiveTime';
 import { memoryService } from '../services/api';
@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
 
     const stats = [
         { label: 'Trend Fairness', value: '42%', icon: <TrendingUp className="text-nova-accent" />, color: 'from-nova-accent/20' },
-        { label: 'Trust Score', value: '95/100', icon: <Shield className="text-green-400" />, color: 'from-green-400/20' },
+        { label: 'Trust Score', value: '95/100', icon: <Bird className="text-green-400" />, color: 'from-green-400/20' },
         { label: 'Active Memory', value: '1.2 GB', icon: <Zap className="text-yellow-400" />, color: 'from-yellow-400/20' },
     ];
 

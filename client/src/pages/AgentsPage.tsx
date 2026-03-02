@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Plus, Globe, Activity, Award, UserCheck, Bird } from 'lucide-react';
+import { Bird, Plus, Globe, Activity, Award, UserCheck } from 'lucide-react';
 import { agentService } from '../services/api';
 import type { Agent } from '../types';
 
@@ -101,7 +101,7 @@ const AgentsPage: React.FC = () => {
                 {!loading && agents.map((agent) => (
                     <div key={agent.id} className="glass p-6 md:p-8 rounded-3xl border-2 border-nova-border hover:border-nova-accent/20 transition-all group overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <Shield size={120} />
+                            <Bird size={120} />
                         </div>
 
                         <div className="flex items-start gap-6 relative z-10">
