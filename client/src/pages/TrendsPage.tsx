@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, AlertCircle, CheckCircle2, Search, Zap, BarChart3 } from 'lucide-react';
+import { Bird, AlertCircle, CheckCircle2, Search, Zap, BarChart3 } from 'lucide-react';
 import { trendService } from '../services/api';
 import type { TrendAnalysis } from '../types';
 
@@ -135,7 +135,7 @@ const TrendsPage: React.FC = () => {
 
                 {!loading && trends.length === 0 && (
                     <div className="col-span-full py-20 text-center glass border-dashed border-nova-border rounded-3xl opacity-30">
-                        <TrendingUp size={48} className="mx-auto mb-4" />
+                        <Bird size={48} className="mx-auto mb-4 text-nova-accent opacity-50" />
                         <p className="text-lg font-bold">No intelligence data yet.</p>
                         <p className="text-sm">Submit a topic to begin trend scanning.</p>
                     </div>

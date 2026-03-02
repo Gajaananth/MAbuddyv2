@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Search, Download, AlertTriangle, Clock, Radio, ChevronDown, Zap, Trash2, FileText, Check } from 'lucide-react';
+import { Bird, Search, Download, AlertTriangle, Clock, Radio, ChevronDown, Zap, Trash2, FileText, Check } from 'lucide-react';
 import { intelligenceService } from '../services/api';
 import { useLiveTime } from '../hooks/useLiveTime';
 
@@ -245,9 +245,9 @@ const IntelligenceDashboard: React.FC = () => {
             <header className="mb-8 sm:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
                 <div className="flex items-center gap-4 sm:gap-5">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 xl:w-20 xl:h-20 rounded-xl sm:rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 relative shadow-2xl shrink-0">
-                        <Shield size={24} className="sm:hidden" />
-                        <Shield size={36} className="hidden sm:block xl:hidden" />
-                        <Shield size={44} className="hidden xl:block" />
+                        <Bird size={24} className="sm:hidden" />
+                        <Bird size={36} className="hidden sm:block xl:hidden" />
+                        <Bird size={44} className="hidden xl:block" />
                         <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 sm:w-5 h-3 sm:h-5 bg-red-500 rounded-full border-2 sm:border-4 border-nova-bg animate-pulse"></div>
                     </div>
                     <div className="min-w-0">
@@ -387,7 +387,7 @@ const IntelligenceDashboard: React.FC = () => {
                 <div className="space-y-4 sm:space-y-6">
                     {filteredRaids.length === 0 ? (
                         <div className="text-center py-20 opacity-30 glass rounded-3xl border-2 border-dashed border-nova-border">
-                            <Shield size={64} className="mx-auto mb-4 text-nova-accent" />
+                            <Bird size={64} className="mx-auto mb-4 text-nova-accent" />
                             <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-widest">No Intelligence Data</h3>
                         </div>
                     ) : (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Shield,
+    Bird,
     Key,
     Fingerprint,
     Smartphone,
@@ -91,8 +91,8 @@ const SecuritySettings: React.FC = () => {
     return (
         <div className="security-settings p-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center gap-3 mb-8">
-                <div className="p-3 bg-blue-500/20 rounded-xl">
-                    <Shield className="w-8 h-8 text-blue-400" />
+                <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
+                    <Bird className="w-8 h-8" />
                 </div>
                 <div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">

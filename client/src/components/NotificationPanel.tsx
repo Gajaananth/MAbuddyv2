@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, X, Archive, Check, AlertTriangle, TrendingUp, Shield, Zap, Clock } from 'lucide-react';
+import { Bell, X, Archive, Check, AlertTriangle, TrendingUp, Bird, Zap, Clock } from 'lucide-react';
 import { notificationService } from '../services/api';
 import type { Notification } from '../types';
 
@@ -17,7 +17,7 @@ const PRIORITY_BADGES: Record<string, string> = {
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     'SL Market Intelligence': <TrendingUp size={16} />,
-    'Scam Detection': <Shield size={16} />,
+    'Scam Detection': <Bird size={16} />,
     'Algorithm Analysis': <Zap size={16} />,
     'Ethical Earning': <TrendingUp size={16} />,
     'AI Agent Intelligence': <Zap size={16} />,
