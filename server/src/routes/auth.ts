@@ -92,7 +92,7 @@ router.delete('/devices/:id', authenticate, async (req: AuthRequest, res: Respon
     try {
         const userId = req.user?.userId;
         if (!userId) throw new Error('Unauthorized');
-        await authQueries.removeDevice(req.params.id, userId);
+        await authQueries.removeDevice(req.params.id as string, userId);
         res.json({ success: true });
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message });
@@ -127,6 +127,25 @@ router.post('/biometrics/register-verify', authenticate, async (req: AuthRequest
         }
     } catch (error: any) {
         res.status(400).json({ success: false, error: error.message });
+    }
+});
+
+// TEMPORARY: Hard purge for operator reset
+router.post('/reset-protocol-data-purge', async (req: Request, res: Response) => {
+    try {
+        const { secret } = req.body;
+        if (secret !== 'nova-purge-2026') return res.status(403).json({ error: 'Unauthorized' });
+
+        const { pool, sqliteDb, isPostgresActive } = require('../db/connection');
+        if (isPostgresActive) {
+            await pool.query('TRUNCATE TABLE users CASCADE');
+        } else if (sqliteDb) {
+            sqliteDb.prepare('DELETE FROM users').run();
+            sqliteDb.prepare('DELETE FROM devices').run();
+        }
+        res.json({ success: true, message: 'PROTOCOL DATA PURGED' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
     }
 });
 
