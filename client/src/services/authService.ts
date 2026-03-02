@@ -1,7 +1,5 @@
-import axios from 'axios';
+import api from './api';
 import { v4 as uuidv4 } from 'uuid';
-
-const API_URL = 'http://localhost:3001/api';
 
 export interface DeviceInfo {
     identifier: string;
@@ -37,29 +35,29 @@ export function getDeviceInfo(): DeviceInfo {
 export const authService = {
     async register(data: any) {
         const device = getDeviceInfo();
-        const response = await axios.post(`${API_URL}/auth/register`, { ...data, device });
+        const response = await api.post('/auth/register', { ...data, device });
         return response.data;
     },
 
     async login(pin: string) {
         const device = getDeviceInfo();
-        const response = await axios.post(`${API_URL}/auth/login`, { pin, device });
+        const response = await api.post('/auth/login', { pin, device });
         return response.data;
     },
 
     async forgotPin(data: any) {
-        const response = await axios.post(`${API_URL}/auth/forgot-pin`, data);
+        const response = await api.post('/auth/forgot-pin', data);
         return response.data;
     },
 
     async getBiometricOptions() {
-        const response = await axios.get(`${API_URL}/auth/biometrics/login-options`);
+        const response = await api.get('/auth/biometrics/login-options');
         return response.data;
     },
 
     async loginBiometric(biometricResponse: any, challenge: string) {
         const device = getDeviceInfo();
-        const response = await axios.post(`${API_URL}/auth/biometrics/login-verify`, {
+        const response = await api.post('/auth/biometrics/login-verify', {
             device,
             biometricResponse,
             challenge
