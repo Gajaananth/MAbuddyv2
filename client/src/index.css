@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+@theme {
+  --color-nova-bg: #050505;
+  --color-nova-card: #0a0a0a;
+  --color-nova-border: #1a1a1a;
+  --color-nova-accent: #00f2ff;
+  --color-nova-accent-alt: #7000ff;
+  --color-nova-text: #e0e0e0;
+  --color-nova-text-dim: #a0a0a0;
+
+  --font-family-sans: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  background-color: var(--color-nova-bg);
+  color: var(--color-nova-text);
+  font-family: var(--font-family-sans);
+  font-size: 16px;
+  /* Base size */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  font-size: 1rem;
+  /* Scales with root */
+  line-height: 1.6;
+  text-align: left;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-nova-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 5px;
+  border: 3px solid var(--color-nova-bg);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-nova-accent);
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(10, 10, 10, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.nova-gradient-text {
+  background: linear-gradient(135deg, var(--color-nova-accent), var(--color-nova-accent-alt));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.nova-glow {
+  box-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+}
+
+.nova-accent-glow {
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+}

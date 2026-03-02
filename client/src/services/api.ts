@@ -1,0 +1,81 @@
+import axios from 'axios';
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3001/api';
+
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Token is injected by AuthContext.tsx into axios.defaults or api.defaults
+// We don't need the interceptor looking at localStorage anymore for "PIN on Refresh"
+
+export default api;
+
+export const chatService = {
+    sendMessage: (message: string, conversation_id?: string, publish_to_moltbook: boolean = false, signal?: AbortSignal) =>
+        api.post('/chat', { message, conversation_id, publish_to_moltbook }, { signal }),
+};
+
+export const trendService = {
+    analyzeTrend: (topic: string) =>
+        api.post('/trends/analyze', { topic }),
+    getTrends: () =>
+        api.get('/trends'),
+};
+
+export const agentService = {
+    getAgents: () =>
+        api.get('/agents'),
+    addAgent: (agentData: { name: string; description: string; capabilities: string[] }) =>
+        api.post('/agents', agentData),
+};
+
+export const memoryService = {
+    getConversations: (limit = 20, offset = 0) =>
+        api.get(`/memory/conversations?limit=${limit}&offset=${offset}`),
+    getConversationDetail: (id: string) =>
+        api.get(`/memory/conversations/${id}`),
+    searchConversations: (query: string) =>
+        api.get(`/memory/search?q=${encodeURIComponent(query)}`),
+    deleteConversation: (id: string, permanent = false) =>
+        api.delete(`/memory/conversations/${id}?permanent=${permanent}`),
+    updateTitle: (id: string, title: string) =>
+        api.patch(`/memory/conversations/${id}`, { title }),
+};
+
+export const intelligenceService = {
+    getRaids: (limit = 50) =>
+        api.get(`/intelligence/raids?limit=${limit}`),
+    getReports: (limit = 10) =>
+        api.get(`/intelligence/reports?limit=${limit}`),
+    triggerRaid: (type: 'mid-week' | 'end-of-week' = 'mid-week') =>
+        api.post('/intelligence/raid/trigger', { type }),
+    getRaidStatus: () =>
+        api.get('/intelligence/raid/status'),
+    exportReport: (reportId: string, format: 'json' | 'pdf' | 'word' = 'json') =>
+        api.get(`/intelligence/reports/${reportId}/export?format=${format}`, { responseType: format === 'json' ? 'json' : 'blob' }),
+    exportRaid: (id: string, format: string = 'pdf') =>
+        api.get(`/intelligence/raids/${id}/export?format=${format}`, { responseType: 'blob' }),
+    deleteRaid: (id: string) =>
+        api.delete(`/intelligence/raids/${id}`),
+    deleteReport: (id: string) =>
+        api.delete(`/intelligence/reports/${id}`),
+    bulkDeleteRaids: (ids: string[]) =>
+        api.post('/intelligence/raids/bulk-delete', { ids }),
+    bulkDeleteReports: (ids: string[]) =>
+        api.post('/intelligence/reports/bulk-delete', { ids }),
+};
+
+export const notificationService = {
+    getNotifications: (limit = 30, includeRead = true) =>
+        api.get(`/notifications?limit=${limit}&include_read=${includeRead}`),
+    getUnreadCount: () =>
+        api.get('/notifications/unread-count'),
+    markRead: (id: string) =>
+        api.patch(`/notifications/${id}/read`),
+    archive: (id: string) =>
+        api.delete(`/notifications/${id}`),
+};
