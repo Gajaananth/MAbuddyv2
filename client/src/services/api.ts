@@ -1,6 +1,18 @@
 import axios from 'axios';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'http://localhost:3001/api';
+const getBaseUrl = () => {
+    const envUrl = import.meta.env.VITE_API_BASE_URL;
+    if (envUrl) return envUrl;
+
+    // Auto-detect: If we are on Vercel but URL is missing, it's a configuration error
+    if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
+        console.warn('[Zium Nova] VITE_API_BASE_URL is missing in production config! Defaulting to local fallback (likely to fail).');
+    }
+
+    return 'http://localhost:3001/api';
+};
+
+const API_BASE_URL = getBaseUrl();
 
 const api = axios.create({
     baseURL: API_BASE_URL,

@@ -39,11 +39,20 @@ const limiter = rateLimit({
 // ─── Middleware ────────────────────────────────────────────────
 app.use(limiter);
 app.use(cors({
-    origin: [
-        'http://localhost:5173',
-        'http://localhost:3000',
-        process.env.FRONTEND_URL || '*', // Allow Vercel frontend
-    ],
+    origin: (origin, callback) => {
+        const allowedOrigins = [
+            'http://localhost:5173',
+            'http://localhost:3000',
+            'https://ma-buddy.vercel.app',
+            process.env.FRONTEND_URL,
+        ];
+
+        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    },
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
