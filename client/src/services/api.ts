@@ -4,12 +4,14 @@ const getBaseUrl = () => {
     const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl) return envUrl;
 
-    // Auto-detect: If we are on Vercel but URL is missing, it's a configuration error
+    // Auto-detect production environment
     if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
-        console.warn('[Zium Nova] VITE_API_BASE_URL is missing in production config! Defaulting to local fallback (likely to fail).');
+        if (!envUrl) {
+            console.error('[Zium Nova] CRITICAL: VITE_API_BASE_URL IS UNDEFINED. SHEDDING CONNECTION.');
+        }
     }
 
-    return 'http://localhost:3001/api';
+    return envUrl || 'http://localhost:3001/api';
 };
 
 const API_BASE_URL = getBaseUrl();

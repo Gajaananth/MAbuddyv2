@@ -78,7 +78,7 @@ const RegisterPage: React.FC = () => {
                                 <div>
                                     <label className="block text-[10px] font-black text-nova-text-dim uppercase tracking-[2px] mb-3 ml-2">Establish 6-Digit Protocol PIN</label>
                                     <div className="relative">
-                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-nova-text-dim" size={18} />
+                                        <Bird className="absolute left-4 top-1/2 -translate-y-1/2 text-nova-text-dim" size={18} />
                                         <input
                                             type="password"
                                             name="pin"

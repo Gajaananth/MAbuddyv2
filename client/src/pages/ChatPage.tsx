@@ -23,7 +23,7 @@ const ChatPage: React.FC = () => {
         { label: 'Strategic Mode', command: 'MODE STRATEGIC', icon: <Cpu size={14} /> },
         { label: 'Execution Mode', command: 'MODE EXECUTION', icon: <Zap size={14} /> },
         { label: 'Analytics Mode', command: 'Activate Analytics Mode', icon: <BarChart3 size={14} /> },
-        { label: 'Strict Response Format', command: 'STRICT RESPONSE FORMAT', icon: <Lock size={14} /> },
+        { label: 'Strict Response Format', command: 'STRICT RESPONSE FORMAT', icon: <Bird size={14} /> },
         { label: 'Reset Default', command: 'RESET MODE', icon: <RefreshCcw size={14} /> },
     ];
 
