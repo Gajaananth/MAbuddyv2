@@ -580,4 +580,22 @@ export async function updateDeviceNotificationStatus(deviceId: string, enabled: 
     }
 }
 
-
+export async function logAgentActivity(action: {
+    agent_id?: string;
+    action_type: string;
+    platform?: string;
+    details: string;
+    metadata?: object;
+}): Promise<void> {
+    if (isPostgresActive) {
+        await pool.query(
+            'INSERT INTO agent_activity_logs (agent_id, action_type, platform, details, metadata) VALUES ($1, $2, $3, $4, $5)',
+            [action.agent_id || 'ZIUM_NOVA', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata || null]
+        );
+    } else {
+        const id = uuidv4();
+        getSqlite().prepare(
+            'INSERT INTO agent_activity_logs (id, agent_id, action_type, platform, details, metadata) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(id, action.agent_id || 'ZIUM_NOVA', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata ? JSON.stringify(action.metadata) : null);
+    }
+}

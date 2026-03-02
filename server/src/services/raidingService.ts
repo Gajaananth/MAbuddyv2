@@ -1,12 +1,11 @@
 import cron from 'node-cron';
 import { chromium } from 'playwright';
 import { think } from './openClawService';
-import { saveRaidResult } from '../db/queries';
+import { saveRaidResult, createNotification, logAgentActivity } from '../db/queries';
+import { getAllUsers } from '../db/authQueries';
 import { generateWeeklyReport } from './intelligenceService';
 import { notifyStrategicSignal, detectStrategicBreach, evaluateAndNotify } from './notificationService';
 import { observeSubmolt } from './moltbookService';
-
-import { getAllUsers } from '../db/authQueries';
 
 // Track active raids for UI feedback
 export const activeRaids = new Map<string, {
@@ -109,6 +108,14 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
             }
 
             activeRaids.set(userId, { ...activeRaids.get(userId)!, status: 'analyzing' });
+
+            // Securely log the strategic action
+            await logAgentActivity({
+                action_type: 'STRATEGIC_SCAN',
+                platform: 'INTERNET',
+                details: `Investigated cluster: ${clusterName} for topic: ${topic}`,
+                metadata: { userId, type, cluster: clusterName }
+            });
 
             // Process findings with Zium Nova's brain
             const analysis = await think(`ZIUM NOVA – ANTIGRAVITY RAID EXECUTION

@@ -145,6 +145,16 @@ export async function initDatabase(): Promise<void> {
             last_collaboration TIMESTAMPTZ DEFAULT NULL
           );
 
+          CREATE TABLE IF NOT EXISTS agent_activity_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            agent_id VARCHAR(50) DEFAULT 'ZIUM_NOVA',
+            action_type VARCHAR(50) NOT NULL,
+            platform VARCHAR(100),
+            details TEXT NOT NULL,
+            metadata JSONB DEFAULT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
           CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
           CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at DESC);
           CREATE INDEX IF NOT EXISTS idx_trends_created ON trend_analyses(created_at DESC);
@@ -267,6 +277,15 @@ function initSQLite() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS agent_activity_logs (
+            id TEXT PRIMARY KEY,
+            agent_id TEXT DEFAULT 'ZIUM_NOVA',
+            action_type TEXT NOT NULL,
+            platform TEXT,
+            details TEXT NOT NULL,
+            metadata TEXT DEFAULT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
     `);
 
