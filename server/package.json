@@ -1,6 +1,8 @@
 {
   "name": "zium-nova-server",
   "version": "1.0.0",
+  "private": true,
+  "type": "module",
   "description": "Zium Nova AI Agent — Backend Server",
   "main": "dist/index.js",
   "scripts": {

@@ -1,4 +1,4 @@
-import app from '../server/src/index.js';
+import app from '../server/src/index';
 
 /**
  * Zium Nova Entry Layer v1.7.8 (PURE ESM-BOND)
