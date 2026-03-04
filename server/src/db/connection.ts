@@ -178,6 +178,10 @@ export async function initDatabase(): Promise<void> {
     console.error('[DB] CRITICAL: PostgreSQL GRID OFFLINE:', error.message);
     if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
       console.error('[DB] EMERGENCY: Local SQLite fallback bypassed in production to prevent data fragmentation.');
+      if (process.env.VERCEL) {
+        console.error('[DB] Protocol: Forced PostgreSQL (Serverless Mode) - No SQLite fallback on Vercel.');
+        throw error; // Re-throw error if PostgreSQL fails on Vercel
+      }
       throw error;
     }
     console.warn('[DB] Local Dev Fallback: Activating SQLite.');
