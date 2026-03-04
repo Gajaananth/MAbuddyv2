@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import * as authQueries from '../db/authQueries';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
@@ -12,7 +13,15 @@ export async function hashValue(val: string): Promise<string> {
     return bcrypt.hash(val, 10);
 }
 
+export function deterministicHash(val: string): string {
+    return crypto.createHash('sha256').update(val).digest('hex');
+}
+
 export async function compareValue(val: string, hash: string): Promise<boolean> {
+    // Check if it's a SHA-256 hash (64 chars hex) or BCrypt
+    if (hash.length === 64 && /^[0-9a-f]+$/.test(hash)) {
+        return deterministicHash(val) === hash;
+    }
     return bcrypt.compare(val, hash);
 }
 
@@ -38,12 +47,10 @@ export async function register(u: {
     const q2Normalized = normalizeInput(u.q2);
     const q3Normalized = u.q3.toString();
 
-    const [dobHash, q1Hash, q2Hash, q3Hash] = await Promise.all([
-        hashValue(dobNormalized),
-        hashValue(q1Normalized),
-        hashValue(q2Normalized),
-        hashValue(q3Normalized)
-    ]);
+    const dobHash = deterministicHash(dobNormalized);
+    const q1Hash = deterministicHash(q1Normalized);
+    const q2Hash = deterministicHash(q2Normalized);
+    const q3Hash = deterministicHash(q3Normalized);
 
     // 2. Search for Existing User
     let user = await authQueries.findUserByIdentifiers({
@@ -259,22 +266,17 @@ export async function forgotPin(data: {
     q3: number;
     newPin: string;
 }) {
-    const users = await authQueries.getUserByPin('');
-    let matchedUser = null;
+    const dobHash = deterministicHash(data.dob);
+    const q1Hash = deterministicHash(normalizeInput(data.q1));
+    const q2Hash = deterministicHash(normalizeInput(data.q2));
+    const q3Hash = deterministicHash(data.q3.toString());
 
-    for (const user of users) {
-        const dobMatch = await compareValue(data.dob, user.dob_hash);
-        if (dobMatch) {
-            const q1M = await compareValue(normalizeInput(data.q1), user.q1_hash);
-            const q2M = await compareValue(normalizeInput(data.q2), user.q2_hash);
-            const q3M = await compareValue(data.q3.toString(), user.q3_hash);
-
-            if (q1M && q2M && q3M) {
-                matchedUser = user;
-                break;
-            }
-        }
-    }
+    const matchedUser = await authQueries.findUserByIdentifiers({
+        dob_hash: dobHash,
+        q1_hash: q1Hash,
+        q2_hash: q2Hash,
+        q3_hash: q3Hash
+    });
 
     if (!matchedUser) {
         throw new Error('VERIFICATION FAILED: Mandatory security identifiers do not match records.');
