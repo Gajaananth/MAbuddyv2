@@ -14,8 +14,8 @@ let isInitializing = false;
 const dbConfig = {
   connectionString: process.env.DATABASE_URL || '',
   max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 60000,
+  connectionTimeoutMillis: 30000,
   ssl: process.env.VERCEL || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 };
 
@@ -196,10 +196,10 @@ export async function initDatabase(): Promise<void> {
     }
   } catch (error: any) {
     isInitializing = false;
-    console.error('[DB] Grid Failure:', error.message);
+    console.error('[DB] Grid Failure Detailed:', error);
 
     if (process.env.VERCEL || (process.env.DATABASE_URL && process.env.NODE_ENV === 'production')) {
-      throw new Error(`[Zium Nova] Database Grid Timeout: ${error.message}`);
+      throw new Error(`[Zium Nova] Database Grid Timeout: ${error.message} (Code: ${error.code || 'UNKNOWN'})`);
     }
 
     console.warn('[DB] Activating Local Shadow Logic.');
