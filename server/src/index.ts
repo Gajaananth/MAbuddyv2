@@ -79,7 +79,10 @@ app.use('/api/memory', authenticate, memoryRoutes);
 app.use('/api/intelligence', authenticate, intelligenceRoutes);
 app.use('/api/notifications', authenticate, notificationRoutes);
 
-// ─── Start Server ─────────────────────────────────────────────
+// ─── Export for Serverless ────────────────────────────────────
+export default app;
+
+// ─── Start Server (Skip if on Vercel) ─────────────────────────
 async function start() {
     // Initialize Database (attempts Postgres, falls back to SQLite)
     await initDatabase();
@@ -87,20 +90,29 @@ async function start() {
     // Start Autonomous Raiding Engine
     initRaidingSchedule();
 
-    app.listen(PORT, () => {
-        console.log('');
-        console.log('  ╔══════════════════════════════════════════╗');
-        console.log('  ║           ZIUM NOVA — ONLINE             ║');
-        console.log('  ║                                          ║');
-        console.log('  ║   Silent Beast Protocol: ACTIVE          ║');
-        console.log('  ║   Truth Exposer: ARMED                   ║');
-        console.log(`  ║   Mode: ${process.env.OPENCLAW_API_KEY || process.env.OPENROUTER_API_KEY ? 'LIVE          ' : 'DEMO (no API key)'}              ║`);
-        console.log(`  ║   Port: ${PORT}                              ║`);
-        console.log('  ║                                          ║');
-        console.log('  ║   "Observe. Analyze. Act with purpose."  ║');
-        console.log('  ╚══════════════════════════════════════════╝');
-        console.log('');
-    });
+    if (!process.env.VERCEL) {
+        app.listen(PORT, () => {
+            console.log('');
+            console.log('  ╔══════════════════════════════════════════╗');
+            console.log('  ║           ZIUM NOVA — ONLINE             ║');
+            console.log('  ║                                          ║');
+            console.log('  ║   Silent Beast Protocol: ACTIVE          ║');
+            console.log('  ║   Truth Exposer: ARMED                   ║');
+            console.log(`  ║   Mode: ${process.env.OPENCLAW_API_KEY || process.env.OPENROUTER_API_KEY ? 'LIVE          ' : 'DEMO (no API key)'}              ║`);
+            console.log(`  ║   Port: ${PORT}                              ║`);
+            console.log('  ║                                          ║');
+            console.log('  ║   "Observe. Analyze. Act with purpose."  ║');
+            console.log('  ╚══════════════════════════════════════════╝');
+            console.log('');
+        });
+    }
 }
 
-start().catch(console.error);
+// In Serverless environments, initialization might need to happen per-request or at top-level.
+// For Vercel, we can try top-level init or lazy-init in middleware.
+if (process.env.VERCEL) {
+    initDatabase().catch(console.error);
+    initRaidingSchedule();
+} else {
+    start().catch(console.error);
+}

@@ -1,7 +1,19 @@
 {
+    "version": 2,
     "buildCommand": "cd client && npm install && npm run build",
     "outputDirectory": "client/dist",
-    "rewrites": [
+    "functions": {
+        "api/index.ts": {
+            "runtime": "@vercel/node",
+            "memory": 1024,
+            "maxDuration": 15
+        }
+    },
+    "routes": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/index.ts"
+        },
         {
             "source": "/(.*)",
             "destination": "/index.html"

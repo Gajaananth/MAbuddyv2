@@ -1,16 +1,21 @@
 import { Pool } from 'pg';
-import Database from 'better-sqlite3';
 import path from 'path';
 import dotenv from 'dotenv';
 
 dotenv.config();
+
+// better-sqlite3 is a native C++ addon — skip it on Vercel serverless
+let Database: any = null;
+if (!process.env.VERCEL) {
+  try { Database = require('better-sqlite3'); } catch { }
+}
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   max: 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: process.env.NODE_ENV === 'production' || process.env.VERCEL ? { rejectUnauthorized: false } : false
 });
 
 pool.on('error', (err) => {
@@ -22,7 +27,7 @@ pool.on('connect', () => {
 });
 
 const DB_PATH = path.join(process.cwd(), 'zium_nova.sqlite');
-let sqliteDb: Database.Database | null = null;
+let sqliteDb: any = null;
 export let isPostgresActive = false;
 
 /**

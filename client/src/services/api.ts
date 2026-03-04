@@ -4,14 +4,12 @@ const getBaseUrl = () => {
     const envUrl = import.meta.env.VITE_API_BASE_URL;
     if (envUrl) return envUrl;
 
-    // Auto-detect production environment
-    if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
-        if (!envUrl) {
-            console.error('[Zium Nova] CRITICAL: VITE_API_BASE_URL IS UNDEFINED. SHEDDING CONNECTION.');
-        }
+    // Auto-detect Vercel environment and use local /api
+    if (typeof window !== 'undefined' && (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'ma-buddy.vercel.app')) {
+        return '/api';
     }
 
-    return envUrl || 'http://localhost:3001/api';
+    return 'http://localhost:3001/api';
 };
 
 const API_BASE_URL = getBaseUrl();
