@@ -38,7 +38,27 @@ export async function initDatabase(): Promise<void> {
   try {
     const client = await pool.connect();
     try {
+      // Fast check for existing schema to avoid cold-start lag on Vercel
+      const schemaCheck = await client.query("SELECT 1 FROM information_schema.tables WHERE table_name = 'users' LIMIT 1");
+      if (schemaCheck.rows.length > 0) {
+        isPostgresActive = true;
+        console.log('[DB] PostgreSQL Grid: ONLINE (Schema Verified)');
+        return;
+      }
+
       await client.query(`
+          CREATE TABLE IF NOT EXISTS users (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            dob_hash TEXT NOT NULL,
+            pin_hash TEXT NOT NULL,
+            q1_hash TEXT NOT NULL,
+            q2_hash TEXT NOT NULL,
+            q3_hash TEXT NOT NULL,
+            failed_attempts INTEGER DEFAULT 0,
+            lock_until TIMESTAMPTZ DEFAULT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
           CREATE TABLE IF NOT EXISTS conversations (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             title VARCHAR(255) NOT NULL DEFAULT 'New Conversation',
@@ -109,18 +129,6 @@ export async function initDatabase(): Promise<void> {
             created_at TIMESTAMPTZ DEFAULT NOW()
           );
 
-          CREATE TABLE IF NOT EXISTS users (
-            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            dob_hash TEXT NOT NULL,
-            pin_hash TEXT NOT NULL,
-            q1_hash TEXT NOT NULL,
-            q2_hash TEXT NOT NULL,
-            q3_hash TEXT NOT NULL,
-            failed_attempts INTEGER DEFAULT 0,
-            lock_until TIMESTAMPTZ DEFAULT NULL,
-            created_at TIMESTAMPTZ DEFAULT NOW()
-          );
-
           CREATE TABLE IF NOT EXISTS devices (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -176,21 +184,21 @@ export async function initDatabase(): Promise<void> {
     }
   } catch (error: any) {
     console.error('[DB] CRITICAL: PostgreSQL GRID OFFLINE:', error.message);
-    if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+    if (process.env.DATABASE_URL && (process.env.NODE_ENV === 'production' || process.env.VERCEL)) {
       console.error('[DB] EMERGENCY: Local SQLite fallback bypassed in production to prevent data fragmentation.');
       if (process.env.VERCEL) {
         console.error('[DB] Protocol: Forced PostgreSQL (Serverless Mode) - No SQLite fallback on Vercel.');
-        throw error; // Re-throw error if PostgreSQL fails on Vercel
       }
       throw error;
     }
     console.warn('[DB] Local Dev Fallback: Activating SQLite.');
     isPostgresActive = false;
-    initSQLite();
+    if (Database) initSQLite();
   }
 }
 
 function initSQLite() {
+  if (!Database) return;
   sqliteDb = new Database(DB_PATH);
   sqliteDb.exec(`
         CREATE TABLE IF NOT EXISTS conversations (
@@ -305,67 +313,15 @@ function initSQLite() {
         );
     `);
 
-  // Migrate existing tables — add columns that may be missing
+  // Migrate existing tables
   const existingCols = sqliteDb.prepare("PRAGMA table_info(conversations)").all() as any[];
   const colNames = existingCols.map((c: any) => c.name);
 
-  if (!colNames.includes('topic_tag')) {
-    sqliteDb.exec("ALTER TABLE conversations ADD COLUMN topic_tag TEXT DEFAULT NULL");
-    console.log('[DB] Migration: Added topic_tag column');
-  }
-  if (!colNames.includes('is_deleted')) {
-    sqliteDb.exec("ALTER TABLE conversations ADD COLUMN is_deleted INTEGER DEFAULT 0");
-    console.log('[DB] Migration: Added is_deleted column');
-  }
-  if (!colNames.includes('user_id')) {
-    sqliteDb.exec("ALTER TABLE conversations ADD COLUMN user_id TEXT DEFAULT 'default_user'");
-    console.log('[DB] Migration: Added user_id column');
-  }
+  if (!colNames.includes('topic_tag')) sqliteDb.exec("ALTER TABLE conversations ADD COLUMN topic_tag TEXT DEFAULT NULL");
+  if (!colNames.includes('is_deleted')) sqliteDb.exec("ALTER TABLE conversations ADD COLUMN is_deleted INTEGER DEFAULT 0");
+  if (!colNames.includes('user_id')) sqliteDb.exec("ALTER TABLE conversations ADD COLUMN user_id TEXT DEFAULT 'default_user'");
 
-  // Intelligence Migration
-  const raidCols = sqliteDb.prepare("PRAGMA table_info(intelligence_raids)").all() as any[];
-  const raidColNames = raidCols.map((c: any) => c.name);
-  if (!raidColNames.includes('ride_type')) {
-    sqliteDb.exec("ALTER TABLE intelligence_raids ADD COLUMN ride_type TEXT DEFAULT 'mid-week'");
-    sqliteDb.exec("ALTER TABLE intelligence_raids ADD COLUMN opportunity_score INTEGER DEFAULT 0");
-    sqliteDb.exec("ALTER TABLE intelligence_raids ADD COLUMN status TEXT DEFAULT 'active'");
-    console.log('[DB] Migration: Added metadata columns to intelligence_raids');
-  }
-  if (!raidColNames.includes('user_id')) {
-    sqliteDb.exec("ALTER TABLE intelligence_raids ADD COLUMN user_id TEXT");
-    console.log('[DB] Migration: Added user_id column to intelligence_raids');
-  }
-
-  const reportCols = sqliteDb.prepare("PRAGMA table_info(weekly_reports)").all() as any[];
-  const reportColNames = reportCols.map((c: any) => c.name);
-  if (!reportColNames.includes('ride_type')) {
-    sqliteDb.exec("ALTER TABLE weekly_reports ADD COLUMN ride_type TEXT DEFAULT 'end-week'");
-    sqliteDb.exec("ALTER TABLE weekly_reports ADD COLUMN opportunity_score INTEGER DEFAULT 0");
-    sqliteDb.exec("ALTER TABLE weekly_reports ADD COLUMN status TEXT DEFAULT 'active'");
-    console.log('[DB] Migration: Added metadata columns to weekly_reports');
-  }
-  if (!reportColNames.includes('user_id')) {
-    sqliteDb.exec("ALTER TABLE weekly_reports ADD COLUMN user_id TEXT");
-    console.log('[DB] Migration: Added user_id column to weekly_reports');
-  }
-
-  // Trend analyses migration
-  const trendCols = sqliteDb.prepare("PRAGMA table_info(trend_analyses)").all() as any[];
-  const trendColNames = trendCols.map((c: any) => c.name);
-  if (!trendColNames.includes('user_id')) {
-    sqliteDb.exec("ALTER TABLE trend_analyses ADD COLUMN user_id TEXT");
-    console.log('[DB] Migration: Added user_id column to trend_analyses');
-  }
-
-  // Device Migration
-  const deviceCols = sqliteDb.prepare("PRAGMA table_info(devices)").all() as any[];
-  const deviceColNames = deviceCols.map((c: any) => c.name);
-  if (!deviceColNames.includes('notifications_enabled')) {
-    sqliteDb.exec("ALTER TABLE devices ADD COLUMN notifications_enabled INTEGER DEFAULT 0");
-    console.log('[DB] Migration: Added notifications_enabled column to devices');
-  }
-
-  console.log('[DB] SQLite Fallback: ACTIVE at', DB_PATH);
+  console.log('[DB] SQLite Fallback: ACTIVE');
 }
 
 export { pool, sqliteDb };

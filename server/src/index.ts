@@ -15,12 +15,10 @@ import { initRaidingSchedule } from './services/raidingService';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
-const envPath = path.resolve(__dirname, '../.env');
-const result = dotenv.config({ path: envPath });
-
-console.log(`[System] Loading environment from: ${envPath}`);
-if (result.error) {
-    console.error(`[System] Failed to load .env: ${result.error.message}`);
+if (!process.env.VERCEL) {
+    const envPath = path.resolve(__dirname, '../.env');
+    console.log(`[System] Loading environment from: ${envPath}`);
+    dotenv.config({ path: envPath });
 }
 
 const app = express();
@@ -108,11 +106,10 @@ async function start() {
     }
 }
 
-// In Serverless environments, initialization might need to happen per-request or at top-level.
-// For Vercel, we can try top-level init or lazy-init in middleware.
+// In Serverless environments (Vercel), we initialize the database but avoid background cron timers
+// that are incompatible with serverless execution models.
 if (process.env.VERCEL) {
-    initDatabase().catch(console.error);
-    initRaidingSchedule();
+    initDatabase().catch(err => console.error('[DB] Serverless Init Error:', err.message));
 } else {
     start().catch(console.error);
 }
