@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Send, Terminal, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, Lock, RefreshCcw, Bird } from 'lucide-react';
+import { Send, Terminal, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, RefreshCcw, Bird } from 'lucide-react';
 import { chatService, memoryService } from '../services/api';
 import type { Message } from '../types';
 

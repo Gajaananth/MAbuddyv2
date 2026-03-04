@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bird, Lock, Calculator, ArrowRight, UserPlus, AlertCircle } from 'lucide-react';
+import { Bird, Calculator, ArrowRight, UserPlus, AlertCircle } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
