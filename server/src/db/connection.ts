@@ -10,17 +10,24 @@ let sqliteDb: any = null;
 export let isPostgresActive = false;
 let isInitializing = false;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+// Ensure DATABASE_URL is present before initializing the pool to prevent startup crashes.
+const dbConfig = {
+  connectionString: process.env.DATABASE_URL || '',
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
   ssl: process.env.VERCEL || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+};
 
-pool.on('error', (err) => {
-  console.error('[DB] PostgreSQL Pool Error:', err);
-});
+const pool = dbConfig.connectionString ? new Pool(dbConfig) : null;
+
+if (!pool) {
+  console.warn('[DB] CRITICAL: DATABASE_URL is empty. Grid disconnected.');
+} else {
+  pool.on('error', (err) => {
+    console.error('[DB] PostgreSQL Pool Error:', err);
+  });
+}
 
 const DB_PATH = path.join(process.cwd(), 'zium_nova.sqlite');
 
@@ -35,6 +42,8 @@ export async function initDatabase(): Promise<void> {
   console.log('[DB] Protocol: Establishing Grid Connection...');
 
   try {
+    if (!pool) throw new Error('DATABASE_URL mission critical environment variable is MISSING.');
+
     const client = await pool.connect();
 
     try {
