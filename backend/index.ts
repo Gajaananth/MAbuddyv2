@@ -23,6 +23,9 @@ if (!process.env.VERCEL) {
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
+// Trust Vercel Proxy for express-rate-limit
+app.set('trust proxy', 1);
+
 // ─── Rate Limiting ───────────────────────────────────────────
 // Limit each IP to 100 requests per 15 minutes
 const limiter = rateLimit({
@@ -59,8 +62,8 @@ app.get('/api/health', (_req, res) => {
     res.json({
         status: 'online',
         agent: 'Zium Nova',
-        version: 'v1.8.3',
-        protocol: 'antigravity_esm_bond_v4',
+        version: 'v1.8.7',
+        protocol: 'antigravity_esm_bond_v7',
         mode: process.env.OPENCLAW_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
