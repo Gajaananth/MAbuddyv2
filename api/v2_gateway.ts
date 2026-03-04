@@ -1,4 +1,4 @@
-import app from './src/index.js';
+import app from '../backend/index.js';
 
 /**
  * Zium Nova Gateway v1.8.4 (CACHE BYPASS)

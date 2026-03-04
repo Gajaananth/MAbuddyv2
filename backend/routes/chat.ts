@@ -73,7 +73,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         // Weekly Ride Command Recognition
         if (lowerMessage.includes('weekly ride') || lowerMessage.includes('run weekly ride now')) {
             const { runManualWeeklyRide } = await import('../services/raidingService.js');
-            runManualWeeklyRide().catch(console.error);
+            runManualWeeklyRide(userId).catch(console.error);
 
             const response: ApiResponse = {
                 success: true,
