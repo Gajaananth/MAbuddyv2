@@ -175,7 +175,7 @@ const LoginPage: React.FC = () => {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-500 rounded-full blur-[200px]"></div>
             </div>
 
-            <div className="w-full max-sm relative z-10">
+            <div className="w-full max-w-sm relative z-10">
                 <div className="text-center mb-12">
                     <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-6 shadow-2xl">
                         <Bird size={32} />
