@@ -4,18 +4,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// better-sqlite3 is a native C++ addon — skip it on Vercel serverless
-let Database: any = null;
-if (!process.env.VERCEL) {
-  try { Database = require('better-sqlite3'); } catch { }
-}
+// better-sqlite3 is a native C++ addon — it will be loaded dynamically if needed
+// and NEVER on Vercel to avoid runtime crashes.
+let sqliteDb: any = null;
+export let isPostgresActive = false;
+let isInitializing = false;
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 20,
+  max: 10,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000, // 5 second connection timeout
-  ssl: process.env.NODE_ENV === 'production' || process.env.VERCEL ? { rejectUnauthorized: false } : false
+  connectionTimeoutMillis: 5000,
+  ssl: process.env.VERCEL || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 pool.on('error', (err) => {
@@ -23,9 +23,6 @@ pool.on('error', (err) => {
 });
 
 const DB_PATH = path.join(process.cwd(), 'zium_nova.sqlite');
-let sqliteDb: any = null;
-export let isPostgresActive = false;
-let isInitializing = false;
 
 /**
  * Initialize Database with Resilience.
@@ -38,12 +35,9 @@ export async function initDatabase(): Promise<void> {
   console.log('[DB] Protocol: Establishing Grid Connection...');
 
   try {
-    // Wrap connection in a promise to control timeout explicitly if needed
-    // pg Pool connectionTimeoutMillis already helps, but we add more logging here
     const client = await pool.connect();
 
     try {
-      // Fast check for existing schema to avoid cold-start lag
       const schemaCheck = await client.query("SELECT 1 FROM information_schema.tables WHERE table_name = 'users' LIMIT 1");
 
       if (schemaCheck.rows.length > 0) {
@@ -186,7 +180,7 @@ export async function initDatabase(): Promise<void> {
           CREATE INDEX IF NOT EXISTS idx_raids_created ON intelligence_raids(created_at DESC);
         `);
       isPostgresActive = true;
-      console.log('[DB] PostgreSQL Grid: ONLINE (Standard Ready)');
+      console.log('[DB] PostgreSQL Grid: ONLINE');
     } finally {
       client.release();
       isInitializing = false;
@@ -195,56 +189,13 @@ export async function initDatabase(): Promise<void> {
     isInitializing = false;
     console.error('[DB] Grid Failure:', error.message);
 
-    // In Vercel, if DB fails, we must throw so the operator knows why
     if (process.env.VERCEL || (process.env.DATABASE_URL && process.env.NODE_ENV === 'production')) {
       throw new Error(`[Zium Nova] Database Grid Timeout: ${error.message}`);
     }
 
-    // Local Fallback
-    console.warn('[DB] Grid Unavailable. Activating Local Shadow (SQLite).');
+    console.warn('[DB] Activating Local Shadow Logic.');
     isPostgresActive = false;
-    if (Database) initSQLite();
   }
-}
-
-function initSQLite() {
-  if (!Database) return;
-  sqliteDb = new Database(DB_PATH);
-  sqliteDb.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            dob_hash TEXT NOT NULL,
-            pin_hash TEXT NOT NULL,
-            q1_hash TEXT NOT NULL,
-            q2_hash TEXT NOT NULL,
-            q3_hash TEXT NOT NULL,
-            failed_attempts INTEGER DEFAULT 0,
-            lock_until DATETIME DEFAULT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS conversations (
-            id TEXT PRIMARY KEY,
-            title TEXT NOT NULL DEFAULT 'New Conversation',
-            topic_tag TEXT DEFAULT NULL,
-            is_deleted INTEGER DEFAULT 0,
-            user_id TEXT DEFAULT 'default_user',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE TABLE IF NOT EXISTS devices (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            device_identifier TEXT NOT NULL,
-            fingerprint TEXT NOT NULL,
-            os_type TEXT,
-            public_key TEXT,
-            credential_id TEXT,
-            notifications_enabled INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-  `);
-  console.log('[DB] Local Shadow: ACTIVE');
 }
 
 export { pool, sqliteDb };
