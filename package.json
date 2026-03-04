@@ -26,7 +26,9 @@
         "docx": "^9.6.0",
         "jspdf": "^4.2.0",
         "jspdf-autotable": "^5.0.7",
-        "zod": "^4.3.6"
+        "zod": "^4.3.6",
+        "web-push": "^3.6.7",
+        "eventemitter3": "^5.0.4"
     },
     "devDependencies": {
         "@types/express": "^5.0.0",
@@ -36,6 +38,7 @@
         "@types/bcryptjs": "^2.4.6",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/uuid": "^10.0.0",
+        "@types/web-push": "^3.6.4",
         "typescript": "^5.7.3"
     }
 }
