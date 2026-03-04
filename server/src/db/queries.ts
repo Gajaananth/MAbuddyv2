@@ -556,7 +556,7 @@ export async function savePushSubscription(userId: string, deviceId: string, sub
 export async function getPushSubscriptions(userId: string): Promise<any[]> {
     if (isPostgresActive) {
         const result = await pool.query('SELECT subscription_data FROM push_subscriptions WHERE user_id = $1', [userId]);
-        return result.rows.map(r => r.subscription_data);
+        return result.rows.map((r: any) => r.subscription_data);
     } else {
         const results = getSqlite().prepare('SELECT subscription_data FROM push_subscriptions WHERE user_id = ?').all(userId) as any[];
         return results.map(r => JSON.parse(r.subscription_data));

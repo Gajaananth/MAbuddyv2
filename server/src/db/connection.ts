@@ -19,12 +19,12 @@ const dbConfig = {
   ssl: process.env.VERCEL || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 };
 
-const pool = dbConfig.connectionString ? new Pool(dbConfig) : null;
+const pool = (dbConfig.connectionString ? new Pool(dbConfig) : null) as any;
 
 if (!pool) {
   console.warn('[DB] CRITICAL: DATABASE_URL is empty. Grid disconnected.');
 } else {
-  pool.on('error', (err) => {
+  pool.on('error', (err: any) => {
     console.error('[DB] PostgreSQL Pool Error:', err);
   });
 }
