@@ -1,8 +1,8 @@
-import app from '../server/src/index';
+import app from '../server/src/index.js';
 
 /**
- * Zium Nova Entry Layer v1.7.7 (ESM-ISO MODE)
- * 🦅🛰️ This file is statically compiled by Vercel to ensure 
- * 100% of server code is bundled into the lambda environment.
+ * Zium Nova Entry Layer v1.7.8 (PURE ESM-BOND)
+ * Protocol: Global ESM
+ * 🦅🛰️ Unified build and runtime environment.
  */
 export default app;

@@ -252,7 +252,7 @@ export async function loginBiometric(c: {
     }
 
     // 2. Verify Biometric
-    const { verifyLogin } = require('./webAuthnService');
+    const { verifyLogin } = await import('./webAuthnService');
     const verification = await verifyLogin(c.biometricResponse, c.challenge, registeredDevice.public_key, registeredDevice.counter || 0);
 
     if (!verification.verified) {
