@@ -32,47 +32,63 @@ export async function register(u: {
         os: string;
     }
 }) {
-    // 1. Check User Quota
-    const userCount = await authQueries.getUserCount();
-    if (userCount >= MAX_USERS) {
-        throw new Error('SYSTEM QUOTA REACHED: Maximum user limit exceeded.');
-    }
-
-    // 2. Check Device Quota
-    const deviceCount = await authQueries.getDeviceCount();
-    if (deviceCount >= MAX_DEVICES) {
-        throw new Error('DEVICE QUOTA REACHED: Maximum registered devices exceeded.');
-    }
-
-    // 3. Validate PIN
-    if (u.pin.length < 6 || !/^\d+$/.test(u.pin)) {
-        throw new Error('VALIDATION ERROR: PIN must be at least 6 digits.');
-    }
-
-    // 4. Normalize & Hash
-    const dobNormalized = u.dob; // Format YYYY-MM-DD
+    // 1. Normalize & Hash Identification Data
+    const dobNormalized = u.dob;
     const q1Normalized = normalizeInput(u.q1);
     const q2Normalized = normalizeInput(u.q2);
     const q3Normalized = u.q3.toString();
 
-    const [dobHash, pinHash, q1Hash, q2Hash, q3Hash] = await Promise.all([
+    const [dobHash, q1Hash, q2Hash, q3Hash] = await Promise.all([
         hashValue(dobNormalized),
-        hashValue(u.pin),
         hashValue(q1Normalized),
         hashValue(q2Normalized),
         hashValue(q3Normalized)
     ]);
 
-    // 5. Create User
-    const user = await authQueries.createUser({
+    // 2. Search for Existing User
+    let user = await authQueries.findUserByIdentifiers({
         dob_hash: dobHash,
-        pin_hash: pinHash,
         q1_hash: q1Hash,
         q2_hash: q2Hash,
         q3_hash: q3Hash
     });
 
-    // 6. Bind Device
+    if (user) {
+        // User exists -> Check if PIN matches
+        const pinMatch = await compareValue(u.pin, user.pin_hash);
+        if (!pinMatch) {
+            throw new Error('IDENTIFICATION CONFLICT: Security identifiers match an existing user, but PIN is incorrect.');
+        }
+
+        // PIN matches -> Check if device is already registered to THIS user
+        const existingDevice = await authQueries.findDevice(user.id, u.device.fingerprint);
+        if (existingDevice) {
+            return { success: true, userId: user.id, message: 'DEVICE_ALREADY_LINKED' };
+        }
+
+        // Check Per-User Device Quota
+        const userDeviceCount = await authQueries.getDeviceCountByUserId(user.id);
+        if (userDeviceCount >= MAX_DEVICES) {
+            throw new Error(`DEVICE QUOTA REACHED: Maximum of ${MAX_DEVICES} devices allowed per protocol operator.`);
+        }
+    } else {
+        // New User -> Check Global User Quota
+        const userCount = await authQueries.getUserCount();
+        if (userCount >= MAX_USERS) {
+            throw new Error('SYSTEM QUOTA REACHED: Maximum operator limit exceeded. Contact lead architect.');
+        }
+
+        const pinHash = await hashValue(u.pin);
+        user = await authQueries.createUser({
+            dob_hash: dobHash,
+            pin_hash: pinHash,
+            q1_hash: q1Hash,
+            q2_hash: q2Hash,
+            q3_hash: q3Hash
+        });
+    }
+
+    // 3. Bind Device to User (Existing or New)
     await authQueries.registerDevice({
         user_id: user.id,
         device_identifier: u.device.identifier,

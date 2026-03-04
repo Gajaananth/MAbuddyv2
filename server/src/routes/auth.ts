@@ -138,12 +138,22 @@ router.post('/reset-protocol-data-purge', async (req: Request, res: Response) =>
 
         const { pool, sqliteDb, isPostgresActive } = require('../db/connection');
         if (isPostgresActive) {
-            await pool.query('TRUNCATE TABLE users CASCADE');
+            // Postgres cascade wipe
+            await pool.query('TRUNCATE TABLE conversations, messages, intelligence_raids, weekly_reports, trend_analyses, notifications, users, devices, push_subscriptions, agent_network, agent_activity_logs CASCADE');
         } else if (sqliteDb) {
-            sqliteDb.prepare('DELETE FROM users').run();
-            sqliteDb.prepare('DELETE FROM devices').run();
+            // SQLite manual wipe (no truncate cascade)
+            const tables = [
+                'conversations', 'messages', 'intelligence_raids', 'weekly_reports',
+                'trend_analyses', 'notifications', 'users', 'devices',
+                'push_subscriptions', 'agent_activity_logs'
+            ];
+            sqliteDb.transaction(() => {
+                for (const table of tables) {
+                    sqliteDb.prepare(`DELETE FROM ${table}`).run();
+                }
+            })();
         }
-        res.json({ success: true, message: 'PROTOCOL DATA PURGED' });
+        res.json({ success: true, message: 'FULL PROTOCOL DATA PURGED — SYSTEM READY' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

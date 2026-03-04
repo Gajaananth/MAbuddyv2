@@ -69,6 +69,25 @@ export async function getAllUsers(): Promise<any[]> {
     }
 }
 
+export async function findUserByIdentifiers(u: {
+    dob_hash: string;
+    q1_hash: string;
+    q2_hash: string;
+    q3_hash: string;
+}): Promise<any | null> {
+    if (isPostgresActive) {
+        const result = await pool.query(
+            'SELECT * FROM users WHERE dob_hash = $1 AND q1_hash = $2 AND q2_hash = $3 AND q3_hash = $4',
+            [u.dob_hash, u.q1_hash, u.q2_hash, u.q3_hash]
+        );
+        return result.rows[0] || null;
+    } else {
+        return getSqlite().prepare(
+            'SELECT * FROM users WHERE dob_hash = ? AND q1_hash = ? AND q2_hash = ? AND q3_hash = ?'
+        ).get(u.dob_hash, u.q1_hash, u.q2_hash, u.q3_hash) || null;
+    }
+}
+
 export async function findUserByDobHash(dobHash: string): Promise<any | null> {
     if (isPostgresActive) {
         const result = await pool.query('SELECT * FROM users WHERE dob_hash = $1', [dobHash]);
@@ -134,6 +153,16 @@ export async function getDevicesByUserId(userId: string): Promise<any[]> {
         return result.rows;
     } else {
         return getSqlite().prepare('SELECT * FROM devices WHERE user_id = ?').all(userId) as any[];
+    }
+}
+
+export async function getDeviceCountByUserId(userId: string): Promise<number> {
+    if (isPostgresActive) {
+        const result = await pool.query('SELECT COUNT(*) FROM devices WHERE user_id = $1', [userId]);
+        return parseInt(result.rows[0].count, 10);
+    } else {
+        const result = getSqlite().prepare('SELECT COUNT(*) as count FROM devices WHERE user_id = ?').get(userId) as any;
+        return result.count;
     }
 }
 
