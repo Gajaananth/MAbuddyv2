@@ -16,9 +16,8 @@ import path from 'path';
 import rateLimit from 'express-rate-limit';
 
 if (!process.env.VERCEL) {
-    const envPath = path.resolve(__dirname, '../.env');
-    console.log(`[System] Loading environment from: ${envPath}`);
-    dotenv.config({ path: envPath });
+    console.log(`[System] Loading environment from local .env...`);
+    dotenv.config(); // dotenv automatically looks for .env in process.cwd()
 }
 
 const app = express();

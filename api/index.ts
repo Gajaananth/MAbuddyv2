@@ -1,4 +1,4 @@
-import app from './src/index.js';
+import app from './src/index';
 
 /**
  * Zium Nova Entry Layer v1.8.0 (TOTAL UNIFICATION)
