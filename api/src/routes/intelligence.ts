@@ -1,10 +1,10 @@
 import { Router, Response } from 'express';
-import * as db from '../db/queries';
-import { performInternetRaid, runManualWeeklyRide, activeRaids } from '../services/raidingService';
-import { generateIntelligencePDF } from '../services/pdfService';
-import { generateIntelligenceDocx } from '../services/docxService';
-import { ApiResponse } from '../types';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import * as db from '../db/queries.js';
+import { performInternetRaid, runManualWeeklyRide, activeRaids } from '../services/raidingService.js';
+import { generateIntelligencePDF } from '../services/pdfService.js';
+import { generateIntelligenceDocx } from '../services/docxService.js';
+import { ApiResponse } from '../types/index.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 import fs from 'fs';
 import path from 'path';
 

@@ -3,7 +3,7 @@
  * Handles persistent notifications, priority signal detection, push delivery, and strategic alerts.
  */
 
-import { createNotification, getPushSubscriptions } from '../db/queries';
+import { createNotification, getPushSubscriptions } from '../db/queries.js';
 import webpush from 'web-push';
 import dotenv from 'dotenv';
 

@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import * as authService from '../services/authService';
-import * as webAuthn from '../services/webAuthnService';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import * as authQueries from '../db/authQueries';
-import { initDatabase, isPostgresActive } from '../db/connection';
+import * as authService from '../services/authService.js';
+import * as webAuthn from '../services/webAuthnService.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import * as authQueries from '../db/authQueries.js';
+import { initDatabase, isPostgresActive } from '../db/connection.js';
 
 const router = Router();
 
@@ -165,7 +165,7 @@ router.get('/status', async (_req: Request, res: Response) => {
     try {
         const userCount = await authQueries.getUserCount();
         const deviceCount = await authQueries.getDeviceCount();
-        const { isPostgresActive } = require('../db/connection');
+        const { isPostgresActive } = await import('../db/connection.js');
         res.json({
             success: true,
             users: userCount,
@@ -185,7 +185,7 @@ router.post('/reset-protocol-data-purge', async (req: Request, res: Response) =>
         const { secret } = req.body;
         if (secret !== 'nova-purge-2026') return res.status(403).json({ error: 'Unauthorized' });
 
-        const { pool, sqliteDb, isPostgresActive } = require('../db/connection');
+        const { pool, sqliteDb, isPostgresActive } = await import('../db/connection.js');
         if (isPostgresActive) {
             // Postgres cascade wipe — order matters
             await pool.query(`

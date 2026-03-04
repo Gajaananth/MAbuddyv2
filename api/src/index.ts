@@ -1,16 +1,16 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initDatabase } from './db/connection';
-import chatRoutes from './routes/chat';
-import trendsRoutes from './routes/trends';
-import agentsRoutes from './routes/agents';
-import memoryRoutes from './routes/memory';
-import intelligenceRoutes from './routes/intelligence';
-import notificationRoutes from './routes/notifications';
-import authRoutes from './routes/auth';
-import { authenticate } from './middleware/auth';
-import { initRaidingSchedule } from './services/raidingService';
+import { initDatabase } from './db/connection.js';
+import chatRoutes from './routes/chat.js';
+import trendsRoutes from './routes/trends.js';
+import agentsRoutes from './routes/agents.js';
+import memoryRoutes from './routes/memory.js';
+import intelligenceRoutes from './routes/intelligence.js';
+import notificationRoutes from './routes/notifications.js';
+import authRoutes from './routes/auth.js';
+import { authenticate } from './middleware/auth.js';
+import { initRaidingSchedule } from './services/raidingService.js';
 
 import path from 'path';
 import rateLimit from 'express-rate-limit';
@@ -59,6 +59,8 @@ app.get('/api/health', (_req, res) => {
     res.json({
         status: 'online',
         agent: 'Zium Nova',
+        version: 'v1.8.3',
+        protocol: 'antigravity_esm_bond_v4',
         mode: process.env.OPENCLAW_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),

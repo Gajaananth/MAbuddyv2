@@ -1,6 +1,6 @@
-import { think } from './openClawService';
-import { getRaidResults, saveWeeklyReport } from '../db/queries';
-import { generateIntelligencePDF } from './pdfService';
+import { think } from './openClawService.js';
+import { getRaidResults, saveWeeklyReport } from '../db/queries.js';
+import { generateIntelligencePDF } from './pdfService.js';
 
 /**
  * Intelligence Service

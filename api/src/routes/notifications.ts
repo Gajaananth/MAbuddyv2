@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
-import * as db from '../db/queries';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { ApiResponse } from '../types';
+import * as db from '../db/queries.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { ApiResponse } from '../types/index.js';
 
 const router = Router();
 
@@ -93,7 +93,7 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
  */
 router.get('/vapid-key', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const { getVapidPublicKey } = await import('../services/notificationService');
+        const { getVapidPublicKey } = await import('../services/notificationService.js');
         res.json({ success: true, publicKey: getVapidPublicKey() });
     } catch (error) {
         res.status(500).json({ success: false, error: 'Failed to get VAPID key' });

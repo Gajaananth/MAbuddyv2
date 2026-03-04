@@ -1,8 +1,8 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { OpenClawResponse } from '../types';
-import { createAgent } from './agent';
-import { defaultTools } from './tools';
+import { OpenClawResponse } from '../types/index.js';
+import { createAgent } from './agent.js';
+import { defaultTools } from './tools.js';
 
 dotenv.config();
 

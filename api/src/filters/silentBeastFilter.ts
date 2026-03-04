@@ -1,4 +1,4 @@
-import { FilterResult, FilterScores } from '../types';
+import { FilterResult, FilterScores } from '../types/index.js';
 
 /**
  * Silent Beast / Truth Exposer Filter

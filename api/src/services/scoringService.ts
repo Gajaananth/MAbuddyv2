@@ -1,4 +1,4 @@
-import { FilterScores } from '../types';
+import { FilterScores } from '../types/index.js';
 
 /**
  * Zium Nova Scoring System

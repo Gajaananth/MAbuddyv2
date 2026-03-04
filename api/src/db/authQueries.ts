@@ -1,4 +1,4 @@
-import { pool, sqliteDb, isPostgresActive } from './connection';
+import { pool, sqliteDb, isPostgresActive } from './connection.js';
 import { v4 as uuidv4 } from 'uuid';
 
 function getSqlite() {

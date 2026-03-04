@@ -1,10 +1,10 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { think } from '../services/openClawService';
-import { applyFilter } from '../filters/silentBeastFilter';
-import * as db from '../db/queries';
-import { ApiResponse, TrendData } from '../types';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import { think } from '../services/openClawService.js';
+import { applyFilter } from '../filters/silentBeastFilter.js';
+import * as db from '../db/queries.js';
+import { ApiResponse, TrendData } from '../types/index.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 

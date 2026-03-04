@@ -1,12 +1,12 @@
 import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { think } from '../services/openClawService';
-import { applyFilter } from '../filters/silentBeastFilter';
-import { calculateProductionScores } from '../services/scoringService';
-import { postToMoltbook } from '../services/moltbookService';
-import * as db from '../db/queries';
-import { ApiResponse } from '../types';
-import { AuthRequest } from '../middleware/auth';
+import { think } from '../services/openClawService.js';
+import { applyFilter } from '../filters/silentBeastFilter.js';
+import { calculateProductionScores } from '../services/scoringService.js';
+import { postToMoltbook } from '../services/moltbookService.js';
+import * as db from '../db/queries.js';
+import { ApiResponse } from '../types/index.js';
+import { AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -72,7 +72,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
         // Weekly Ride Command Recognition
         if (lowerMessage.includes('weekly ride') || lowerMessage.includes('run weekly ride now')) {
-            const { runManualWeeklyRide } = require('../services/raidingService');
+            const { runManualWeeklyRide } = await import('../services/raidingService.js');
             runManualWeeklyRide().catch(console.error);
 
             const response: ApiResponse = {
@@ -143,10 +143,10 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
             let filePath = '';
             if (format.toLowerCase() === 'pdf') {
-                const { generateIntelligencePDF } = require('../services/pdfService');
+                const { generateIntelligencePDF } = await import('../services/pdfService.js');
                 filePath = await generateIntelligencePDF(report);
             } else {
-                const { generateIntelligenceDocx } = require('../services/docxService');
+                const { generateIntelligenceDocx } = await import('../services/docxService.js');
                 filePath = await generateIntelligenceDocx(report);
             }
 

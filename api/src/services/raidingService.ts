@@ -1,10 +1,10 @@
 import cron from 'node-cron';
-import { think } from './openClawService';
-import { saveRaidResult, logAgentActivity } from '../db/queries';
-import { getAllUsers } from '../db/authQueries';
-import { generateWeeklyReport } from './intelligenceService';
-import { evaluateAndNotify } from './notificationService';
-import { observeSubmolt } from './moltbookService';
+import { think } from './openClawService.js';
+import { saveRaidResult, logAgentActivity } from '../db/queries.js';
+import { getAllUsers } from '../db/authQueries.js';
+import { generateWeeklyReport } from './intelligenceService.js';
+import { evaluateAndNotify } from './notificationService.js';
+import { observeSubmolt } from './moltbookService.js';
 
 // Track active raids for UI feedback
 export const activeRaids = new Map<string, {

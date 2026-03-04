@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
-import * as db from '../db/queries';
-import { ApiResponse, Conversation, Message } from '../types';
-import { authenticate, AuthRequest } from '../middleware/auth';
+import * as db from '../db/queries.js';
+import { ApiResponse, Conversation, Message } from '../types/index.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 

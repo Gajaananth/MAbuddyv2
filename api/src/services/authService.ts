@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import * as authQueries from '../db/authQueries';
+import * as authQueries from '../db/authQueries.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
 const MAX_USERS = 5;
@@ -252,7 +252,7 @@ export async function loginBiometric(c: {
     }
 
     // 2. Verify Biometric
-    const { verifyLogin } = await import('./webAuthnService');
+    const { verifyLogin } = await import('./webAuthnService.js');
     const verification = await verifyLogin(c.biometricResponse, c.challenge, registeredDevice.public_key, registeredDevice.counter || 0);
 
     if (!verification.verified) {
