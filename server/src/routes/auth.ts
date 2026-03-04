@@ -3,8 +3,37 @@ import * as authService from '../services/authService';
 import * as webAuthn from '../services/webAuthnService';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import * as authQueries from '../db/authQueries';
+import { initDatabase, isPostgresActive } from '../db/connection';
 
 const router = Router();
+
+/**
+ * Diagnostic Endpoint (Public)
+ */
+router.get('/diag', async (_req: Request, res: Response) => {
+    const start = Date.now();
+    let dbStatus = 'checking';
+    let error = null;
+
+    try {
+        await initDatabase();
+        dbStatus = isPostgresActive ? 'online' : 'fallback_active';
+    } catch (err: any) {
+        dbStatus = 'error';
+        error = err.message;
+    }
+
+    res.json({
+        success: true,
+        status: 'diagnostics_complete',
+        results: {
+            database: dbStatus,
+            latency_ms: Date.now() - start,
+            environment: process.env.VERCEL ? 'vercel_serverless' : 'local_node',
+            error: error
+        }
+    });
+});
 
 /**
  * POST /api/auth/register

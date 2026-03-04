@@ -66,6 +66,25 @@ app.get('/api/health', (_req, res) => {
     });
 });
 
+// ─── Resilience Middleware ────────────────────────────────────
+// Ensures database is initialized before processing any API requests
+// but allows the app to boot instantly.
+app.use(async (req, res, next) => {
+    if (req.path === '/api/health' || req.path === '/api/auth/diag') return next();
+
+    try {
+        await initDatabase();
+        next();
+    } catch (err: any) {
+        console.error('[Resilience] Critical Grid Failure:', err.message);
+        res.status(503).json({
+            success: false,
+            error: 'Grid Offline (Database Timeout)',
+            details: err.message
+        });
+    }
+});
+
 // ─── Routes ───────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 
@@ -80,36 +99,18 @@ app.use('/api/notifications', authenticate, notificationRoutes);
 // ─── Export for Serverless ────────────────────────────────────
 export default app;
 
-// ─── Start Server (Skip if on Vercel) ─────────────────────────
+// ─── Start Server (Local Only) ────────────────────────────────
 async function start() {
-    // Initialize Database (attempts Postgres, falls back to SQLite)
     await initDatabase();
-
-    // Start Autonomous Raiding Engine
     initRaidingSchedule();
 
     if (!process.env.VERCEL) {
         app.listen(PORT, () => {
-            console.log('');
-            console.log('  ╔══════════════════════════════════════════╗');
-            console.log('  ║           ZIUM NOVA — ONLINE             ║');
-            console.log('  ║                                          ║');
-            console.log('  ║   Silent Beast Protocol: ACTIVE          ║');
-            console.log('  ║   Truth Exposer: ARMED                   ║');
-            console.log(`  ║   Mode: ${process.env.OPENCLAW_API_KEY || process.env.OPENROUTER_API_KEY ? 'LIVE          ' : 'DEMO (no API key)'}              ║`);
-            console.log(`  ║   Port: ${PORT}                              ║`);
-            console.log('  ║                                          ║');
-            console.log('  ║   "Observe. Analyze. Act with purpose."  ║');
-            console.log('  ╚══════════════════════════════════════════╝');
-            console.log('');
+            console.log('\n  ZIUM NOVA — ONLINE (PORT: ' + PORT + ')\n');
         });
     }
 }
 
-// In Serverless environments (Vercel), we initialize the database but avoid background cron timers
-// that are incompatible with serverless execution models.
-if (process.env.VERCEL) {
-    initDatabase().catch(err => console.error('[DB] Serverless Init Error:', err.message));
-} else {
+if (!process.env.VERCEL) {
     start().catch(console.error);
 }
