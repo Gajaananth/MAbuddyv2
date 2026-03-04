@@ -107,7 +107,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             }
             // Logic for date range would go here...
 
-            const reports = await db.filterReports({ ...filters, user_id: userId });
+            const reports = await db.filterReports(userId, filters);
             let content = `### Intelligence Archive Search Results\n\n`;
             if (reports.length === 0) {
                 content += "No reports found matching your criteria.";
@@ -133,7 +133,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             const [, reportId, format] = exportMatch;
             console.log(`[Chat] Exporting report ${reportId} to ${format}...`);
 
-            const reports = await db.getRaidResults(100); // Or filter by ID
+            const reports = await db.getRaidResults(userId, 100);
             const report = reports.find(r => r.id === reportId || r.id.startsWith(reportId));
 
             if (!report) {
@@ -178,9 +178,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             }
 
             if (isPermanent) {
-                await db.permanentDeleteReport(reportId);
+                await db.permanentDeleteReport(reportId, userId);
             } else {
-                await db.softDeleteReport(reportId);
+                await db.softDeleteReport(reportId, userId);
             }
 
             const response: ApiResponse = {

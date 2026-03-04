@@ -23,7 +23,8 @@ router.post('/register', async (req: Request, res: Response) => {
  */
 router.post('/login', async (req: Request, res: Response) => {
     try {
-        const result = await authService.login(req.body);
+        const { pin, device, identifiers } = req.body;
+        const result = await authService.login({ pin, device, identifiers });
         res.json({ ...result });
     } catch (error: any) {
         res.status(401).json({ success: false, error: error.message });
@@ -130,6 +131,25 @@ router.post('/biometrics/register-verify', authenticate, async (req: AuthRequest
     }
 });
 
+// Diagnostic: Check system status without auth
+router.get('/status', async (_req: Request, res: Response) => {
+    try {
+        const userCount = await authQueries.getUserCount();
+        const deviceCount = await authQueries.getDeviceCount();
+        const { isPostgresActive } = require('../db/connection');
+        res.json({
+            success: true,
+            users: userCount,
+            devices: deviceCount,
+            maxUsers: 2,
+            maxDevicesPerUser: 10,
+            database: isPostgresActive ? 'PostgreSQL' : 'SQLite'
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // TEMPORARY: Hard purge for operator reset
 router.post('/reset-protocol-data-purge', async (req: Request, res: Response) => {
     try {
@@ -138,20 +158,27 @@ router.post('/reset-protocol-data-purge', async (req: Request, res: Response) =>
 
         const { pool, sqliteDb, isPostgresActive } = require('../db/connection');
         if (isPostgresActive) {
-            // Postgres cascade wipe
-            await pool.query('TRUNCATE TABLE conversations, messages, intelligence_raids, weekly_reports, trend_analyses, notifications, users, devices, push_subscriptions, agent_network, agent_activity_logs CASCADE');
+            // Postgres cascade wipe — order matters
+            await pool.query(`
+                TRUNCATE TABLE push_subscriptions, devices, notifications,
+                messages, conversations, intelligence_raids, weekly_reports,
+                trend_analyses, users, agent_network, agent_activity_logs CASCADE
+            `);
         } else if (sqliteDb) {
-            // SQLite manual wipe (no truncate cascade)
+            // SQLite: delete children BEFORE parents (FK order)
             const tables = [
-                'conversations', 'messages', 'intelligence_raids', 'weekly_reports',
-                'trend_analyses', 'notifications', 'users', 'devices',
-                'push_subscriptions', 'agent_activity_logs'
+                'push_subscriptions', 'devices', 'notifications',
+                'messages', 'conversations',
+                'intelligence_raids', 'weekly_reports', 'trend_analyses',
+                'agent_activity_logs', 'users'
             ];
+            sqliteDb.exec('PRAGMA foreign_keys = OFF');
             sqliteDb.transaction(() => {
                 for (const table of tables) {
                     sqliteDb.prepare(`DELETE FROM ${table}`).run();
                 }
             })();
+            sqliteDb.exec('PRAGMA foreign_keys = ON');
         }
         res.json({ success: true, message: 'FULL PROTOCOL DATA PURGED — SYSTEM READY' });
     } catch (error: any) {

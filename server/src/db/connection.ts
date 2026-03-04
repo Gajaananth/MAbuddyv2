@@ -7,16 +7,18 @@ dotenv.config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  max: 10, // Optimized for Supabase free tier
+  max: 20,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 5000,
-  ssl: {
-    rejectUnauthorized: false // Required for Supabase/Heroku connections
-  }
+  connectionTimeoutMillis: 10000,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 pool.on('error', (err) => {
   console.error('[DB] PostgreSQL Pool Error:', err);
+});
+
+pool.on('connect', () => {
+  console.log('[DB] New Client Bound to Grid');
 });
 
 const DB_PATH = path.join(process.cwd(), 'zium_nova.sqlite');
@@ -167,8 +169,13 @@ export async function initDatabase(): Promise<void> {
     } finally {
       client.release();
     }
-  } catch (error) {
-    console.warn('[DB] PostgreSQL failed (Auth/Connection). Falling back to SQLite...');
+  } catch (error: any) {
+    console.error('[DB] CRITICAL: PostgreSQL GRID OFFLINE:', error.message);
+    if (process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+      console.error('[DB] EMERGENCY: Local SQLite fallback bypassed in production to prevent data fragmentation.');
+      throw error;
+    }
+    console.warn('[DB] Local Dev Fallback: Activating SQLite.');
     isPostgresActive = false;
     initSQLite();
   }

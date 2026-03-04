@@ -108,41 +108,64 @@ export async function register(u: {
 
 export async function login(c: {
     pin: string;
+    identifiers?: {
+        dob: string;
+        q1: string;
+        q2: string;
+        q3: number;
+    },
     device: {
         identifier: string;
         fingerprint: string;
+        os?: string;
     }
 }) {
-    // 1. Fetch all users (only 2 max)
-    const users = await authQueries.getUserByPin(''); // This currently returns all users
-
-    // 2. Identify user from device
-    // In a real device bound system, we check if this device is registered to one of the users
-    // We iterate through users and their devices to find a match
+    // 1. Identification: Determine who is trying to access the grid
     let matchedUser = null;
     let registeredDevice = null;
 
-    for (const user of users) {
-        const devices = await authQueries.getDevicesByUserId(user.id);
-        const device = devices.find(d => d.device_identifier === c.device.identifier && d.fingerprint === c.device.fingerprint);
-        if (device) {
-            matchedUser = user;
-            registeredDevice = device;
-            break;
+    if (c.identifiers) {
+        // Full Identification Protocol
+        const dobHash = deterministicHash(c.identifiers.dob);
+        const q1Hash = deterministicHash(normalizeInput(c.identifiers.q1));
+        const q2Hash = deterministicHash(normalizeInput(c.identifiers.q2));
+        const q3Hash = deterministicHash(c.identifiers.q3.toString());
+
+        matchedUser = await authQueries.findUserByIdentifiers({
+            dob_hash: dobHash,
+            q1_hash: q1Hash,
+            q2_hash: q2Hash,
+            q3_hash: q3Hash
+        });
+
+        if (!matchedUser) {
+            throw new Error('ACCESS DENIED: Security identifiers do not match any registered operator.');
+        }
+    } else {
+        // Fast Identification Protocol (Device Recognized)
+        const users = await authQueries.getUserByPin('');
+        for (const user of users) {
+            const devices = await authQueries.getDevicesByUserId(user.id);
+            const found = devices.find(d => d.device_identifier === c.device.identifier && d.fingerprint === c.device.fingerprint);
+            if (found) {
+                matchedUser = user;
+                registeredDevice = found;
+                break;
+            }
         }
     }
 
     if (!matchedUser) {
-        throw new Error('ACCESS DENIED: Device not registered to any protocol operator.');
+        throw new Error('STATUS: DEVICE_UNRECOGNIZED. Initiate Identity Verification.');
     }
 
-    // 3. Check Lockout
+    // 2. Check Lockout Status
     if (matchedUser.lock_until && new Date(matchedUser.lock_until) > new Date()) {
         const remaining = Math.ceil((new Date(matchedUser.lock_until).getTime() - Date.now()) / 1000 / 60);
-        throw new Error(`ACCOUNT LOCKED: Excessive failed requests. Retry in ${remaining} minutes.`);
+        throw new Error(`ACCOUNT LOCKED: Retry in ${remaining} minutes.`);
     }
 
-    // 4. Verify PIN
+    // 3. Verification: PIN Validation
     const isMatch = await compareValue(c.pin, matchedUser.pin_hash);
 
     if (!isMatch) {
@@ -154,23 +177,49 @@ export async function login(c: {
         await authQueries.updateFailedAttempts(matchedUser.id, newCount, lockUntil);
 
         if (lockUntil) {
-            throw new Error(`ACCOUNT LOCKED: 5 failed attempts reached. Locked for ${LOCKOUT_MINUTES} minutes.`);
+            throw new Error(`ACCOUNT LOCKED: 5 failed attempts. Locked for ${LOCKOUT_MINUTES} minutes.`);
         }
         throw new Error(`INVALID PIN: Attempt ${newCount} of ${MAX_FAILED_ATTEMPTS}.`);
     }
 
-    // 5. Reset Counter
+    // 4. Cleanup & Auto-Link
     await authQueries.resetFailedAttempts(matchedUser.id);
 
-    // 6. Generate Session
-    const token = jwt.sign({ userId: matchedUser.id, deviceId: registeredDevice.id }, JWT_SECRET, { expiresIn: '24h' });
+    if (!registeredDevice) {
+        // Recognition successful via Identifiers -> Auto-Link the device now
+        const existingDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
+        if (!existingDevice) {
+            const deviceCount = await authQueries.getDeviceCountByUserId(matchedUser.id);
+            if (deviceCount < MAX_DEVICES) {
+                await authQueries.registerDevice({
+                    user_id: matchedUser.id,
+                    device_identifier: c.device.identifier,
+                    fingerprint: c.device.fingerprint,
+                    os_type: c.device.os || 'unknown'
+                });
+                // Re-find to get the ID for the token
+                registeredDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
+            } else {
+                throw new Error('DEVICE_LIMIT_EXCEEDED: Maximum of 10 devices allowed per operator.');
+            }
+        } else {
+            registeredDevice = existingDevice;
+        }
+    }
+
+    // 5. Generate Session
+    const token = jwt.sign(
+        { userId: matchedUser.id, deviceId: registeredDevice?.id },
+        JWT_SECRET,
+        { expiresIn: '72h' }
+    );
 
     return {
         success: true,
         token,
         user: {
             id: matchedUser.id,
-            isBiometricEnabled: !!registeredDevice.public_key
+            isBiometricEnabled: !!registeredDevice?.public_key
         }
     };
 }

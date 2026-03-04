@@ -29,7 +29,8 @@ const RegisterPage: React.FC = () => {
             await authService.register(formData);
             navigate('/login');
         } catch (err: any) {
-            setError(err.response?.data?.error || 'Registration failed. Max users reached or invalid input.');
+            const serverError = err.response?.data?.error;
+            setError(serverError || `Connection Error: ${err.message}`);
         } finally {
             setLoading(false);
         }

@@ -39,9 +39,9 @@ export const authService = {
         return response.data;
     },
 
-    async login(pin: string) {
+    async login(pin: string, identifiers?: any) {
         const device = getDeviceInfo();
-        const response = await api.post('/auth/login', { pin, device });
+        const response = await api.post('/auth/login', { pin, device, identifiers });
         return response.data;
     },
 
