@@ -1,42 +1,17 @@
 {
     "compilerOptions": {
-        "target": "ESNext",
+        "target": "ES2022",
+        "module": "commonjs",
         "lib": [
-            "DOM",
-            "DOM.Iterable",
-            "ESNext"
+            "ES2022"
         ],
-        "allowJs": true,
-        "skipLibCheck": true,
         "esModuleInterop": true,
-        "allowSyntheticDefaultImports": true,
-        "strict": true,
+        "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "noFallthroughCasesInSwitch": true,
-        "module": "ESNext",
-        "moduleResolution": "node",
-        "resolveJsonModule": true,
-        "isolatedModules": true,
-        "noEmit": true,
-        "jsx": "react-jsx",
-        "baseUrl": ".",
-        "paths": {
-            "@/*": [
-                "client/src/*"
-            ],
-            "@server/*": [
-                "server/src/*"
-            ]
-        }
+        "moduleResolution": "node"
     },
     "include": [
-        "client/src",
-        "server/src",
-        "api"
-    ],
-    "exclude": [
-        "node_modules",
-        "client/dist",
-        "server/dist"
+        "api/**/*",
+        "server/src/**/*"
     ]
 }
