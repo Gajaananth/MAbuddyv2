@@ -12,7 +12,7 @@ let isInitializing = false;
 
 // Ensure DATABASE_URL is present before initializing the pool to prevent startup crashes.
 const dbConfig = {
-  connectionString: process.env.DATABASE_URL || '',
+  connectionString: (process.env.DATABASE_URL || '').trim(),
   max: 10,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 30000,
