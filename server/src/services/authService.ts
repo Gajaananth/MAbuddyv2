@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import * as authQueries from '../db/authQueries';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
-const MAX_USERS = 2;
+const MAX_USERS = 5;
 const MAX_DEVICES = 10;
 const LOCKOUT_MINUTES = 10;
 const MAX_FAILED_ATTEMPTS = 5;
