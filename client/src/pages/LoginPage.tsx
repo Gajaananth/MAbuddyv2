@@ -146,6 +146,7 @@ const LoginPage: React.FC = () => {
                         <div>
                             <label className="block text-[10px] font-black text-nova-text-dim uppercase tracking-[2px] mb-2 ml-2">Q3: DOB Date - Month</label>
                             <input type="number" className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white outline-none focus:ring-2 focus:ring-red-500/50"
+                                placeholder="Positive or negative integer"
                                 value={identityData.q3 || ''} onChange={e => setIdentityData({ ...identityData, q3: parseInt(e.target.value) || 0 })} />
                         </div>
 
@@ -159,10 +160,18 @@ const LoginPage: React.FC = () => {
 
                         {error && <p className="text-red-400 text-[10px] font-black uppercase tracking-widest bg-red-500/10 p-4 rounded-2xl border border-red-500/20">{error}</p>}
 
-                        <button onClick={isForgotMode ? handleForgotReset : handleIdentitySubmit} disabled={loading}
-                            className="w-full bg-red-500 text-white font-black py-5 rounded-2xl uppercase tracking-widest shadow-xl shadow-red-500/20 hover:bg-red-600 transition-all flex items-center justify-center gap-2">
-                            {loading ? 'Verifying...' : (isForgotMode ? 'Restore Access' : 'Establish Binding')}
-                        </button>
+                        <div className="space-y-4">
+                            <button onClick={isForgotMode ? handleForgotReset : handleIdentitySubmit} disabled={loading}
+                                className="w-full bg-red-500 text-white font-black py-5 rounded-2xl uppercase tracking-widest shadow-xl shadow-red-500/20 hover:bg-red-600 transition-all flex items-center justify-center gap-2">
+                                {loading ? 'Verifying...' : (isForgotMode ? 'Restore Access' : 'Establish Binding')}
+                            </button>
+
+                            {isEnrollMode && (
+                                <p className="text-center text-[10px] font-black text-nova-text-dim uppercase tracking-widest">
+                                    Not enrolled? <Link to="/register" className="text-red-500 hover:text-red-400 transition-colors">Register here</Link>
+                                </p>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

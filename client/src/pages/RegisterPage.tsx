@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Bird, Calculator, ArrowRight, UserPlus, AlertCircle } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
@@ -14,22 +14,12 @@ const RegisterPage: React.FC = () => {
         pin: '',
         q1: '',
         q2: '',
-        q3: ''
+        q3: 0
     });
-
-    useEffect(() => {
-        if (formData.dob) {
-            const date = new Date(formData.dob);
-            const day = date.getDate();
-            const month = date.getMonth() + 1; // getMonth() is 0-indexed
-            const result = Math.abs(day - month);
-            setFormData(prev => ({ ...prev, q3: result.toString() }));
-        }
-    }, [formData.dob]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData(prev => ({ ...prev, [name]: name === 'q3' ? parseInt(value) : value }));
     };
 
     const handleRegister = async () => {
@@ -136,16 +126,16 @@ const RegisterPage: React.FC = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-black text-nova-text-dim uppercase tracking-[2px] mb-3 ml-2">Security Q3: (Absolute: Date - Month)</label>
+                                    <label className="block text-[10px] font-black text-nova-text-dim uppercase tracking-[2px] mb-3 ml-2">Security Q3: (DOB Date - Month)</label>
                                     <div className="relative">
                                         <Calculator className="absolute left-4 top-1/2 -translate-y-1/2 text-nova-text-dim" size={18} />
                                         <input
                                             type="number"
                                             name="q3"
-                                            placeholder="Auto-calculated"
+                                            placeholder="Integer result"
                                             value={formData.q3}
-                                            readOnly
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-white font-medium focus:ring-2 focus:ring-red-500/50 outline-none transition-all cursor-not-allowed opacity-70"
+                                            onChange={handleInputChange}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 pl-12 text-white font-medium focus:ring-2 focus:ring-red-500/50 outline-none transition-all"
                                         />
                                     </div>
                                 </div>
