@@ -62,7 +62,7 @@ app.get('/api/health', (_req, res) => {
     res.json({
         status: 'online',
         agent: 'Zium Nova',
-        version: 'v1.8.8',
+        version: 'v1.8.14',
         protocol: 'antigravity_esm_bond_v8',
         mode: process.env.OPENCLAW_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),
