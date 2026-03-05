@@ -31,33 +31,39 @@ if (!pool) {
 
 const DB_PATH = path.join(process.cwd(), 'zium_nova.sqlite');
 
+let initPromise: Promise<void> | null = null;
+
 /**
  * Initialize Database with Resilience.
  */
 export async function initDatabase(): Promise<void> {
   if (isPostgresActive) return;
-  if (isInitializing) return;
 
-  isInitializing = true;
-  console.log('[DB] Protocol: Establishing Grid Connection...');
+  if (initPromise) {
+    return initPromise;
+  }
 
-  try {
-    if (!pool) throw new Error('DATABASE_URL mission critical environment variable is MISSING.');
-
-    const client = await pool.connect();
-
+  initPromise = (async () => {
+    console.log('[DB] Protocol: Establishing Grid Connection...');
     try {
-      const schemaCheck = await client.query("SELECT 1 FROM information_schema.tables WHERE table_name = 'users' LIMIT 1");
+      if (!pool) throw new Error('DATABASE_URL mission critical environment variable is MISSING.');
 
-      if (schemaCheck.rows.length > 0) {
-        isPostgresActive = true;
-        isInitializing = false;
-        console.log('[DB] PostgreSQL Grid: ONLINE (Verified)');
-        return;
-      }
+      const client = await pool.connect();
 
-      console.log('[DB] Grid: Initializing Core Protocol Tables...');
-      await client.query(`
+      try {
+        const schemaCheck = await client.query("SELECT 1 FROM information_schema.tables WHERE table_name = 'users' LIMIT 1");
+
+        if (schemaCheck.rows.length > 0) {
+          isPostgresActive = true;
+          isInitializing = false;
+          console.log('[DB] PostgreSQL Grid: ONLINE (Verified)');
+          return;
+        }
+
+        console.log('[DB] Grid: Initializing Core Protocol Tables...');
+        await client.query(`
+          CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+          
           CREATE TABLE IF NOT EXISTS users (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             dob_hash TEXT NOT NULL,
@@ -188,23 +194,25 @@ export async function initDatabase(): Promise<void> {
           CREATE INDEX IF NOT EXISTS idx_raids_category ON intelligence_raids(category);
           CREATE INDEX IF NOT EXISTS idx_raids_created ON intelligence_raids(created_at DESC);
         `);
-      isPostgresActive = true;
-      console.log('[DB] PostgreSQL Grid: ONLINE');
-    } finally {
-      client.release();
-      isInitializing = false;
-    }
-  } catch (error: any) {
-    isInitializing = false;
-    console.error('[DB] Grid Failure Detailed:', error);
+        isPostgresActive = true;
+        console.log('[DB] PostgreSQL Grid: ONLINE');
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      initPromise = null; // Allow retry on failure
+      console.error('[DB] Grid Failure Detailed:', error);
 
-    if (process.env.VERCEL || (process.env.DATABASE_URL && process.env.NODE_ENV === 'production')) {
-      throw new Error(`[Zium Nova] Database Grid Timeout: ${error.message} (Code: ${error.code || 'UNKNOWN'})`);
-    }
+      if (process.env.VERCEL || (process.env.DATABASE_URL && process.env.NODE_ENV === 'production')) {
+        throw new Error(`[Zium Nova] Database Grid Timeout: ${error.message} (Code: ${error.code || 'UNKNOWN'})`);
+      }
 
-    console.warn('[DB] Activating Local Shadow Logic.');
-    isPostgresActive = false;
-  }
+      console.warn('[DB] Activating Local Shadow Logic.');
+      isPostgresActive = false;
+    }
+  })();
+
+  return initPromise;
 }
 
 export { pool, sqliteDb };
