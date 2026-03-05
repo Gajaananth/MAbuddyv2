@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
     ];
 
     return (
-        <div className="flex flex-col items-start space-y-12 sm:space-y-24 animate-in fade-in duration-700 text-left w-full h-full pb-10 sm:pb-20">
+        <div className="flex flex-col items-start space-y-8 sm:space-y-16 animate-in fade-in duration-700 text-left w-full h-full pb-10 sm:pb-20 max-w-7xl mx-auto">
             {/* Push Notification Activation Banner */}
             <div className="w-full">
                 <NotificationActivationBanner />

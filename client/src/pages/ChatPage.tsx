@@ -244,7 +244,7 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-160px)] sm:h-[calc(100vh-140px)] lg:h-[calc(100vh-100px)] flex flex-col min-w-0">
+        <div className="h-[calc(100vh-160px)] sm:h-[calc(100vh-140px)] lg:h-[calc(100vh-120px)] flex flex-col min-w-0 max-w-6xl mx-auto w-full">
             <header className="mb-4 sm:mb-6 md:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-3 sm:py-4 xl:py-6 gap-3 sm:gap-4 md:gap-6 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0">
                 <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
                     <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 xl:w-20 xl:h-20 rounded-lg sm:rounded-xl md:rounded-2xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent relative shadow-2xl shadow-nova-accent/5 shrink-0">

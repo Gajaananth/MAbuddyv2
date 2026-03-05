@@ -62,13 +62,13 @@ function App() {
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
                 {/* Content Engine - Offset by Sidebar width on Desktop */}
-                <main className="flex-1 min-w-0 lg:pl-80 transition-all duration-300 relative min-h-screen">
-                  {/* Background Atmosphere - Fixed width and better positioning to avoid horizontal scrolling */}
+                <main className="flex-1 min-w-0 lg:pl-80 transition-all duration-300 relative min-h-screen flex flex-col items-center">
+                  {/* Background Atmosphere - Fixed width and better positioning to avoid horizontal overflow */}
                   <div className="fixed top-0 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-nova-accent/10 blur-[100px] sm:blur-[180px] rounded-full -mr-48 sm:-mr-96 -mt-48 sm:-mt-96 pointer-events-none z-0"></div>
                   <div className="fixed bottom-0 left-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-nova-accent-alt/10 blur-[80px] sm:blur-[150px] rounded-full -ml-16 sm:-ml-32 -mb-16 sm:-mb-32 pointer-events-none z-0"></div>
 
-                  {/* Atomic Content Container */}
-                  <div className="relative z-10 pt-24 sm:pt-28 lg:pt-20 px-4 sm:px-8 md:px-12 lg:px-16 min-h-screen flex flex-col items-stretch w-full max-w-full overflow-x-hidden">
+                  {/* Atomic Content Container - Centered and constrained */}
+                  <div className="relative z-10 pt-24 sm:pt-28 lg:pt-20 px-4 sm:px-8 md:px-12 lg:px-16 min-h-screen flex flex-col items-stretch w-full max-w-[1600px] overflow-x-hidden">
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/chat" element={<ChatPage />} />

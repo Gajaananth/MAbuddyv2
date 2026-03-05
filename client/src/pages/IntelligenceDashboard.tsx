@@ -240,7 +240,7 @@ const IntelligenceDashboard: React.FC = () => {
     );
 
     return (
-        <div className="w-full max-w-7xl mx-auto pb-20 px-4 sm:px-0">
+        <div className="w-full max-w-7xl mx-auto pb-20 px-0 sm:px-0 flex flex-col">
             {/* Header */}
             <header className="mb-8 sm:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
                 <div className="flex items-center gap-4 sm:gap-5">
