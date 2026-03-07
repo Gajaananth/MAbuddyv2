@@ -1,7 +1,7 @@
 import app from '../backend/index.js';
 
 /**
- * Zium Nova Gateway v1.8.4 (CACHE BYPASS)
- * 🦅🛰️ This is a fresh entry point to bypass Vercel build-cache anomalies.
+ * Zium Nova Gateway v1.9.0 — Dashboard Streamlined + Notification Fixes
+ * 🦅🛰️ Cache-busting redeploy
  */
 export default app;
