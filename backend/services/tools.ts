@@ -59,4 +59,4 @@ export const internetRideTool = tool({
     },
 });
 
-export const defaultTools = [trendAnalyzerTool, scamDetectorTool, internetRideTool];
+export const defaultTools = [internetRideTool];
