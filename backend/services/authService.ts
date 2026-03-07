@@ -5,9 +5,27 @@ import * as authQueries from '../db/authQueries.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
 const MAX_USERS = 5;
-const MAX_DEVICES = 10;
 const LOCKOUT_MINUTES = 10;
 const MAX_FAILED_ATTEMPTS = 5;
+
+// Lead Admin gets 5 devices, standard operators get 3.
+async function getDeviceLimit(userId: string): Promise<number> {
+    try {
+        const users = await authQueries.getAllUsers();
+        // Sort by created_at to find the first (admin) user
+        const sortedUsers = users.sort((a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+
+        if (sortedUsers.length > 0 && sortedUsers[0].id === userId) {
+            return 5;
+        }
+        return 3;
+    } catch {
+        return 3; // Fallback to safe minimum
+    }
+}
+
 
 export async function hashValue(val: string): Promise<string> {
     return bcrypt.hash(val, 10);
@@ -75,9 +93,11 @@ export async function register(u: {
 
         // Check Per-User Device Quota
         const userDeviceCount = await authQueries.getDeviceCountByUserId(user.id);
-        if (userDeviceCount >= MAX_DEVICES) {
-            throw new Error(`DEVICE QUOTA REACHED: Maximum of ${MAX_DEVICES} devices allowed per protocol operator.`);
+        const userLimit = await getDeviceLimit(user.id);
+        if (userDeviceCount >= userLimit) {
+            throw new Error(`DEVICE QUOTA REACHED: Maximum of ${userLimit} devices allowed for your clearance level.`);
         }
+
     } else {
         // New User -> Check Global User Quota
         const userCount = await authQueries.getUserCount();
@@ -190,7 +210,8 @@ export async function login(c: {
         const existingDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
         if (!existingDevice) {
             const deviceCount = await authQueries.getDeviceCountByUserId(matchedUser.id);
-            if (deviceCount < MAX_DEVICES) {
+            const userLimit = await getDeviceLimit(matchedUser.id);
+            if (deviceCount < userLimit) {
                 await authQueries.registerDevice({
                     user_id: matchedUser.id,
                     device_identifier: c.device.identifier,
@@ -200,8 +221,9 @@ export async function login(c: {
                 // Re-find to get the ID for the token
                 registeredDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
             } else {
-                throw new Error('DEVICE_LIMIT_EXCEEDED: Maximum of 10 devices allowed per operator.');
+                throw new Error(`DEVICE_LIMIT_EXCEEDED: Maximum of ${userLimit} devices allowed for your clearance level.`);
             }
+
         } else {
             registeredDevice = existingDevice;
         }
@@ -230,40 +252,51 @@ export async function loginBiometric(c: {
         fingerprint: string;
     },
     biometricResponse: any,
-    challenge: string
+    challenge: string,
+    origin: string,
+    rpID: string
 }) {
-    // 1. Identify device
-    const users = await authQueries.getUserByPin('');
-    let matchedUser = null;
-    let registeredDevice = null;
-
-    for (const user of users) {
-        const devices = await authQueries.getDevicesByUserId(user.id);
-        const device = devices.find(d => d.device_identifier === c.device.identifier && d.fingerprint === c.device.fingerprint);
-        if (device && device.public_key) {
-            matchedUser = user;
-            registeredDevice = device;
-            break;
-        }
+    // 1. Identify device and user directly
+    const device = await authQueries.getDeviceByIdentifierAndFingerprint(c.device.identifier, c.device.fingerprint);
+    
+    if (!device || !device.public_key || !device.credential_id) {
+        throw new Error('ACCESS_DENIED: Biometrics not enrolled for this device.');
     }
 
-    if (!matchedUser || !registeredDevice) {
-        throw new Error('ACCESS DENIED: Biometrics not enrolled for this device.');
+    const users = await authQueries.getAllUsers();
+    const matchedUser = users.find(u => u.id === device.user_id);
+
+    if (!matchedUser) {
+        throw new Error('ACCESS_DENIED: Associated operator profile missing.');
     }
 
     // 2. Verify Biometric
     const { verifyLogin } = await import('./webAuthnService.js');
-    const verification = await verifyLogin(c.biometricResponse, c.challenge, registeredDevice.public_key, registeredDevice.counter || 0);
+    const verification = await verifyLogin(
+        c.biometricResponse, 
+        c.challenge, 
+        device.public_key, 
+        device.credential_id,
+        (device && typeof device.counter === 'number') ? device.counter : 0,
+        c.origin,
+        c.rpID
+    );
+
+
 
     if (!verification.verified) {
-        throw new Error('BIOMETRIC FAILED: Identity not confirmed.');
+        throw new Error('BIOMETRIC_FAILURE: Identity not confirmed.');
     }
 
-    // 3. Reset Counter (just in case they were trying pins)
+    // 3. Update counter and reset failed attempts
+    if (typeof verification.newCounter === 'number') {
+        await authQueries.updateWebAuthn(device.id, device.public_key, device.credential_id, verification.newCounter);
+    }
     await authQueries.resetFailedAttempts(matchedUser.id);
 
+
     // 4. Generate Session
-    const token = jwt.sign({ userId: matchedUser.id, deviceId: registeredDevice.id }, JWT_SECRET, { expiresIn: '24h' });
+    const token = jwt.sign({ userId: matchedUser.id, deviceId: device.id }, JWT_SECRET, { expiresIn: '24h' });
 
     return {
         success: true,
@@ -274,6 +307,7 @@ export async function loginBiometric(c: {
         }
     };
 }
+
 
 export async function verifySecurityQuestions(userId: string, data: { q1: string, q2: string, q3: number }): Promise<boolean> {
     const users = await authQueries.getUserByPin('');
@@ -338,10 +372,11 @@ export async function forgotPin(data: {
     return { success: true };
 }
 
-export async function enableBiometrics(userId: string, deviceId: string, publicKey: string, credentialId: string) {
-    await authQueries.updateWebAuthn(deviceId, publicKey, credentialId);
+export async function enableBiometrics(userId: string, deviceId: string, publicKey: string, credentialId: string, counter: number) {
+    await authQueries.updateWebAuthn(deviceId, publicKey, credentialId, counter);
     return { success: true };
 }
+
 
 export async function disableBiometrics(userId: string, deviceId: string, data: { pin: string, q1: string, q2: string, q3: number }) {
     const users = await authQueries.getUserByPin('');
@@ -354,6 +389,13 @@ export async function disableBiometrics(userId: string, deviceId: string, data: 
     const qMatch = await verifySecurityQuestions(userId, data);
     if (!qMatch) throw new Error('Questions Denied.');
 
-    await authQueries.updateWebAuthn(deviceId, '', '');
+    await authQueries.updateWebAuthn(deviceId, '', '', 0);
     return { success: true };
 }
+
+export async function revokeBiometrics(userId: string, deviceId: string) {
+    // Simple revocation for already authenticated users in settings
+    await authQueries.updateWebAuthn(deviceId, '', '', 0);
+    return { success: true };
+}
+

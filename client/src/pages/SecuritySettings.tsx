@@ -40,7 +40,7 @@ const SecuritySettings: React.FC = () => {
     };
 
     useEffect(() => {
-        if (activeTab === 'devices') fetchDevices();
+        if (activeTab === 'devices' || activeTab === 'biometric') fetchDevices();
     }, [activeTab]);
 
     const handleChangePin = async (e: React.FormEvent) => {
@@ -71,12 +71,30 @@ const SecuritySettings: React.FC = () => {
             await api.post('/auth/biometrics/register-verify', attestationRes);
 
             setMessage({ type: 'success', text: 'Fingerprint enrolled.' });
+            fetchDevices(); // Refresh list to show biometric icon
         } catch (err: any) {
-            setMessage({ type: 'error', text: err.message || 'Enrollment failed.' });
+            const errorText = err.response?.data?.error || err.response?.data?.details || err.message || 'Enrollment failed.';
+            setMessage({ type: 'error', text: `PROTOCOL_FAILURE: ${errorText}` });
+            console.error('[Biometrics] Enrollment Error:', err.response?.data || err);
         } finally {
             setLoading(false);
         }
     };
+
+    const handleRevokeBiometric = async () => {
+        if (!confirm('PROTOCOL REVOCATION: Disable biometric access for this device?')) return;
+        setLoading(true);
+        try {
+            await api.delete('/auth/biometrics');
+            setMessage({ type: 'success', text: 'Biometric access revoked.' });
+            fetchDevices();
+        } catch (err: any) {
+            setMessage({ type: 'error', text: 'Revocation failed.' });
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const handleRemoveDevice = async (id: string) => {
         if (!confirm('Remove this device? You will be logged out if it is the current one.')) return;
@@ -219,27 +237,56 @@ const SecuritySettings: React.FC = () => {
                             </div>
                             <div className="space-y-2">
                                 <h3 className="text-xl font-bold">Biometric Vault</h3>
-                                <p className="text-gray-400 text-sm max-w-xs mx-auto">
-                                    Secure your session with hardware-level biometric authentication. Enrollment requires platform support.
-                                </p>
+                                {devices.some(d => d.device_identifier === localStorage.getItem('zn_device_id') && d.public_key) ? (
+                                    <div className="space-y-4">
+                                        <p className="text-green-400 text-sm max-w-xs mx-auto font-semibold uppercase tracking-widest">
+                                            Status: Protocol Hardware Bound
+                                        </p>
+                                        <div className="flex flex-col gap-3 max-w-xs mx-auto">
+                                            <button
+                                                onClick={handleEnrollBiometric}
+                                                disabled={loading}
+                                                className="w-full bg-white/10 border border-white/20 text-white font-bold py-3 rounded-xl hover:bg-white/20 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Loader2 className={`w-4 h-4 animate-spin ${loading ? 'block' : 'hidden'}`} />
+                                                Update Biometrics
+                                            </button>
+                                            <button
+                                                onClick={handleRevokeBiometric}
+                                                disabled={loading}
+                                                className="w-full bg-red-500/10 border border-red-500/20 text-red-500 font-bold py-3 rounded-xl hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <Loader2 className={`w-4 h-4 animate-spin ${loading ? 'block' : 'hidden'}`} />
+                                                Revoke Access
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <p className="text-gray-400 text-sm max-w-xs mx-auto">
+                                            Secure your session with hardware-level biometric authentication. Enrollment requires platform support.
+                                        </p>
+                                        <button
+                                            onClick={handleEnrollBiometric}
+                                            disabled={loading}
+                                            className="inline-flex items-center gap-2 bg-white text-black font-bold px-8 py-3 rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50 shadow-xl"
+                                        >
+                                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />}
+                                            <span>Enroll Fingerprint</span>
+                                        </button>
+                                    </>
+                                )}
                             </div>
-                            <button
-                                onClick={handleEnrollBiometric}
-                                disabled={loading}
-                                className="inline-flex items-center gap-2 bg-white text-black font-bold px-8 py-3 rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50 shadow-xl"
-                            >
-                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />}
-                                <span>Enroll Fingerprint</span>
-                            </button>
                         </div>
                     )}
+
 
                     {activeTab === 'devices' && (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-widest">Linked Assets</h3>
-                                <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full border border-blue-500/30">
-                                    {devices.length}/10 LIMIT
+                                <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-1 rounded-full border border-blue-500/30 uppercase tracking-widest">
+                                    {devices.length}/17 Protocol Assets
                                 </span>
                             </div>
                             <div className="space-y-3">
@@ -251,12 +298,23 @@ const SecuritySettings: React.FC = () => {
                                             </div>
                                             <div>
                                                 <div className="text-sm font-semibold flex items-center gap-2">
-                                                    {dev.device_identifier.slice(0, 8)}...
-                                                    {dev.public_key && <Fingerprint className="w-3 h-3 text-green-400" />}
+                                                    {dev.device_identifier.slice(0, 12)}...
+                                                    {dev.public_key && (
+                                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20 text-[9px] text-green-400 uppercase tracking-wider font-bold">
+                                                            <Fingerprint className="w-2.5 h-2.5" />
+                                                            Verified Biometrics
+                                                        </div>
+                                                    )}
                                                 </div>
-                                                <div className="text-[10px] text-gray-500 uppercase">{dev.os_type} — ID: {dev.id.slice(0, 4)}</div>
+                                                <div className="flex flex-col gap-0.5 mt-1">
+                                                    <div className="text-[10px] text-gray-500 uppercase">{dev.os_type} — ID: {dev.id.slice(0, 8)}</div>
+                                                    {dev.credential_id && (
+                                                        <div className="text-[9px] text-nova-text/30 font-mono">CRED: {dev.credential_id.slice(0, 16)}...</div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
+
                                         <button
                                             onClick={() => handleRemoveDevice(dev.id)}
                                             className="p-2 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"

@@ -457,7 +457,6 @@ export async function bulkDeleteReports(ids: string[], userId: string): Promise<
 }
 
 // ──────────────────────────── Notifications ────────────────────────────
-
 export async function createNotification(userId: string, data: {
     title: string;
     category: string;
@@ -465,19 +464,20 @@ export async function createNotification(userId: string, data: {
     monetization_potential: string;
     content: string;
     priority: 'normal' | 'high' | 'critical';
+    metadata?: object;
 }): Promise<any> {
     if (isPostgresActive) {
         const result = await pool.query(
-            'INSERT INTO notifications (user_id, title, category, risk_level, monetization_potential, content, priority) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [userId, data.title, data.category, data.risk_level, data.monetization_potential, data.content, data.priority]
+            'INSERT INTO notifications (user_id, title, category, risk_level, monetization_potential, content, priority, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [userId, data.title, data.category, data.risk_level, data.monetization_potential, data.content, data.priority, data.metadata || null]
         );
         return result.rows[0];
     } else {
         const db = getSqlite();
         const id = uuidv4();
         db.prepare(
-            'INSERT INTO notifications (id, user_id, title, category, risk_level, monetization_potential, content, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(id, userId, data.title, data.category, data.risk_level, data.monetization_potential, data.content, data.priority);
+            'INSERT INTO notifications (id, user_id, title, category, risk_level, monetization_potential, content, priority, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).run(id, userId, data.title, data.category, data.risk_level, data.monetization_potential, data.content, data.priority, data.metadata ? JSON.stringify(data.metadata) : null);
         return db.prepare('SELECT * FROM notifications WHERE id = ?').get(id);
     }
 }

@@ -88,7 +88,8 @@ const LoginPage: React.FC = () => {
             setAuth(data.token, data.user);
             navigate('/');
         } catch (err: any) {
-            setError(err.message || 'Biometric verification failed.');
+            const errorMsg = err.response?.data?.details || err.response?.data?.error || err.message || 'Biometric verification failed.';
+            setError(`PROTOCOL_FAILURE: ${errorMsg}`);
         } finally {
             setLoading(false);
         }

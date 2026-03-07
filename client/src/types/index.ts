@@ -79,6 +79,11 @@ export interface Notification {
     is_read: boolean | number;
     is_archived: boolean | number;
     priority: 'normal' | 'high' | 'critical';
+    metadata?: {
+        confidence?: number;
+        is_blinking?: boolean;
+        alert_type?: string;
+    } | null;
     created_at: string;
 }
 

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Bird, Search, Download, AlertTriangle, Clock, Radio, ChevronDown, Zap, Trash2, FileText, Check } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { intelligenceService } from '../services/api';
 import { useLiveTime } from '../hooks/useLiveTime';
 
-interface RaidResult {
+interface RideResult {
     id: string;
     category: string;
     risk_level: 'Low' | 'Medium' | 'High';
@@ -29,20 +30,22 @@ const riskColors: Record<string, string> = {
 };
 
 const IntelligenceDashboard: React.FC = () => {
-    const [raids, setRaids] = useState<RaidResult[]>([]);
+    const [rides, setRides] = useState<RideResult[]>([]);
     const [reports, setReports] = useState<WeeklyReport[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeTab, setActiveTab] = useState<'raids' | 'reports'>('raids');
+    const [activeTab, setActiveTab] = useState<'rides' | 'reports'>('rides');
     const [loading, setLoading] = useState(true);
     const [triggerLoading, setTriggerLoading] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [expandedReports, setExpandedReports] = useState<string[]>([]);
-    const [raidStatus, setRaidStatus] = useState<{
+    const [rideStatus, setRideStatus] = useState<{
         status: string;
         currentCluster: string;
         clustersCompleted: number;
         totalClusters: number;
     } | null>(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const liveTime = useLiveTime();
 
     useEffect(() => {
@@ -53,52 +56,75 @@ const IntelligenceDashboard: React.FC = () => {
         setSelectedIds([]);
     }, [activeTab]);
 
-    // Polling for Raid Status
+    // Polling for Ride Status
+    // We always poll while triggerLoading=true so we don't stop
+    // before the server has had time to register the ride as started.
     useEffect(() => {
-        let interval: any;
+        let interval: ReturnType<typeof setInterval>;
+        let prevClustersCompleted = 0;
 
         const checkStatus = async () => {
             try {
-                const res = await intelligenceService.getRaidStatus();
+                const res = await intelligenceService.getRideStatus();
                 const data = res.data.data;
 
                 if (data.status && data.status !== 'idle') {
-                    setRaidStatus(data);
-                    setTriggerLoading(true);
-                    // Refresh data if we just finished or a cluster completed
-                    if (data.status === 'completed' || data.clustersCompleted > (raidStatus?.clustersCompleted || 0)) {
+                    setRideStatus(data);
+
+                    // Reload data when a new cluster finishes
+                    if (data.clustersCompleted > prevClustersCompleted) {
                         loadData();
+                        prevClustersCompleted = data.clustersCompleted;
                     }
-                } else {
-                    if (triggerLoading) {
+
+                    if (data.status === 'completed' || data.status === 'failed') {
                         setTriggerLoading(false);
+                        setRideStatus(null);
                         loadData();
                     }
-                    setRaidStatus(null);
                 }
+                // If idle while triggerLoading is true, keep waiting —
+                // the background raid may not have started yet.
             } catch (error) {
                 console.error('[Intelligence] Status Poll Error:', error);
             }
         };
 
-        if (triggerLoading || raidStatus) {
-            interval = setInterval(checkStatus, 3000);
+        if (triggerLoading || rideStatus) {
+            interval = setInterval(checkStatus, 2500);
         }
 
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [triggerLoading, raidStatus]);
+        return () => clearInterval(interval);
+    }, [triggerLoading, rideStatus]);
 
     const loadData = async () => {
         setLoading(true);
         try {
-            const [raidsRes, reportsRes] = await Promise.all([
-                intelligenceService.getRaids(),
+            const [ridesRes, reportsRes] = await Promise.all([
+                intelligenceService.getRides(),
                 intelligenceService.getReports(),
             ]);
-            setRaids(raidsRes.data.data || []);
-            setReports(reportsRes.data.data || []);
+            const fetchedRides = ridesRes.data.data || [];
+            const fetchedReports = reportsRes.data.data || [];
+            setRides(fetchedRides);
+            setReports(fetchedReports);
+
+            // Check for highlighted ID from search params
+            const targetId = searchParams.get('id');
+            if (targetId) {
+                setHighlightedId(targetId);
+                // Determine if it's a ride or report
+                const isRide = fetchedRides.some((r: RideResult) => r.id === targetId);
+                const isReport = fetchedReports.some((r: WeeklyReport) => r.id === targetId);
+
+                if (isRide) setActiveTab('rides');
+                else if (isReport) setActiveTab('reports');
+
+                // Clear search params to avoid persistent highlighting
+                const newParams = new URLSearchParams(searchParams);
+                newParams.delete('id');
+                setSearchParams(newParams, { replace: true });
+            }
         } catch (error) {
             console.error('[Intelligence] Load Error:', error);
         } finally {
@@ -106,15 +132,31 @@ const IntelligenceDashboard: React.FC = () => {
         }
     };
 
-    const handleTriggerRaid = async () => {
+    // Scroll to highlighted item
+    useEffect(() => {
+        if (highlightedId && !loading) {
+            const timer = setTimeout(() => {
+                const element = document.getElementById(`finding-${highlightedId}`);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                // Fade out highlight after 3 seconds
+                const fadeTimer = setTimeout(() => setHighlightedId(null), 3000);
+                return () => clearTimeout(fadeTimer);
+            }, 500);
+            return () => clearTimeout(timer);
+        }
+    }, [highlightedId, loading]);
+
+    const handleTriggerRide = async () => {
         if (triggerLoading) return;
         setTriggerLoading(true);
         try {
-            await intelligenceService.triggerRaid('end-of-week');
+            await intelligenceService.triggerRide('end-of-week');
             // Status effect will take over polling
         } catch (error: any) {
             console.error('[Intelligence] Trigger Error:', error);
-            alert(error.response?.data?.error || 'Failed to trigger raid');
+            alert(error.response?.data?.error || 'Failed to trigger Internet Ride');
             setTriggerLoading(false);
         }
     };
@@ -142,9 +184,9 @@ const IntelligenceDashboard: React.FC = () => {
         }
     };
 
-    const handleRaidExport = async (raidId: string, format: 'pdf' = 'pdf') => {
+    const handleRideExport = async (raidId: string, format: 'pdf' = 'pdf') => {
         try {
-            const res = await intelligenceService.exportRaid(raidId, format);
+            const res = await intelligenceService.exportRide(raidId, format);
             const blob = new Blob([res.data], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -155,18 +197,18 @@ const IntelligenceDashboard: React.FC = () => {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         } catch (error) {
-            console.error('[Intelligence] Raid Export Error:', error);
+            console.error('[Intelligence] Internet Ride Export Error:', error);
             alert('Export failed. Please try again.');
         }
     };
 
-    const handleDeleteRaid = async (id: string) => {
+    const handleDeleteRide = async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this intelligence finding?')) return;
         try {
-            await intelligenceService.deleteRaid(id);
+            await intelligenceService.deleteRide(id);
             loadData();
         } catch (error) {
-            console.error('[Intelligence] Delete Raid Error:', error);
+            console.error('[Intelligence] Delete Internet Ride Error:', error);
         }
     };
 
@@ -182,12 +224,12 @@ const IntelligenceDashboard: React.FC = () => {
 
     const handleBulkDelete = async () => {
         if (selectedIds.length === 0) return;
-        const type = activeTab === 'raids' ? 'intelligence findings' : 'weekly reports';
+        const type = activeTab === 'rides' ? 'intelligence findings' : 'weekly reports';
         if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} ${type}?`)) return;
 
         try {
-            if (activeTab === 'raids') {
-                await intelligenceService.bulkDeleteRaids(selectedIds);
+            if (activeTab === 'rides') {
+                await intelligenceService.bulkDeleteRides(selectedIds);
             } else {
                 await intelligenceService.bulkDeleteReports(selectedIds);
             }
@@ -205,11 +247,11 @@ const IntelligenceDashboard: React.FC = () => {
     };
 
     const toggleSelectAll = () => {
-        if (activeTab === 'raids') {
-            if (selectedIds.length === raids.length) {
+        if (activeTab === 'rides') {
+            if (selectedIds.length === rides.length) {
                 setSelectedIds([]);
             } else {
-                setSelectedIds(raids.map(r => r.id));
+                setSelectedIds(rides.map(r => r.id));
             }
         } else {
             if (selectedIds.length === reports.length) {
@@ -232,8 +274,8 @@ const IntelligenceDashboard: React.FC = () => {
         return text.replace(/(\*\*|\*|_|#|`)/g, '').replace(/\\n/g, '\n').trim();
     };
 
-    const filteredRaids = raids.filter(
-        (r: RaidResult) =>
+    const filteredRides = rides.filter(
+        (r: RideResult) =>
             r.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.tags.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -243,57 +285,60 @@ const IntelligenceDashboard: React.FC = () => {
         <div className="w-full max-w-7xl mx-auto pb-20 px-0 sm:px-0 flex flex-col">
             {/* Header */}
             <header className="mb-8 sm:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-                <div className="flex items-center gap-4 sm:gap-5">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 xl:w-20 xl:h-20 rounded-xl sm:rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 relative shadow-2xl shrink-0">
-                        <Bird size={24} className="sm:hidden" />
-                        <Bird size={36} className="hidden sm:block xl:hidden" />
-                        <Bird size={44} className="hidden xl:block" />
-                        <div className="absolute -bottom-0.5 -right-0.5 sm:-bottom-1 sm:-right-1 w-3 sm:w-5 h-3 sm:h-5 bg-red-500 rounded-full border-2 sm:border-4 border-nova-bg animate-pulse"></div>
+                <div className="flex items-center gap-4 lg:gap-3">
+                    <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl lg:rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 relative shadow-2xl shrink-0">
+                        <Bird size={24} className="lg:hidden" />
+                        <Bird size={30} className="hidden lg:block" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 lg:w-3.5 lg:h-3.5 bg-red-500 rounded-full border-2 border-nova-bg animate-pulse"></div>
                     </div>
                     <div className="min-w-0">
-                        <h2 className="text-xl sm:text-2xl xl:text-3xl font-black text-white tracking-tight uppercase truncate">Intelligence Hub</h2>
-                        <p className="text-[10px] sm:text-sm text-nova-text-dim font-bold flex items-center gap-1.5 sm:gap-2 truncate">
+                        <h2 className="text-xl lg:text-base font-black text-white tracking-tight uppercase truncate">Intelligence Hub</h2>
+                        <p className="text-[10px] lg:text-[10px] text-nova-text-dim font-bold flex items-center gap-1.5 lg:gap-1 truncate">
                             <Radio size={10} className="text-red-400 animate-pulse shrink-0" />
-                            <span className="truncate">{liveTime.full} — {raids.length} findings</span>
+                            <span className="truncate">{liveTime.full} — {rides.length} findings</span>
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+
+
+                <div className="flex items-center gap-3 w-full lg:w-auto">
                     <button
-                        onClick={handleTriggerRaid}
+                        onClick={handleTriggerRide}
                         disabled={triggerLoading}
-                        className="flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 font-black text-[10px] sm:text-sm uppercase tracking-widest hover:bg-red-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-1 lg:flex-none px-4 lg:px-5 py-2.5 lg:py-2 rounded-xl lg:rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black text-[10px] lg:text-xs uppercase tracking-widest hover:bg-red-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         <Zap size={14} className="shrink-0" />
-                        <span className="truncate">{triggerLoading ? 'Raiding...' : 'Trigger Raid'}</span>
+                        <span className="truncate">{triggerLoading ? 'Riding...' : 'Trigger Internet Ride'}</span>
                     </button>
                 </div>
+
             </header>
 
             {/* Raid Progress Bar */}
-            {raidStatus && raidStatus.status !== 'completed' && raidStatus.status !== 'failed' && (
+            {rideStatus && rideStatus.status !== 'completed' && rideStatus.status !== 'failed' && (
                 <div className="mb-8 sm:mb-10 p-4 sm:p-6 glass rounded-xl sm:rounded-2xl border-2 border-nova-accent/30 bg-nova-accent/5 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="flex justify-between items-end mb-3 sm:mb-4">
-                        <div className="space-y-0.5 sm:space-y-1">
-                            <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-tight flex items-center gap-1.5 sm:gap-2">
-                                <Zap size={16} className="text-nova-accent animate-pulse shrink-0" />
-                                Strategic Raid
+                    <div className="flex justify-between items-end mb-3">
+                        <div className="space-y-0.5">
+                            <h3 className="text-sm lg:text-[13px] font-black text-white uppercase tracking-tight flex items-center gap-1.5">
+                                <Zap size={15} className="text-nova-accent animate-pulse shrink-0" />
+                                Strategic Internet Ride
                             </h3>
-                            <p className="text-[9px] sm:text-xs text-nova-text-dim font-bold uppercase tracking-widest">
-                                Phase: <span className="text-nova-accent">{raidStatus.currentCluster}</span>
-                                ({raidStatus.clustersCompleted + 1}/{raidStatus.totalClusters})
+                            <p className="text-[9px] lg:text-[9px] text-nova-text-dim font-bold uppercase tracking-widest">
+                                Phase: <span className="text-nova-accent">{rideStatus.currentCluster}</span>
+                                ({rideStatus.clustersCompleted + 1}/{rideStatus.totalClusters})
                             </p>
                         </div>
                         <div className="text-right">
-                            <span className="text-xl sm:text-2xl font-mono font-black text-nova-accent">
-                                {Math.round((raidStatus.clustersCompleted / raidStatus.totalClusters) * 100)}%
+                            <span className="text-xl lg:text-lg font-mono font-black text-nova-accent">
+                                {Math.round((rideStatus.clustersCompleted / rideStatus.totalClusters) * 100)}%
                             </span>
                         </div>
+
                     </div>
                     <div className="w-full h-2 sm:h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-0.5">
                         <div
                             className="h-full bg-nova-accent rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]"
-                            style={{ width: `${(raidStatus.clustersCompleted / raidStatus.totalClusters) * 100}%` }}
+                            style={{ width: `${(rideStatus.clustersCompleted / rideStatus.totalClusters) * 100}%` }}
                         ></div>
                     </div>
                     <div className="mt-3 sm:mt-4 flex items-center gap-2 sm:gap-3 text-[8px] sm:text-[10px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-60">
@@ -320,13 +365,13 @@ const IntelligenceDashboard: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 sm:mb-8">
                 <div className="flex gap-2 w-full sm:w-auto">
                     <button
-                        onClick={() => setActiveTab('raids')}
-                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-sm uppercase tracking-widest transition-all ${activeTab === 'raids'
+                        onClick={() => setActiveTab('rides')}
+                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-sm uppercase tracking-widest transition-all ${activeTab === 'rides'
                             ? 'bg-nova-accent/10 text-nova-accent border border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
                             : 'bg-white/5 text-nova-text-dim border border-transparent hover:border-white/10'
                             }`}
                     >
-                        Raid Findings ({raids.length})
+                        Internet Ride Findings ({rides.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('reports')}
@@ -353,14 +398,14 @@ const IntelligenceDashboard: React.FC = () => {
                         onClick={toggleSelectAll}
                         className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-nova-text-dim text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
                     >
-                        {selectedIds.length === (activeTab === 'raids' ? raids.length : reports.length) && (activeTab === 'raids' ? raids.length : reports.length) > 0
+                        {selectedIds.length === (activeTab === 'rides' ? rides.length : reports.length) && (activeTab === 'rides' ? rides.length : reports.length) > 0
                             ? 'Deselect All' : 'Select All'}
                     </button>
                 </div>
             </div>
 
             {/* Search Bar */}
-            {activeTab === 'raids' && (
+            {activeTab === 'rides' && (
                 <div className="mb-6 sm:mb-8 relative">
                     <Search size={16} className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-nova-text-dim" />
                     <input
@@ -383,18 +428,19 @@ const IntelligenceDashboard: React.FC = () => {
                     </div>
                     <span className="text-[10px] sm:text-xs font-black text-nova-accent uppercase tracking-[0.2em]">Synchronizing Intelligence...</span>
                 </div>
-            ) : activeTab === 'raids' ? (
+            ) : activeTab === 'rides' ? (
                 <div className="space-y-4 sm:space-y-6">
-                    {filteredRaids.length === 0 ? (
+                    {filteredRides.length === 0 ? (
                         <div className="text-center py-20 opacity-30 glass rounded-3xl border-2 border-dashed border-nova-border">
                             <Bird size={64} className="mx-auto mb-4 text-nova-accent" />
                             <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-widest">No Intelligence Data</h3>
                         </div>
                     ) : (
-                        filteredRaids.map((raid: RaidResult) => (
+                        filteredRides.map((ride: RideResult) => (
                             <div
-                                key={raid.id}
-                                className={`glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all group relative overflow-hidden ${selectedIds.includes(raid.id) ? 'border-nova-accent bg-nova-accent/5' : 'border-nova-border hover:border-nova-accent/30'}`}
+                                key={ride.id}
+                                id={`finding-${ride.id}`}
+                                className={`glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all group relative overflow-hidden ${selectedIds.includes(ride.id) ? 'border-nova-accent bg-nova-accent/5' : highlightedId === ride.id ? 'border-nova-accent bg-nova-accent/10 shadow-[0_0_30px_rgba(0,242,255,0.2)] scale-[1.02] z-20' : 'border-nova-border hover:border-nova-accent/30'}`}
                             >
                                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                                     {/* Selection Checkbox - Moved inside flow */}
@@ -402,24 +448,24 @@ const IntelligenceDashboard: React.FC = () => {
                                         <div className="relative cursor-pointer shrink-0">
                                             <input
                                                 type="checkbox"
-                                                checked={selectedIds.includes(raid.id)}
-                                                onChange={() => toggleSelection(raid.id)}
+                                                checked={selectedIds.includes(ride.id)}
+                                                onChange={() => toggleSelection(ride.id)}
                                                 className="w-6 h-6 rounded-lg opacity-0 absolute inset-0 cursor-pointer z-10"
                                             />
-                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${selectedIds.includes(raid.id) ? 'bg-nova-accent border-nova-accent text-nova-bg' : 'border-nova-border bg-white/5'}`}>
-                                                <Check size={14} className={selectedIds.includes(raid.id) ? 'opacity-100' : 'opacity-0'} />
+                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${selectedIds.includes(ride.id) ? 'bg-nova-accent border-nova-accent text-nova-bg' : 'border-nova-border bg-white/5'}`}>
+                                                <Check size={14} className={selectedIds.includes(ride.id) ? 'opacity-100' : 'opacity-0'} />
                                             </div>
                                         </div>
                                         <div className="flex sm:flex-col items-center gap-3 sm:gap-2">
                                             <button
-                                                onClick={() => handleRaidExport(raid.id, 'pdf')}
+                                                onClick={() => handleRideExport(ride.id, 'pdf')}
                                                 className="p-2 rounded-lg bg-nova-accent/10 border border-nova-accent/30 text-nova-accent hover:bg-nova-accent/20 transition-all shadow-lg shadow-nova-accent/5"
                                                 title="Export PDF"
                                             >
                                                 <FileText size={16} />
                                             </button>
                                             <button
-                                                onClick={() => handleDeleteRaid(raid.id)}
+                                                onClick={() => handleDeleteRide(ride.id)}
                                                 className="p-2 text-nova-text-dim hover:text-red-400 transition-colors"
                                                 title="Delete Intelligence"
                                             >
@@ -430,13 +476,13 @@ const IntelligenceDashboard: React.FC = () => {
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
-                                            <span className={`px-2 py-0.5 rounded text-[8px] sm:text-[10px] font-black uppercase tracking-widest border ${riskColors[raid.risk_level]}`}>
-                                                {raid.risk_level} Risk
+                                            <span className={`px-2 py-0.5 rounded text-[8px] sm:text-[10px] font-black uppercase tracking-widest border ${riskColors[ride.risk_level]}`}>
+                                                {ride.risk_level} Risk
                                             </span>
-                                            <span className="text-[9px] sm:text-xs font-mono text-nova-text-dim opacity-50">/{raid.category}</span>
+                                            <span className="text-[9px] sm:text-xs font-mono text-nova-text-dim opacity-50">/{ride.category}</span>
                                         </div>
 
-                                        <p className="text-sm sm:text-base text-nova-text font-medium leading-relaxed mb-4">{raid.content}</p>
+                                        <p className="text-sm sm:text-base text-nova-text font-medium leading-relaxed mb-4">{ride.content}</p>
 
                                         <details className="group/details mb-4">
                                             <summary className="cursor-pointer text-[10px] sm:text-xs font-black text-nova-accent uppercase tracking-widest flex items-center gap-2 hover:opacity-80 list-none">
@@ -444,21 +490,21 @@ const IntelligenceDashboard: React.FC = () => {
                                                 Agent Analysis Summary
                                             </summary>
                                             <div className="mt-3 p-4 bg-nova-accent/[0.03] border border-nova-accent/10 rounded-xl text-xs sm:text-sm text-nova-text-dim leading-relaxed whitespace-pre-wrap italic">
-                                                "{cleanse(raid.summary)}"
+                                                "{cleanse(ride.summary)}"
                                             </div>
                                         </details>
 
                                         <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
                                             <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 text-[8px] sm:text-[9px] font-black text-nova-text-dim uppercase border border-white/10 uppercase tracking-tighter">
-                                                <Radio size={8} className="text-nova-accent" /> {raid.source_platform}
+                                                <Radio size={8} className="text-nova-accent" /> {ride.source_platform}
                                             </span>
-                                            {raid.tags.map((tag, i) => (
+                                            {ride.tags.map((tag, i) => (
                                                 <span key={i} className="px-2 py-1 rounded bg-nova-accent/5 text-[8px] sm:text-[9px] font-black text-nova-accent uppercase border border-nova-accent/10">
                                                     #{tag}
                                                 </span>
                                             ))}
                                             <span className="ml-auto text-[8px] sm:text-[9px] font-mono text-nova-text-dim/40 self-center uppercase">
-                                                {new Date(raid.created_at).toLocaleDateString()}
+                                                {new Date(ride.created_at).toLocaleDateString()}
                                             </span>
                                         </div>
                                     </div>

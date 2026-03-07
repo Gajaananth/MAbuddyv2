@@ -12,7 +12,7 @@ const router = Router();
 
 /**
  * GET /api/intelligence/raids
- * Retrieve raid findings for the authenticated user.
+ * Retrieve Internet Ride findings for the authenticated user.
  */
 router.get('/raids', authenticate, async (req: AuthRequest, res: Response) => {
     try {
@@ -30,8 +30,8 @@ router.get('/raids', authenticate, async (req: AuthRequest, res: Response) => {
 
         res.json(response);
     } catch (error) {
-        console.error('[Intelligence] Raids Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to retrieve raids' });
+        console.error('[Intelligence] Internet Ride Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to retrieve Internet Ride findings' });
     }
 });
 
@@ -44,10 +44,10 @@ router.delete('/raids/:id', authenticate, async (req: AuthRequest, res: Response
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
         await db.deleteRaidResult(req.params.id as string, userId);
-        res.json({ success: true, message: 'Raid result deleted' });
+        res.json({ success: true, message: 'Internet Ride finding deleted' });
     } catch (error) {
-        console.error('[Intelligence] Delete Raid Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to delete raid result' });
+        console.error('[Intelligence] Delete Internet Ride Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete Internet Ride finding' });
     }
 });
 
@@ -64,9 +64,9 @@ router.post('/raids/bulk-delete', authenticate, async (req: AuthRequest, res: Re
             return res.status(400).json({ success: false, error: 'Invalid IDs' });
         }
         await db.bulkDeleteRaidResults(ids, userId);
-        res.json({ success: true, message: `${ids.length} raids deleted` });
+        res.json({ success: true, message: `${ids.length} Internet Ride findings deleted` });
     } catch (error) {
-        console.error('[Intelligence] Bulk Delete Raids Error:', error);
+        console.error('[Intelligence] Bulk Delete Internet Rides Error:', error);
         res.status(500).json({ success: false, error: 'Bulk delete failed' });
     }
 });
@@ -182,7 +182,7 @@ router.get('/reports/:id/export', authenticate, async (req: AuthRequest, res: Re
 
 /**
  * GET /api/intelligence/raids/:id/export
- * Export an individual raid finding.
+ * Export an individual Internet Ride finding.
  */
 router.get('/raids/:id/export', authenticate, async (req: AuthRequest, res: Response) => {
     try {
@@ -204,7 +204,8 @@ router.get('/raids/:id/export', authenticate, async (req: AuthRequest, res: Resp
                 ...raid,
                 executive_summary: raid.summary || raid.content,
                 id: raid.id,
-                created_at: raid.created_at
+                created_at: raid.created_at,
+                source: 'Internet Ride Protocol'
             };
             const filePath = await generateIntelligencePDF(exportData);
             res.download(filePath, (err) => {
@@ -215,14 +216,14 @@ router.get('/raids/:id/export', authenticate, async (req: AuthRequest, res: Resp
 
         res.status(400).json({ success: false, error: 'Invalid format for individual findings' });
     } catch (error) {
-        console.error('[Intelligence] Raid Export Error:', error);
+        console.error('[Intelligence] Internet Ride Export Error:', error);
         res.status(500).json({ success: false, error: 'Export failed' });
     }
 });
 
 /**
  * GET /api/intelligence/raid/status
- * Check if a raid is currently active for the user.
+ * Check if an Internet Ride is currently active for the user.
  */
 router.get('/raid/status', authenticate, async (req: AuthRequest, res: Response) => {
     try {
@@ -232,24 +233,27 @@ router.get('/raid/status', authenticate, async (req: AuthRequest, res: Response)
         const status = activeRaids.get(userId) || { status: 'idle' };
         res.json({ success: true, data: status });
     } catch (error) {
-        console.error('[Intelligence] Status Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to get raid status' });
+        console.error('[Intelligence] Ride Status Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to get Internet Ride status' });
     }
 });
 
 /**
  * POST /api/intelligence/raid/trigger
- * Manually trigger an intelligence raid.
+ * Manually trigger an Internet Ride.
  */
 router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const type = (req.body.type as 'mid-week' | 'end-of-week') || 'mid-week';
-
-        if (activeRaids.has(userId)) {
-            return res.status(400).json({ success: false, error: 'RAID ALREADY IN PROGRESS: System is currently engaged.' });
+        // Check if a raid is already actively running (not completed/failed)
+        const existing = activeRaids.get(userId);
+        if (existing && existing.status !== 'completed' && existing.status !== 'failed') {
+            return res.status(400).json({
+                success: false,
+                error: `INTERNET RIDE IN PROGRESS: ${existing.currentCluster} (${existing.clustersCompleted}/${existing.totalClusters} clusters done).`
+            });
         }
 
         const result = await runManualWeeklyRide(userId);
@@ -260,9 +264,10 @@ router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Respons
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        console.error('[Intelligence] Trigger Error:', error);
-        res.status(500).json({ success: false, error: 'Raid trigger failed' });
+        console.error('[Intelligence] Ride Trigger Error:', error);
+        res.status(500).json({ success: false, error: 'Internet Ride trigger failed. Check server logs.' });
     }
 });
+
 
 export default router;

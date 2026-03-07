@@ -60,23 +60,23 @@ export const memoryService = {
 };
 
 export const intelligenceService = {
-    getRaids: (limit = 50) =>
+    getRides: (limit = 50) =>
         api.get(`/intelligence/raids?limit=${limit}`),
     getReports: (limit = 10) =>
         api.get(`/intelligence/reports?limit=${limit}`),
-    triggerRaid: (type: 'mid-week' | 'end-of-week' = 'mid-week') =>
+    triggerRide: (type: 'mid-week' | 'end-of-week' = 'mid-week') =>
         api.post('/intelligence/raid/trigger', { type }),
-    getRaidStatus: () =>
+    getRideStatus: () =>
         api.get('/intelligence/raid/status'),
     exportReport: (reportId: string, format: 'json' | 'pdf' | 'word' = 'json') =>
         api.get(`/intelligence/reports/${reportId}/export?format=${format}`, { responseType: format === 'json' ? 'json' : 'blob' }),
-    exportRaid: (id: string, format: string = 'pdf') =>
+    exportRide: (id: string, format: string = 'pdf') =>
         api.get(`/intelligence/raids/${id}/export?format=${format}`, { responseType: 'blob' }),
-    deleteRaid: (id: string) =>
+    deleteRide: (id: string) =>
         api.delete(`/intelligence/raids/${id}`),
     deleteReport: (id: string) =>
         api.delete(`/intelligence/reports/${id}`),
-    bulkDeleteRaids: (ids: string[]) =>
+    bulkDeleteRides: (ids: string[]) =>
         api.post('/intelligence/raids/bulk-delete', { ids }),
     bulkDeleteReports: (ids: string[]) =>
         api.post('/intelligence/reports/bulk-delete', { ids }),

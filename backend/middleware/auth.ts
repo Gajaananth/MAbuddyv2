@@ -25,14 +25,32 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ success: false, error: 'AUTHENTICATION REQUIRED: No session token provided.' });
+        return res.status(401).json({ 
+            success: false, 
+            error: 'AUTHENTICATION_REQUIRED', 
+            details: 'No session token provided in headers.' 
+        });
     }
 
     try {
         const decoded = jwt.verify(token, JWT_SECRET) as { userId: string; deviceId: string };
         req.user = decoded;
         next();
-    } catch (error) {
-        res.status(401).json({ success: false, error: 'SESSION EXPIRED: Please re-authenticate.' });
+    } catch (error: any) {
+        let code = 'SESSION_INVALID';
+        let detail = error.message;
+
+        if (error.name === 'TokenExpiredError') {
+            code = 'SESSION_EXPIRED';
+        } else if (error.name === 'JsonWebTokenError') {
+            code = 'SESSION_CORRUPTED';
+        }
+
+        res.status(401).json({ 
+            success: false, 
+            error: code,
+            details: detail
+        });
     }
+
 };

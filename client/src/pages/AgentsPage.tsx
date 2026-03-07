@@ -42,17 +42,19 @@ const AgentsPage: React.FC = () => {
 
     return (
         <div className="px-4 sm:px-10 md:px-16 py-8 md:py-16 space-y-10 max-w-7xl mx-auto">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 sm:gap-10">
-                <div className="space-y-4">
-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight uppercase">Agent <span className="text-nova-accent">Network</span></h2>
-                    <p className="text-nova-text-dim max-w-2xl text-base md:text-xl font-bold leading-relaxed opacity-80">Collaborating with high-integrity, skilled AI agents to build a clean marketing ecosystem.</p>
+            <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
+                <div className="space-y-2 lg:space-y-3">
+                    <h2 className="text-3xl lg:text-xl font-black text-white tracking-tight uppercase">Agent <span className="text-nova-accent">Network</span></h2>
+                    <p className="text-nova-text-dim max-w-2xl text-base lg:text-[13px] font-bold leading-relaxed opacity-80">Collaborating with high-integrity, skilled AI agents to build a clean marketing ecosystem.</p>
                 </div>
+
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-nova-accent/10 text-nova-accent border border-nova-accent/30 font-bold text-sm hover:bg-nova-accent hover:text-nova-bg transition-all"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-4 lg:px-4 py-3 lg:py-2 rounded-xl lg:rounded-lg bg-nova-accent/10 text-nova-accent border border-nova-accent/30 font-bold text-sm lg:text-[11px] uppercase tracking-wider hover:bg-nova-accent hover:text-nova-bg transition-all"
                 >
-                    <Plus size={18} /> Add Verified Agent
+                    <Plus size={16} /> Add Verified Agent
                 </button>
+
             </header>
 
             {showForm && (
@@ -93,42 +95,52 @@ const AgentsPage: React.FC = () => {
                 </form>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-5">
+
                 {loading && [1, 2].map(i => (
                     <div key={i} className="glass h-64 rounded-2xl animate-pulse border border-nova-border"></div>
                 ))}
 
                 {!loading && agents.map((agent) => (
-                    <div key={agent.id} className="glass p-6 md:p-8 rounded-3xl border-2 border-nova-border hover:border-nova-accent/20 transition-all group overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <Bird size={120} />
+                    <div key={agent.id} className="glass p-6 lg:p-4 rounded-3xl lg:rounded-xl border-2 border-nova-border hover:border-nova-accent/20 transition-all group overflow-hidden relative">
+                        <div className="absolute top-0 right-0 p-8 lg:p-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
+                            <Bird size={80} className="hidden lg:block" />
+                            <Bird size={120} className="lg:hidden" />
                         </div>
 
-                        <div className="flex items-start gap-6 relative z-10">
-                            <div className="w-20 h-20 rounded-2xl bg-nova-accent/10 border-2 border-nova-accent/20 flex items-center justify-center text-nova-accent shadow-inner">
-                                {agent.name.includes('Nova') ? <Bird size={40} /> : <UserCheck size={40} />}
+
+                        <div className="flex items-start gap-6 lg:gap-4 relative z-10">
+                            <div className="w-20 lg:w-14 h-20 lg:h-14 rounded-2xl lg:rounded-xl bg-nova-accent/10 border-2 border-nova-accent/20 flex items-center justify-center text-nova-accent shadow-inner">
+                                {agent.name.includes('Nova') ? <Bird size={32} className="lg:w-7 lg:h-7" /> : <UserCheck size={32} className="lg:w-7 lg:h-7" />}
                             </div>
 
+
+
                             <div className="flex-1 space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-white mb-0.5">{agent.name}</h3>
+                                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 lg:gap-4">
+                                    <div className="min-w-0 flex-1">
+                                        <h3 className="text-lg lg:text-sm font-black text-white mb-0.5 truncate">{agent.name}</h3>
                                         <div className="flex items-center gap-2">
-                                            <Globe size={12} className="text-nova-accent" />
-                                            <span className="text-[10px] font-bold text-nova-text-dim uppercase tracking-widest">Protocol Active</span>
+                                            <Globe size={11} className="text-nova-accent" />
+                                            <span className="text-[10px] lg:text-[7px] font-bold text-nova-text-dim uppercase tracking-widest">Protocol Active</span>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-[9px] font-bold text-nova-text-dim uppercase tracking-widest mb-0.5">Trust Score</div>
-                                        <div className={`text-xl font-mono font-bold ${agent.trust_score > 80 ? 'text-green-500' : 'text-orange-400'}`}>
+                                    <div className="lg:shrink-0 flex items-center lg:flex-col lg:items-end gap-3 lg:gap-0.5 border-l lg:border-l-0 lg:border-t-0 border-white/10 pl-3 lg:pl-0">
+                                        <div className="text-[8px] lg:text-[6px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-40">Trust Index</div>
+                                        <div className={`text-xl lg:text-base font-mono font-black ${agent.trust_score > 80 ? 'text-green-500' : 'text-orange-400'}`}>
                                             {agent.trust_score}%
                                         </div>
                                     </div>
                                 </div>
 
-                                <p className="text-xs md:text-sm text-nova-text-dim line-clamp-2 leading-relaxed">
-                                    {agent.description || 'Verified tactical agent contributing to the Zium Nova intelligence ecosystem.'}
-                                </p>
+                                <div className="space-y-2">
+                                    <p className="text-xs lg:text-[10px] text-nova-text-dim line-clamp-2 leading-relaxed font-medium opacity-80">
+                                        {agent.description || 'Verified tactical agent contributing to the Zium Nova intelligence ecosystem.'}
+                                    </p>
+                                </div>
+
+
+
 
                                 <div className="flex flex-wrap gap-2">
                                     {agent.capabilities.map((cap, i) => (
@@ -138,21 +150,22 @@ const AgentsPage: React.FC = () => {
                                     ))}
                                 </div>
 
-                                <div className="pt-4 flex justify-between items-center">
-                                    <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-1.5">
-                                            <Activity size={14} className="text-nova-accent" />
-                                            <span className="text-[10px] font-medium text-nova-text-dim uppercase">Active</span>
+                                <div className="pt-2 flex justify-between items-center border-t border-white/5">
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-1">
+                                            <Activity size={12} className="text-nova-accent" />
+                                            <span className="text-[9px] lg:text-[8px] font-bold text-nova-text-dim uppercase tracking-tighter">Active</span>
                                         </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Award size={14} className="text-green-500" />
-                                            <span className="text-[10px] font-medium text-nova-text-dim uppercase">Verified</span>
+                                        <div className="flex items-center gap-1">
+                                            <Award size={12} className="text-green-500" />
+                                            <span className="text-[9px] lg:text-[8px] font-bold text-nova-text-dim uppercase tracking-tighter">Verified</span>
                                         </div>
                                     </div>
-                                    <button className="px-4 py-2 rounded-lg bg-nova-accent/10 text-nova-accent border border-nova-accent/20 text-[10px] font-bold uppercase tracking-widest hover:bg-nova-accent hover:text-nova-bg transition-all">
-                                        Initiate Collab
+                                    <button className="px-3 py-1.5 rounded bg-nova-accent/10 text-nova-accent border border-nova-accent/20 text-[9px] lg:text-[8px] font-black uppercase tracking-widest hover:bg-nova-accent hover:text-nova-bg transition-all active:scale-95">
+                                        Initiate
                                     </button>
                                 </div>
+
                             </div>
                         </div>
                     </div>

@@ -22,10 +22,18 @@
   color: var(--color-nova-text);
   font-family: var(--font-family-sans);
   font-size: 16px;
-  /* Base size */
+  /* Default for mobile */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+@media (min-width: 1024px) {
+  :root {
+    font-size: 15.2px;
+    /* Slightly relaxed for better legibility */
+  }
+}
+
 
 body {
   margin: 0;
@@ -37,10 +45,10 @@ body {
   text-align: left;
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Slimmer for Desktop */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -49,13 +57,13 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: #1a1a1a;
-  border-radius: 5px;
-  border: 3px solid var(--color-nova-bg);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-nova-accent);
 }
+
 
 /* Glassmorphism */
 .glass {
@@ -78,4 +86,37 @@ body {
 
 .nova-accent-glow {
   box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+}
+
+/* Notification panel slide-up animation (mobile bottom sheet) */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.6)); transform: scale(1); }
+  50% { opacity: 0.4; filter: none; transform: scale(0.95); }
+}
+
+.animate-blink {
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+/* On touch devices (no hover), always show notification action buttons */
+@media (hover: none) {
+  .notification-actions {
+    opacity: 1 !important;
+  }
 }

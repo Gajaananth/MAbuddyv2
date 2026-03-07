@@ -47,6 +47,12 @@ const STRATEGIC_TRIGGERS = [
     'manipulative pattern',
     'pyramid structure',
     'recruitment-based return',
+    'moltbook alpha',
+    'early platform advantage',
+    'leverage scalability',
+    'low competition entry',
+    'real monetization structure',
+    'verified user earnings',
 ];
 
 const PRIORITY_TRIGGERS = [
@@ -70,6 +76,12 @@ const PRIORITY_TRIGGERS = [
     'cse whale flow',
     'undervalued sector inflow',
     'agentic autonomy',
+    'alpha signal',
+    'asymmetric advantage',
+    'opportunity detected',
+    'high earning potential',
+    'scalable income node',
+    'early bird advantage',
 ];
 
 // ──────────────────────────── Detection Engine ────────────────────────────
@@ -130,6 +142,48 @@ function assessRisk(content: string): 'Low' | 'Medium' | 'High' {
     return 'Medium';
 }
 
+/**
+ * Specialized Opportunity Alert Structure (Directive v2.1)
+ */
+export async function createOpportunityAlert(userId: string, data: {
+    platform: string;
+    source: string;
+    opportunityType: string;
+    credibility: string;
+    earningPotential: string;
+    confidenceLevel: number;
+    recommendedActions: string;
+}): Promise<void> {
+    // Only notify if confidence >= 80%
+    if (data.confidenceLevel < 80) {
+        console.log(`[Notification] Opportunity suppressed: Confidence ${data.confidenceLevel}% < 80%`);
+        return;
+    }
+
+    const content = `
+🚨 ULTRA MODE OPPORTUNITY ALERT
+
+Platform / Source: ${data.platform} / ${data.source}
+Opportunity Description: ${data.opportunityType}
+Why This Is Credible: ${data.credibility}
+Risk Level: ${data.confidenceLevel >= 90 ? 'Low' : 'Medium'}
+Earning Potential Estimate: ${data.earningPotential}
+Confidence Level: ${data.confidenceLevel}%
+Difficulty Level: ${data.confidenceLevel >= 85 ? 'Medium' : 'High'}
+
+Operator Action Steps:
+${data.recommendedActions}
+    `.trim();
+
+    const metadata = {
+        confidence: data.confidenceLevel,
+        is_blinking: true,
+        alert_type: 'OPPORTUNITY_ALERT_V2'
+    };
+
+    await evaluateAndNotify(userId, content, `OPPORTUNITY: ${data.opportunityType}`, metadata);
+}
+
 // ──────────────────────────── Push Delivery ────────────────────────────
 
 /**
@@ -174,7 +228,8 @@ export async function sendPushToUser(
 export async function evaluateAndNotify(
     userId: string,
     content: string,
-    title: string
+    title: string,
+    metadata: any = null
 ): Promise<void> {
     const isStrategic = detectStrategicBreach(content);
     const isPriority = detectPrioritySignal(content);
@@ -199,6 +254,7 @@ export async function evaluateAndNotify(
             monetization_potential: monetization,
             content: truncated,
             priority: priority as 'normal' | 'high' | 'critical',
+            metadata: metadata,
         });
 
         // Send push notification to all registered devices

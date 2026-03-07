@@ -180,16 +180,50 @@ export async function findDevice(userId: string, fingerprint: string): Promise<a
     }
 }
 
-export async function updateWebAuthn(deviceId: string, publicKey: string, credentialId: string): Promise<void> {
+export async function getDeviceByIdentifierAndFingerprint(identifier: string, fingerprint: string): Promise<any | null> {
+    if (isPostgresActive) {
+        const result = await pool.query(
+            'SELECT * FROM devices WHERE device_identifier = $1 AND fingerprint = $2',
+            [identifier, fingerprint]
+        );
+        return result.rows[0] || null;
+    } else {
+        return getSqlite().prepare(
+            'SELECT * FROM devices WHERE device_identifier = ? AND fingerprint = ?'
+        ).get(identifier, fingerprint) || null;
+    }
+}
+
+
+export async function updateWebAuthn(deviceId: string, publicKey: string, credentialId: string, counter: number): Promise<void> {
     if (isPostgresActive) {
         await pool.query(
-            'UPDATE devices SET public_key = $1, credential_id = $2 WHERE id = $3',
-            [publicKey, credentialId, deviceId]
+            'UPDATE devices SET public_key = $1, credential_id = $2, counter = $3 WHERE id = $4',
+            [publicKey, credentialId, counter, deviceId]
         );
     } else {
         getSqlite().prepare(
-            'UPDATE devices SET public_key = ?, credential_id = ? WHERE id = ?'
-        ).run(publicKey, credentialId, deviceId);
+            'UPDATE devices SET public_key = ?, credential_id = ?, counter = ? WHERE id = ?'
+        ).run(publicKey, credentialId, counter, deviceId);
+    }
+}
+
+
+export async function updateChallenge(deviceId: string, challenge: string): Promise<void> {
+    if (isPostgresActive) {
+        await pool.query('UPDATE devices SET current_challenge = $1 WHERE id = $2', [challenge, deviceId]);
+    } else {
+        getSqlite().prepare('UPDATE devices SET current_challenge = ? WHERE id = ?').run(challenge, deviceId);
+    }
+}
+
+export async function getChallenge(deviceId: string): Promise<string | null> {
+    if (isPostgresActive) {
+        const result = await pool.query('SELECT current_challenge FROM devices WHERE id = $1', [deviceId]);
+        return result.rows[0]?.current_challenge || null;
+    } else {
+        const result = getSqlite().prepare('SELECT current_challenge FROM devices WHERE id = ?').get(deviceId) as any;
+        return result?.current_challenge || null;
     }
 }
 
@@ -200,3 +234,4 @@ export async function removeDevice(deviceId: string, userId: string): Promise<vo
         getSqlite().prepare('DELETE FROM devices WHERE id = ? AND user_id = ?').run(deviceId, userId);
     }
 }
+

@@ -14,10 +14,19 @@ router.get('/diag', async (_req: Request, res: Response) => {
     const start = Date.now();
     let dbStatus = 'checking';
     let error = null;
+    let columnCheck = 'unverified';
+
 
     try {
         await initDatabase();
         dbStatus = isPostgresActive ? 'online' : 'fallback_active';
+        
+        if (isPostgresActive) {
+            const { pool } = await import('../db/connection.js');
+            // More direct check for the column
+            const colCheck = await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'devices' AND column_name = 'current_challenge'");
+            columnCheck = colCheck.rows.length > 0 ? 'exists' : 'missing';
+        }
     } catch (err: any) {
         dbStatus = 'error';
         error = err.message;
@@ -28,12 +37,14 @@ router.get('/diag', async (_req: Request, res: Response) => {
         status: 'diagnostics_complete',
         results: {
             database: dbStatus,
+            challenge_column: columnCheck,
             latency_ms: Date.now() - start,
             environment: process.env.VERCEL ? 'vercel_serverless' : 'local_node',
             error: error
         }
     });
 });
+
 
 /**
  * POST /api/auth/register
@@ -72,27 +83,7 @@ router.post('/forgot-pin', async (req: Request, res: Response) => {
     }
 });
 
-// ──────────────────────────── Biometric Entry ────────────────────────────
 
-router.get('/biometrics/login-options', async (req: Request, res: Response) => {
-    try {
-        // Options for login usually don't need a specific user until verified,
-        // but since we only have 2 users and 10 devices, we can give a broad challenge.
-        const options = webAuthn.createLoginOptions([]);
-        res.json(options);
-    } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-router.post('/biometrics/login-verify', async (req: Request, res: Response) => {
-    try {
-        const result = await authService.loginBiometric(req.body);
-        res.json({ ...result });
-    } catch (error: any) {
-        res.status(401).json({ success: false, error: error.message });
-    }
-});
 
 // ──────────────────────────── Protected Management Routes ────────────────────────────
 
@@ -132,13 +123,18 @@ router.delete('/devices/:id', authenticate, async (req: AuthRequest, res: Respon
 router.get('/biometrics/register-options', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
-        if (!userId) throw new Error('Unauthorized');
+        const deviceId = req.user?.deviceId;
+        if (!userId || !deviceId) throw new Error('Unauthorized');
+
+        const rpID = req.headers.host?.split(':')[0] || 'localhost';
+
         const devices = await authQueries.getDevicesByUserId(userId);
         const credIds = devices.filter(d => d.credential_id).map(d => d.credential_id);
-        const options = webAuthn.createRegistrationOptions(userId, credIds);
+        const options = await webAuthn.createRegistrationOptions(userId, deviceId, credIds, rpID);
         res.json(options);
+
     } catch (error: any) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ success: false, error: 'REGISTRATION_OPTIONS_ERROR', details: error.message });
     }
 });
 
@@ -148,19 +144,92 @@ router.post('/biometrics/register-verify', authenticate, async (req: AuthRequest
         const deviceId = req.user?.deviceId;
         if (!userId || !deviceId) throw new Error('Unauthorized');
 
-        const verification = await webAuthn.verifyRegistration(userId, req.body);
+        const rpID = req.headers.host?.split(':')[0] || 'localhost';
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const origin = `${protocol}://${req.headers.host}`;
+
+        const verification = await webAuthn.verifyRegistration(userId, deviceId, req.body, origin, rpID);
+
         if (verification.verified && verification.publicKey && verification.credentialId) {
-            await authService.enableBiometrics(userId, deviceId, verification.publicKey, verification.credentialId);
-            res.json({ success: true });
+            await authService.enableBiometrics(userId, deviceId, verification.publicKey, verification.credentialId, verification.counter || 0);
+            res.json({ success: true, verified: true });
         } else {
-            res.status(400).json({ success: false, error: 'Verification failed' });
+            res.status(400).json({ success: false, error: 'VERIFICATION_FAILED', details: 'Authenticator confirmation rejected.' });
         }
     } catch (error: any) {
-        res.status(400).json({ success: false, error: error.message });
+        console.error('[Biometrics] Registration Verify Crash:', error);
+        res.status(400).json({ 
+            success: false, 
+            error: 'PROTOCOL_FAILURE', 
+            details: error.message,
+            stack: error.stack
+        });
     }
 });
 
+router.get('/biometrics/login-options', async (req: Request, res: Response) => {
+    try {
+        const rpID = req.headers.host?.split(':')[0] || 'localhost';
+        const users = await authQueries.getAllUsers();
+        let allCreds: any[] = [];
+        for (const u of users) {
+            const devices = await authQueries.getDevicesByUserId(u.id);
+            allCreds = [...allCreds, ...devices.filter(d => d.credential_id).map(d => ({ id: d.credential_id }))];
+        }
+
+        const options = await webAuthn.createLoginOptions(allCreds, rpID);
+        res.json(options);
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: 'LOGIN_OPTIONS_ERROR', details: error.message });
+    }
+});
+
+router.post('/biometrics/login-verify', async (req: Request, res: Response) => {
+    try {
+        const { device, biometricResponse, challenge } = req.body;
+        const rpID = req.headers.host?.split(':')[0] || 'localhost';
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const origin = `${protocol}://${req.headers.host}`;
+
+        const result = await authService.loginBiometric({
+            device,
+            biometricResponse,
+            challenge,
+            origin,
+            rpID
+        });
+
+        res.json(result);
+    } catch (error: any) {
+        console.error('[Biometrics] Login Verify Crash:', error);
+        res.status(401).json({ success: false, error: 'AUTHENTICATION_FAILED', details: error.message });
+    }
+});
+
+router.delete('/biometrics', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        const deviceId = req.user?.deviceId;
+        if (!userId || !deviceId) throw new Error('Unauthorized');
+
+        await authService.revokeBiometrics(userId, deviceId);
+
+        res.json({ success: true });
+    } catch (error: any) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+
+    res.json({
+        success: true,
+        user: req.user
+    });
+});
+
 // Diagnostic: Check system status without auth
+
 router.get('/status', async (_req: Request, res: Response) => {
     try {
         const userCount = await authQueries.getUserCount();
@@ -170,10 +239,13 @@ router.get('/status', async (_req: Request, res: Response) => {
             success: true,
             users: userCount,
             devices: deviceCount,
-            maxUsers: 2,
-            maxDevicesPerUser: 10,
+            maxUsers: 5,
+            maxDevicesTotal: 17,
+            adminDeviceLimit: 5,
+            operatorDeviceLimit: 3,
             database: isPostgresActive ? 'PostgreSQL' : 'SQLite'
         });
+
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

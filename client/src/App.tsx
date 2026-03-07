@@ -41,34 +41,40 @@ function App() {
             <ProtectedRoute>
               <div className="flex bg-nova-bg text-nova-text min-h-screen selection:bg-nova-accent/30 selection:text-white overflow-x-hidden relative">
                 {/* Mobile Header Bar - Fixed for consistency */}
-                <header className="fixed top-0 left-0 right-0 h-20 glass z-50 flex lg:hidden items-center px-4 sm:px-6 border-b border-nova-border/50 justify-between">
-                  <div className="flex items-center gap-3 sm:gap-4">
+                <header className="fixed top-0 left-0 right-0 h-16 glass z-50 flex lg:hidden items-center px-3 sm:px-6 border-b border-nova-border/50 justify-between">
+                  <div className="flex items-center gap-2 sm:gap-4">
                     <button
                       onClick={() => setSidebarOpen(true)}
-                      className="p-2 sm:p-3 -ml-1 sm:-ml-2 text-nova-accent hover:bg-white/10 rounded-2xl active:scale-90 transition-all shadow-lg"
+                      className="p-1.5 sm:p-3 -ml-1 sm:-ml-2 text-nova-accent hover:bg-white/10 rounded-xl active:scale-90 transition-all shadow-lg"
                     >
-                      <Menu size={24} />
+                      <Menu size={22} />
                     </button>
-                    <h1 className="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase truncate flex items-center gap-2">
-                      <Bird size={20} className="text-nova-accent" />
+                    <h1 className="text-lg sm:text-2xl font-black tracking-tighter text-white uppercase truncate flex items-center gap-1.5">
+                      <Bird size={18} className="text-nova-accent" />
                       <div>Zium <span className="text-nova-accent">Nova</span></div>
                     </h1>
                   </div>
-                  <div className="scale-90 origin-right">
-                    <NotificationPanel />
-                  </div>
+                  <NotificationPanel />
                 </header>
+
 
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-                {/* Content Engine - Offset by Sidebar width on Desktop */}
-                <main className="flex-1 min-w-0 lg:pl-80 transition-all duration-300 relative min-h-screen flex flex-col items-center">
+                {/* Content Engine - Offset by Sidebar width on Desktop (Compact) */}
+                <main className="flex-1 min-w-0 lg:pl-60 transition-all duration-300 relative min-h-screen flex flex-col items-center">
+
+
+
                   {/* Background Atmosphere - Fixed width and better positioning to avoid horizontal overflow */}
                   <div className="fixed top-0 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-nova-accent/10 blur-[100px] sm:blur-[180px] rounded-full -mr-48 sm:-mr-96 -mt-48 sm:-mt-96 pointer-events-none z-0"></div>
-                  <div className="fixed bottom-0 left-0 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-nova-accent-alt/10 blur-[80px] sm:blur-[150px] rounded-full -ml-16 sm:-ml-32 -mb-16 sm:-mb-32 pointer-events-none z-0"></div>
+                  <div className="fixed bottom-0 left-0 w-[300px] lg:w-[400px] h-[300px] lg:h-[400px] bg-nova-accent-alt/10 blur-[80px] lg:blur-[120px] rounded-full -ml-16 lg:-ml-24 -mb-16 lg:-mb-24 pointer-events-none z-0"></div>
 
-                  {/* Atomic Content Container - Centered and constrained */}
-                  <div className="relative z-10 pt-24 sm:pt-28 lg:pt-20 px-4 sm:px-8 md:px-12 lg:px-16 min-h-screen flex flex-col items-stretch w-full max-w-[1600px] overflow-x-hidden">
+                  {/* Atomic Content Container - Aggressively scaled for Desktop */}
+                  <div className="relative z-10 pt-20 lg:pt-4 px-4 sm:px-8 lg:px-12 min-h-screen flex flex-col items-stretch w-full max-w-[1440px] overflow-x-hidden">
+
+
+
+
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/chat" element={<ChatPage />} />

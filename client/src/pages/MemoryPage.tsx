@@ -108,8 +108,9 @@ const MemoryPage: React.FC = () => {
                     <div
                         key={conv.id}
                         onClick={() => editingId !== conv.id && navigate(`/chat?id=${conv.id}`)}
-                        className="glass p-6 rounded-2xl border border-nova-border hover:border-nova-accent/40 hover:bg-nova-accent/[0.02] transition-all cursor-pointer group flex items-center gap-6"
+                        className="glass p-4 sm:p-6 rounded-2xl border border-nova-border hover:border-nova-accent/40 hover:bg-nova-accent/[0.02] transition-all cursor-pointer group flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6"
                     >
+
                         <div className="w-12 h-12 rounded-xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent group-hover:nova-accent-glow transition-all shrink-0">
                             <MessageSquare size={20} />
                         </div>
@@ -135,36 +136,39 @@ const MemoryPage: React.FC = () => {
                             ) : (
                                 <h4 className="text-white font-bold mb-1 group-hover:text-nova-accent transition-colors truncate">{conv.title}</h4>
                             )}
-                            <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-1.5 text-[10px] text-nova-text-dim uppercase tracking-wider">
-                                    <Calendar size={12} />
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-1">
+                                <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] text-nova-text-dim uppercase tracking-wider">
+                                    <Calendar size={11} />
                                     {new Date(conv.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                 </div>
-                                <div className="flex items-center gap-1.5 text-[10px] text-nova-accent/60 uppercase tracking-widest font-mono">
-                                    REF_ID: {conv.id.slice(0, 8)}
+                                <div className="flex items-center gap-1.5 text-[9px] sm:text-[10px] text-nova-accent/60 uppercase tracking-widest font-mono">
+                                    <span className="opacity-40">REF:</span> {conv.id.slice(0, 8)}
                                 </div>
                             </div>
+
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button
-                                onClick={(e) => handleEditStart(conv, e)}
-                                className="p-2.5 rounded-xl bg-white/5 border border-nova-border text-nova-text-dim hover:text-nova-accent hover:border-nova-accent/30 transition-all"
-                                title="Edit title"
-                            >
-                                <Pencil size={14} />
-                            </button>
-                            <button
-                                onClick={(e) => handleDelete(conv.id, e)}
-                                className="p-2.5 rounded-xl bg-white/5 border border-nova-border text-nova-text-dim hover:text-red-400 hover:border-red-500/30 transition-all"
-                                title="Delete conversation"
-                            >
-                                <Trash2 size={14} />
-                            </button>
+                        <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto mt-2 sm:mt-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={(e) => handleEditStart(conv, e)}
+                                    className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-nova-border text-nova-text-dim hover:text-nova-accent hover:border-nova-accent/30 transition-all focus:bg-nova-accent/10"
+                                    title="Edit title"
+                                >
+                                    <Pencil size={14} />
+                                </button>
+                                <button
+                                    onClick={(e) => handleDelete(conv.id, e)}
+                                    className="p-2 sm:p-2.5 rounded-xl bg-white/5 border border-nova-border text-nova-text-dim hover:text-red-400 hover:border-red-500/30 transition-all focus:bg-red-500/10"
+                                    title="Delete conversation"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                            <ChevronRight className="text-nova-text-dim group-hover:text-nova-accent group-hover:translate-x-1 transition-all shrink-0" size={20} />
                         </div>
 
-                        <ChevronRight className="text-nova-text-dim group-hover:text-nova-accent group-hover:translate-x-1 transition-all shrink-0" size={20} />
                     </div>
                 ))}
 

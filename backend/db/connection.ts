@@ -52,19 +52,28 @@ export async function initDatabase(): Promise<void> {
 
       try {
         const schemaCheck = await client.query("SELECT 1 FROM information_schema.tables WHERE table_name = 'users' LIMIT 1");
+        const isNewDb = schemaCheck.rows.length === 0;
 
-        if (schemaCheck.rows.length > 0) {
-          isPostgresActive = true;
-          isInitializing = false;
-          console.log('[DB] PostgreSQL Grid: ONLINE (Verified)');
-          return;
-        }
+        console.log(`[DB] Grid: ${isNewDb ? 'Initializing Core' : 'Syncing'} Protocol Tables...`);
 
-        console.log('[DB] Grid: Initializing Core Protocol Tables...');
         await client.query(`
           CREATE EXTENSION IF NOT EXISTS "pgcrypto";
           
+          -- Migration: Ensure current_challenge and counter exist if devices table already exists
+          DO $$ 
+          BEGIN 
+            IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'devices') THEN
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'devices' AND column_name = 'current_challenge') THEN
+                ALTER TABLE devices ADD COLUMN current_challenge TEXT;
+              END IF;
+              IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'devices' AND column_name = 'counter') THEN
+                ALTER TABLE devices ADD COLUMN counter INTEGER DEFAULT 0;
+              END IF;
+            END IF;
+          END $$;
+
           CREATE TABLE IF NOT EXISTS users (
+
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             dob_hash TEXT NOT NULL,
             pin_hash TEXT NOT NULL,
@@ -154,9 +163,12 @@ export async function initDatabase(): Promise<void> {
             os_type TEXT,
             public_key TEXT,
             credential_id TEXT,
+            current_challenge TEXT,
+            counter INTEGER DEFAULT 0,
             notifications_enabled BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMPTZ DEFAULT NOW()
           );
+
 
           CREATE TABLE IF NOT EXISTS push_subscriptions (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

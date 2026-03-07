@@ -1,31 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, MessageSquare, Zap, Clock, Bird } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { TrendingUp, Zap, Bird, Loader2 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { useLiveTime } from '../hooks/useLiveTime';
-import { memoryService } from '../services/api';
 import NotificationActivationBanner from '../components/NotificationActivationBanner';
-import type { Conversation } from '../types';
 
 const Dashboard: React.FC = () => {
     const liveTime = useLiveTime();
-    const navigate = useNavigate();
-    const [recentConvs, setRecentConvs] = useState<Conversation[]>([]);
-    const [loadingConvs, setLoadingConvs] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
 
-    useEffect(() => {
-        const fetchRecent = async () => {
-            setLoadingConvs(true);
-            try {
-                const res = await memoryService.getConversations(3);
-                setRecentConvs(res.data.data);
-            } catch (err) {
-                console.error('Dash Fetch Error:', err);
-            } finally {
-                setLoadingConvs(false);
-            }
-        };
-        fetchRecent();
-    }, []);
+    const handleSync = async () => {
+        if (isSyncing) return;
+        setIsSyncing(true);
+        // Artificial delay for "Brain Synchronization" effect
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setIsSyncing(false);
+    };
 
     const stats = [
         { label: 'Trend Fairness', value: '42%', icon: <TrendingUp className="text-nova-accent" />, color: 'from-nova-accent/20' },
@@ -47,11 +36,13 @@ const Dashboard: React.FC = () => {
 
             <header className="flex flex-col xl:flex-row justify-start items-start gap-6 sm:gap-10 xl:gap-20 w-full relative">
                 <div className="space-y-2 sm:space-y-4 flex-shrink min-w-0">
-                    <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tighter leading-[1.1] sm:leading-none uppercase break-words flex items-center gap-3">
-                        <Bird size={32} className="text-nova-accent hidden sm:block" />
-                        <Bird size={24} className="text-nova-accent sm:hidden" />
+                    <h2 className="text-2xl lg:text-xl font-black text-white tracking-tighter leading-[1.1] lg:leading-tight uppercase break-words flex items-center gap-3">
+                        <Bird size={24} className="text-nova-accent hidden sm:block" />
+                        <Bird size={20} className="text-nova-accent sm:hidden" />
                         <div>Command <br className="sm:hidden" /> <span className="nova-gradient-text">Dashboard</span></div>
                     </h2>
+
+
                     <p className="text-nova-text-dim max-w-xl text-xs sm:text-sm md:text-base leading-relaxed font-bold opacity-70">
                         Observe. Analyze. Act only when trust and fairness are guaranteed.
                     </p>
@@ -71,88 +62,58 @@ const Dashboard: React.FC = () => {
                     <div key={i} className="glass p-5 sm:p-6 sm:p-8 rounded-2xl sm:rounded-3xl border-2 border-nova-border hover:border-nova-accent/50 transition-all duration-500 group relative overflow-hidden shadow-2xl min-w-0">
                         <div className={`absolute top-0 right-0 w-48 sm:w-64 h-48 sm:h-64 bg-gradient-to-br ${stat.color} to-transparent blur-[80px] sm:blur-[100px] -mr-24 sm:-mr-32 -mt-24 sm:-mt-32 opacity-20 group-hover:opacity-60 transition-opacity`}></div>
                         <div className="flex justify-between items-start relative z-10 w-full gap-4">
-                            <div className="p-3 sm:p-4 bg-white/5 rounded-xl sm:rounded-2xl border border-white/10 group-hover:bg-nova-bg transition-colors shadow-inner shrink-0">{stat.icon}</div>
-                            <div className="text-xl sm:text-2xl sm:text-4xl font-black text-white tracking-tighter truncate">{stat.value}</div>
+                            <div className="p-2 lg:p-3 bg-white/5 rounded-xl border border-white/10 group-hover:bg-nova-bg transition-colors shadow-inner shrink-0">{stat.icon}</div>
+                            <div className="text-xl lg:text-lg font-black text-white tracking-tighter truncate">{stat.value}</div>
                         </div>
+
+
                         <div className="mt-4 sm:mt-6 text-[10px] sm:text-xs sm:text-sm font-black text-nova-text-dim uppercase tracking-[0.15em] relative z-10 text-left truncate">{stat.label}</div>
                     </div>
                 ))}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 sm:gap-10 w-full mb-12">
-                {/* Main Feed Section */}
-                <div className="lg:col-span-2 space-y-6 sm:space-y-8 w-full">
-                    <div className="glass p-5 sm:p-10 rounded-2xl sm:rounded-3xl border-2 border-nova-border bg-nova-bg/20">
-                        <div className="flex justify-between items-center mb-6 sm:mb-8">
-                            <h3 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
-                                <MessageSquare size={20} className="text-nova-accent" />
-                                Strategy Feed
-                            </h3>
-                            <NavLink to="/memory" className="text-[10px] sm:text-xs font-black text-nova-accent hover:underline uppercase tracking-widest shrink-0">Full History</NavLink>
-                        </div>
-                        <div className="space-y-4 sm:space-y-6">
-                            {loadingConvs && [1, 2, 3].map(i => (
-                                <div key={i} className="h-20 sm:h-24 bg-white/5 rounded-2xl sm:rounded-3xl animate-pulse"></div>
-                            ))}
-                            {!loadingConvs && recentConvs.map((conv) => (
-                                <div
-                                    key={conv.id}
-                                    onClick={() => navigate(`/chat?id=${conv.id}`)}
-                                    className="p-4 sm:p-6 bg-white/[0.02] rounded-2xl sm:rounded-3xl border border-nova-border hover:border-nova-accent/30 transition-all group flex gap-3 sm:gap-6 cursor-pointer hover:bg-nova-accent/[0.02] min-w-0"
-                                >
-                                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-nova-accent/10 flex-shrink-0 flex items-center justify-center text-nova-accent group-hover:scale-110 transition-all shadow-lg shadow-nova-accent/5 border border-nova-accent/20">
-                                        <MessageSquare size={18} />
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-center mb-0.5 gap-2 sm:gap-4">
-                                            <span className="font-black text-sm sm:text-lg text-white group-hover:text-nova-accent transition-colors truncate">{conv.title}</span>
-                                            <span className="text-[8px] sm:text-[10px] font-black text-nova-text-dim text-right shrink-0 uppercase opacity-40 flex items-center gap-1">
-                                                <Clock size={8} />
-                                                {new Date(conv.updated_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs sm:text-sm text-nova-text-dim line-clamp-1 font-medium leading-relaxed">
-                                            {conv.topic_tag || 'Standard Protocol Intelligence Analysis'}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                            {!loadingConvs && recentConvs.length === 0 && (
-                                <div className="py-10 text-center text-[10px] sm:text-xs text-nova-text-dim/50 border border-dashed border-nova-border rounded-2xl sm:rounded-3xl uppercase tracking-widest font-black">
-                                    No strategic memory found.
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Sidebar Section */}
-                <div className="space-y-6 sm:space-y-8 w-full">
-                    <div className="glass p-5 sm:p-10 rounded-2xl sm:rounded-3xl border-2 border-nova-border bg-nova-accent/[0.02]">
-                        <h3 className="text-lg sm:text-2xl font-black text-white mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
+            <div className="w-full max-w-4xl mx-auto">
+                {/* Unified Intelligence Section */}
+                <div className="glass p-5 sm:p-10 rounded-2xl sm:rounded-3xl border-2 border-nova-border bg-nova-accent/[0.02]">
+                    <div className="flex justify-between items-center mb-6 sm:mb-8">
+                        <h3 className="text-lg sm:text-2xl font-black text-white tracking-tight flex items-center gap-2 sm:gap-3">
                             <TrendingUp size={20} className="text-nova-accent" />
                             Global Pulse
                         </h3>
-                        <div className="space-y-4 sm:space-y-6">
-                            {recentTrends.map((trend, i) => (
-                                <div key={i} className="p-6 sm:p-8 bg-nova-bg/40 rounded-2xl sm:rounded-3xl border border-nova-border relative overflow-hidden group hover:border-nova-accent/20 transition-all">
-                                    <div className={`absolute inset-y-0 left-0 w-1.5 sm:w-2 ${trend.score > 70 ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_15px_rgba(0,0,0,0.5)]`}></div>
-                                    <div className="text-[8px] sm:text-[9px] font-black text-nova-text-dim uppercase tracking-wider mb-2 opacity-50">{trend.status}</div>
-                                    <div className="font-black text-white text-base sm:text-lg mb-3 sm:mb-4 tracking-tight group-hover:text-nova-accent transition-colors truncate">{trend.topic}</div>
-                                    <div className="w-full bg-white/5 h-1.5 sm:h-2 rounded-full overflow-hidden shadow-inner">
-                                        <div className={`h-full ${trend.score > 70 ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_10px_rgba(0,242,255,0.3)] transition-all duration-1000`} style={{ width: `${trend.score}%` }}></div>
-                                    </div>
-                                    <div className="flex justify-between mt-3 sm:mt-4">
-                                        <span className="text-[8px] sm:text-[10px] font-black text-nova-text-dim uppercase opacity-40">Trust Factor</span>
-                                        <span className={`text-[10px] sm:text-xs font-black ${trend.score > 70 ? 'text-green-400' : 'text-red-400'}`}>{trend.score}%</span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <button className="w-full mt-8 sm:mt-12 py-4 sm:py-6 rounded-xl sm:rounded-2xl bg-nova-accent/10 text-nova-accent text-sm sm:text-base font-black border-2 border-nova-accent/30 hover:bg-nova-accent hover:text-nova-bg transition-all duration-300 uppercase tracking-[0.15em] sm:tracking-widest shadow-xl shadow-nova-accent/20 active:scale-95 shrink-0">
-                            Synchronize Brain
-                        </button>
+                        <NavLink to="/trends" className="text-[10px] sm:text-xs font-black text-nova-accent hover:underline uppercase tracking-widest shrink-0">Trends Analysis</NavLink>
                     </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                        {recentTrends.map((trend, i) => (
+                            <div key={i} className="p-6 sm:p-8 bg-nova-bg/40 rounded-2xl sm:rounded-3xl border border-nova-border relative overflow-hidden group hover:border-nova-accent/20 transition-all">
+                                <div className={`absolute inset-y-0 left-0 w-1.5 sm:w-2 ${trend.score > 70 ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_15px_rgba(0,0,0,0.5)]`}></div>
+                                <div className="text-[8px] sm:text-[9px] font-black text-nova-text-dim uppercase tracking-wider mb-2 opacity-50">{trend.status}</div>
+                                <div className="font-black text-white text-base sm:text-lg mb-3 sm:mb-4 tracking-tight group-hover:text-nova-accent transition-colors truncate">{trend.topic}</div>
+                                <div className="w-full bg-white/5 h-1.5 sm:h-2 rounded-full overflow-hidden shadow-inner">
+                                    <div className={`h-full ${trend.score > 70 ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_10px_rgba(0,242,255,0.3)] transition-all duration-1000`} style={{ width: `${trend.score}%` }}></div>
+                                </div>
+                                <div className="flex justify-between mt-3 sm:mt-4">
+                                    <span className="text-[8px] sm:text-[10px] font-black text-nova-text-dim uppercase opacity-40">Trust Factor</span>
+                                    <span className={`text-[10px] sm:text-xs font-black ${trend.score > 70 ? 'text-green-400' : 'text-red-400'}`}>{trend.score}%</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="w-full mt-8 sm:mt-12 py-4 sm:py-6 rounded-xl sm:rounded-2xl bg-nova-accent/10 text-nova-accent text-sm sm:text-base font-black border-2 border-nova-accent/30 hover:bg-nova-accent hover:text-nova-bg transition-all duration-300 uppercase tracking-[0.15em] sm:tracking-widest shadow-xl shadow-nova-accent/20 active:scale-95 shrink-0 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSyncing ? (
+                            <>
+                                <Loader2 size={20} className="animate-spin" />
+                                Syncing...
+                            </>
+                        ) : (
+                            'Synchronize Brain'
+                        )}
+                    </button>
                 </div>
             </div>
         </div>

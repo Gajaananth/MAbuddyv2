@@ -244,31 +244,32 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-160px)] sm:h-[calc(100vh-140px)] lg:h-[calc(100vh-120px)] flex flex-col min-w-0 max-w-6xl mx-auto w-full">
-            <header className="mb-4 sm:mb-6 md:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-3 sm:py-4 xl:py-6 gap-3 sm:gap-4 md:gap-6 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0">
-                <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 xl:w-20 xl:h-20 rounded-lg sm:rounded-xl md:rounded-2xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent relative shadow-2xl shadow-nova-accent/5 shrink-0">
+        <div className="h-[calc(100vh-160px)] sm:h-[calc(100vh-140px)] lg:h-[calc(100vh-40px)] flex flex-col min-w-0 max-w-6xl mx-auto w-full">
+
+            <header className="mb-4 lg:mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-3 lg:py-4 gap-3 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0">
+                <div className="flex items-center gap-3 lg:gap-4">
+                    <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-lg lg:rounded-xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent relative shadow-2xl shadow-nova-accent/5 shrink-0">
                         <Bird size={18} className="sm:hidden" />
-                        <Bird size={24} className="hidden sm:block md:hidden" />
-                        <Bird size={32} className="hidden md:block xl:hidden" />
-                        <Bird size={40} className="hidden xl:block" />
-                        <div className="absolute -bottom-0.5 -right-0.5 md:-bottom-1 md:-right-1 xl:-bottom-1.5 xl:-right-1.5 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 md:w-5 md:h-5 xl:w-6 xl:h-6 bg-nova-accent rounded-full border-2 md:border-4 border-nova-bg animate-pulse"></div>
+                        <Bird size={24} className="hidden sm:block lg:hidden" />
+                        <Bird size={30} className="hidden lg:block" />
+                        <div className="absolute -bottom-0.5 -right-0.5 lg:-bottom-1 lg:-right-1 w-2.5 h-2.5 lg:w-4 lg:h-4 bg-nova-accent rounded-full border-2 lg:border-3 border-nova-bg animate-pulse"></div>
                     </div>
-                    <div className="space-y-0.5 sm:space-y-1 min-w-0">
-                        <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white tracking-tight uppercase truncate">Zium Intelligence</h2>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <p className="text-[8px] sm:text-[10px] md:text-sm font-bold text-nova-text-dim flex items-center gap-1 sm:gap-1.5 opacity-80">
-                                <Bird size={10} className="text-nova-accent shrink-0" />
-                                <span className="hidden xs:inline">Silent Beast</span> <span className="hidden sm:inline">Protocol</span> v2.1
+                    <div className="space-y-0.5 min-w-0">
+                        <h2 className="text-lg lg:text-base font-black text-white tracking-tight uppercase truncate">Zium Intelligence</h2>
+                        <div className="flex items-center gap-2">
+                            <p className="text-[8px] lg:text-[10px] font-bold text-nova-text-dim flex items-center gap-1 opacity-80">
+                                <Bird size={9} className="text-nova-accent shrink-0" />
+                                <span className="hidden lg:inline">Silent Beast Protocol</span> v2.1
                             </p>
-                            <span className="w-0.5 h-0.5 sm:w-1 sm:h-1 rounded-full bg-white/20"></span>
-                            <p className="text-[8px] sm:text-[10px] md:text-sm font-bold text-green-400 flex items-center gap-1 sm:gap-1.5 truncate">
-                                <User size={10} className="shrink-0" />
+                            <span className="w-0.5 h-0.5 rounded-full bg-white/20"></span>
+                            <p className="text-[8px] lg:text-[10px] font-bold text-green-400 flex items-center gap-1 truncate">
+                                <User size={9} className="shrink-0" />
                                 <span className="truncate">Normal Mode</span>
                             </p>
                         </div>
                     </div>
                 </div>
+
                 <div className="flex items-center justify-between w-full xl:w-auto gap-4 sm:gap-8">
                     <div className="flex items-center gap-3 sm:gap-4 bg-white/5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-white/10 shrink-0">
                         <span className="text-[8px] sm:text-xs font-black text-nova-text-dim uppercase tracking-widest">Sync</span>
@@ -287,7 +288,8 @@ const ChatPage: React.FC = () => {
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-4 sm:space-y-6 scroll-smooth custom-scrollbar pb-4 min-h-0">
+            <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-4 sm:space-y-6 scroll-smooth custom-scrollbar pb-12 min-h-0">
+
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center min-h-[60%] text-center space-y-4 sm:space-y-6 opacity-40 px-4">
                         <Bird size={48} className="text-nova-accent sm:size-64 xl:scale-110 xl:mb-6" />
@@ -314,17 +316,18 @@ const ChatPage: React.FC = () => {
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 duration-300 w-full`}>
                         <div className={`max-w-[95%] sm:max-w-[90%] xl:max-w-[85%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} w-full`}>
                             <div className={`flex items-center gap-1.5 sm:gap-2 mb-1`}>
-                                <span className="text-[9px] sm:text-[10px] xl:text-[11px] font-bold text-nova-text-dim uppercase tracking-tighter">
+                                <span className="text-[9px] lg:text-[10px] font-bold text-nova-text-dim uppercase tracking-tighter">
                                     {msg.role === 'user' ? 'Operator' : 'Zium Nova'}
                                 </span>
-                                <span className="text-[8px] sm:text-[9px] xl:text-[10px] text-nova-text-dim/50 font-mono">
+                                <span className="text-[8px] lg:text-[9px] text-nova-text-dim/50 font-mono">
                                     {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                                 {msg.role === 'nova' && msg.metadata?.production_scores?.overall !== undefined && (
-                                    <span className="text-[8px] sm:text-[9px] font-black text-nova-accent ml-1 sm:ml-2">
+                                    <span className="text-[8px] lg:text-[9px] font-black text-nova-accent ml-1 lg:ml-2">
                                         [{msg.metadata.production_scores.overall || 0}%]
                                     </span>
                                 )}
+
                                 {/* Edit button for user messages */}
                                 {msg.role === 'user' && !loading && editingIndex === null && (
                                     <button
@@ -364,15 +367,16 @@ const ChatPage: React.FC = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className={`p-4 sm:p-6 xl:p-8 rounded-xl sm:rounded-2xl xl:rounded-3xl border shadow-2xl ${msg.role === 'user'
+                                <div className={`p-4 lg:p-5 rounded-xl lg:rounded-2xl border shadow-2xl ${msg.role === 'user'
                                     ? 'bg-nova-accent/5 border-nova-accent/20 text-white rounded-tr-none'
                                     : 'glass border-nova-border text-nova-text rounded-tl-none nova-glow'
                                     }`}>
-                                    <div className="whitespace-pre-wrap text-[13px] sm:text-sm md:text-base leading-relaxed prose prose-invert max-w-none font-medium text-nova-text">
+                                    <div className="whitespace-pre-wrap text-[13px] lg:text-[13.5px] leading-relaxed prose prose-invert max-w-none font-medium text-nova-text">
                                         {msg.content.split('\n').map((line, j) => (
-                                            <p key={j} className={line.startsWith('##') ? 'text-nova-accent font-black mt-3 mb-1 sm:mt-4 sm:mb-2 text-sm sm:text-base md:text-lg uppercase tracking-wide' : 'mb-2'}>{line}</p>
+                                            <p key={j} className={line.startsWith('##') ? 'text-nova-accent font-black mt-2 mb-1 lg:text-base uppercase tracking-wide' : 'mb-1.5'}>{line}</p>
                                         ))}
                                     </div>
+
 
                                     {msg.role === 'nova' && msg.metadata?.production_scores && (
                                         <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-nova-border/30 grid grid-cols-2 xs:grid-cols-4 gap-2 sm:gap-4">
@@ -436,41 +440,40 @@ const ChatPage: React.FC = () => {
             </div>
 
             <div className="mt-4 sm:mt-6 mb-4 sm:mb-8 relative shrink-0">
-                {/* Mode Selector Dropdown */}
-                <div className="absolute bottom-full left-0 mb-3 sm:mb-4 z-10 w-full sm:w-auto">
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowModeMenu(!showModeMenu)}
-                            className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl glass border border-nova-border text-nova-text-dim hover:text-nova-accent hover:border-nova-accent transition-all text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-nova-bg/80"
-                        >
-                            <Terminal size={12} className="shrink-0" />
-                            <span className="truncate">Zium Nova Mode</span>
-                            <ChevronDown size={12} className={`transition-transform duration-300 shrink-0 ${showModeMenu ? 'rotate-180' : ''}`} />
-                        </button>
+                {/* Mode Selector - Grounded and Stable */}
+                <div className="relative inline-block z-[60]">
+                    <button
+                        onClick={() => setShowModeMenu(!showModeMenu)}
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl bg-nova-bg border-2 border-nova-accent/30 text-white hover:text-nova-accent hover:border-nova-accent transition-all text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-2xl active:scale-95 group"
+                    >
+                        <Terminal size={14} className="shrink-0 text-nova-accent group-hover:scale-110 transition-transform" />
+                        <span className="truncate">Zium Nova Mode</span>
+                        <ChevronDown size={14} className={`transition-transform duration-300 shrink-0 text-nova-accent ${showModeMenu ? 'rotate-180' : ''}`} />
+                    </button>
 
-                        {showModeMenu && (
-                            <div className="absolute left-0 bottom-full mb-2 w-full sm:w-64 glass border border-nova-border rounded-xl sm:rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] animate-in slide-in-from-bottom-2 duration-200">
-                                <div className="p-1.5 sm:p-2 space-y-0.5 sm:space-y-1 bg-nova-bg/90 backdrop-blur-xl">
-                                    {modes.map((mode) => (
-                                        <button
-                                            key={mode.label}
-                                            onClick={() => handleModeSelect(mode.command)}
-                                            className="w-full flex items-center gap-2.5 sm:gap-3 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl hover:bg-nova-accent/10 text-nova-text-dim hover:text-white transition-all text-[11px] sm:text-sm group"
-                                        >
-                                            <div className="text-nova-text-dim group-hover:text-nova-accent transition-colors shrink-0">
-                                                {React.cloneElement(mode.icon as React.ReactElement<any>, { size: 14 })}
-                                            </div>
-                                            <div className="flex flex-col items-start min-w-0">
-                                                <span className="font-bold truncate">{mode.label}</span>
-                                                <span className="text-[8px] sm:text-[10px] text-nova-text-dim/60 italic truncate">{mode.command}</span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
+                    {showModeMenu && (
+                        <div className="absolute left-0 bottom-full mb-3 w-64 lg:w-72 glass border-2 border-nova-border rounded-xl sm:rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] animate-in slide-in-from-bottom-4 duration-300">
+                            <div className="p-1 sm:p-1.5 bg-nova-bg/95 backdrop-blur-3xl">
+                                {modes.map((mode) => (
+                                    <button
+                                        key={mode.label}
+                                        onClick={() => handleModeSelect(mode.command)}
+                                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg sm:rounded-xl hover:bg-nova-accent/10 text-nova-text-dim hover:text-white transition-all text-xs group text-left"
+                                    >
+                                        <div className="text-nova-accent/60 group-hover:text-nova-accent transition-colors shrink-0">
+                                            {React.cloneElement(mode.icon as React.ReactElement<any>, { size: 14 })}
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="font-black uppercase tracking-tight truncate leading-tight">{mode.label}</span>
+                                            <span className="text-[8px] text-nova-text-dim/40 font-mono truncate">{mode.command}</span>
+                                        </div>
+                                    </button>
+                                ))}
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
+
 
                 <form onSubmit={handleSend} className="relative w-full">
                     <textarea
@@ -484,9 +487,10 @@ const ChatPage: React.FC = () => {
                         }}
                         disabled={loading}
                         placeholder={loading ? "Processing..." : "Provide strategic signal..."}
-                        className="w-full bg-nova-card border-2 border-nova-border text-white px-4 sm:px-6 py-3 sm:py-4 pr-14 sm:pr-24 rounded-2xl sm:rounded-3xl focus:outline-none focus:border-nova-accent transition-all placeholder:text-nova-text-dim/20 text-sm sm:text-base font-bold shadow-2xl resize-none min-h-[50px] sm:min-h-[64px] max-h-[150px] sm:max-h-[200px]"
+                        className="w-full bg-nova-card border-2 border-nova-border text-white px-4 lg:px-5 py-3 lg:py-3.5 pr-14 lg:pr-20 rounded-2xl lg:rounded-2xl focus:outline-none focus:border-nova-accent transition-all placeholder:text-nova-text-dim/20 text-sm lg:text-[14px] font-bold shadow-2xl resize-none min-h-[50px] lg:min-h-[54px] max-h-[150px] lg:max-h-[150px]"
                         rows={1}
                     />
+
                     {loading ? (
                         <button
                             type="button"
