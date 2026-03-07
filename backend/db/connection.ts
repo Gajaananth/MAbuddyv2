@@ -152,8 +152,17 @@ export async function initDatabase(): Promise<void> {
             is_read BOOLEAN DEFAULT FALSE,
             is_archived BOOLEAN DEFAULT FALSE,
             priority VARCHAR(20) DEFAULT 'normal' CHECK (priority IN ('normal', 'high', 'critical')),
+            metadata JSONB DEFAULT NULL,
             created_at TIMESTAMPTZ DEFAULT NOW()
           );
+
+          -- Migration: Add metadata column to existing notifications table
+          DO $$
+          BEGIN
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'metadata') THEN
+              ALTER TABLE notifications ADD COLUMN metadata JSONB DEFAULT NULL;
+            END IF;
+          END $$;
 
           CREATE TABLE IF NOT EXISTS devices (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
