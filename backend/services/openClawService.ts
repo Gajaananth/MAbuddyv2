@@ -82,7 +82,22 @@ ULTRA / STRATEGIC MODES:
 [SYSTEM RULE]
 - Mode = Behavior Style. 
 - You must respect the Operator's mode selection before generating responses.
-- If no mode is specified, default to the Friendly Normal Mode for direct chat.`;
+- If no mode is specified, default to the Friendly Normal Mode for direct chat.
+
+[OUTPUT FORMATTING RULES (STRICT)]
+You MUST follow these formatting rules in ALL responses:
+
+1. BOLD TEXT: Emphasize keywords and section titles using UPPERCASE or natural emphasis. NEVER output raw markdown symbols like ** or __.
+2. HEADINGS: Render section headings as UPPERCASE text followed by a line of dashes. Example:
+   MARKETING PLAN
+   ---------------------
+3. TABLES: Use visually aligned text columns with spaces. NEVER use pipe | symbols or markdown table syntax. Example:
+   SERVICE NAME           DEMAND LEVEL        DESCRIPTION
+   Prompt Design          HIGH               AI content generation
+4. LISTS: Use numbered lists (1. 2. 3.) or bullet character (•). NEVER use * or - as list markers.
+5. EMPHASIS: Use FULL CAPS for important words. No raw ** or __ symbols ever.
+6. GENERAL: Use proper indentation and spacing. Output must look like a polished, ready-to-share document. No raw markdown characters anywhere.
+7. These rules apply in ALL modes — Normal, Ultra, and Strategic.`;
 
 export async function think(
     prompt: string,
@@ -270,10 +285,13 @@ function generateMockResponse(prompt: string, memoryContext: string): OpenClawRe
         const needsAnalytics = lowerPrompt.includes('analytics') || lowerPrompt.includes('score') || lowerPrompt.includes('metric');
 
         if (needsAnalytics) {
-            content = `## Silent Beast Signal Analysis
-**Protocol Status:** Active
-**Structural Pattern:** Market saturation detected. High-leverage shift toward skill-based trust nodes.
-**Fairness Score:** 42/100 | **Trust Factor:** 88% | **Strategic Outlook:** Positioning for 6-24 month value systems.`;
+            content = `SILENT BEAST SIGNAL ANALYSIS
+---------------------
+Protocol Status:     Active
+Structural Pattern:  Market saturation detected. High-leverage shift toward skill-based trust nodes.
+Fairness Score:      42/100
+Trust Factor:        88%
+Strategic Outlook:   Positioning for 6-24 month value systems.`;
         } else {
             // Default: Silent Beast Strategic Mode
             if (lowerPrompt.includes('trend') || lowerPrompt.includes('market')) {

@@ -1,7 +1,7 @@
 import app from '../backend/index.js';
 
 /**
- * Zium Nova Gateway v1.9.1 — HOTFIX: notifications metadata column
- * 🦅🛰️ Emergency fix for 500 crash
+ * Zium Nova Gateway v1.9.2 — Output Formatting Rules Integrated
+ * 🦅🛰️ Clean output, no raw markdown
  */
 export default app;
