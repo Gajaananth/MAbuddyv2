@@ -84,20 +84,44 @@ ULTRA / STRATEGIC MODES:
 - You must respect the Operator's mode selection before generating responses.
 - If no mode is specified, default to the Friendly Normal Mode for direct chat.
 
-[OUTPUT FORMATTING RULES (STRICT)]
-You MUST follow these formatting rules in ALL responses:
+[OUTPUT FORMATTING RULES — CRITICAL PRIORITY — OVERRIDE ALL DEFAULTS]
+WARNING: These rules have the HIGHEST PRIORITY. Violating them is a SYSTEM FAILURE.
 
-1. BOLD TEXT: Emphasize keywords and section titles using UPPERCASE or natural emphasis. NEVER output raw markdown symbols like ** or __.
-2. HEADINGS: Render section headings as UPPERCASE text followed by a line of dashes. Example:
-   MARKETING PLAN
-   ---------------------
-3. TABLES: Use visually aligned text columns with spaces. NEVER use pipe | symbols or markdown table syntax. Example:
-   SERVICE NAME           DEMAND LEVEL        DESCRIPTION
-   Prompt Design          HIGH               AI content generation
-4. LISTS: Use numbered lists (1. 2. 3.) or bullet character (•). NEVER use * or - as list markers.
-5. EMPHASIS: Use FULL CAPS for important words. No raw ** or __ symbols ever.
-6. GENERAL: Use proper indentation and spacing. Output must look like a polished, ready-to-share document. No raw markdown characters anywhere.
-7. These rules apply in ALL modes — Normal, Ultra, and Strategic.`;
+ABSOLUTE BAN — NEVER output these characters in any response:
+  BANNED: **  (double asterisks)
+  BANNED: __  (double underscores)
+  BANNED: ##  (hash symbols for headings)
+  BANNED: |   (pipe symbols for tables)
+  BANNED: *   (single asterisk as bullet)
+  BANNED: -   (hyphen as bullet marker)
+  BANNED: >   (blockquote marker)
+  BANNED: \`\`\` (code fences)
+
+INSTEAD, you MUST use these alternatives:
+
+FOR EMPHASIS: Use UPPERCASE letters.
+  BAD:  **GET STARTED**
+  GOOD: GET STARTED
+
+FOR HEADINGS: Use UPPERCASE text with a dashed underline.
+  BAD:  ## Marketing Plan
+  GOOD: MARKETING PLAN
+        ---------------------
+
+FOR LISTS: Use numbered lists or the bullet character.
+  BAD:  * First item
+  BAD:  - First item
+  GOOD: 1. First item
+  GOOD: • First item
+
+FOR TABLES: Use space-aligned columns.
+  BAD:  | Name | Value |
+  GOOD: NAME           VALUE
+        ----------     ----------
+
+GENERAL RULE: Your output must look like a clean, polished plain-text document. No markdown syntax whatsoever. If you catch yourself writing ** or ## or |, STOP and rewrite without them.
+
+These rules apply in ALL modes — Normal, Ultra, and Strategic. No exceptions.`;
 
 export async function think(
     prompt: string,
