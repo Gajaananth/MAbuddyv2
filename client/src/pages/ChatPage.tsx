@@ -59,7 +59,7 @@ const ChatPage: React.FC = () => {
         }
     };
 
-    const [publishToMoltbook, setPublishToMoltbook] = useState(false);
+
 
     const handleStop = () => {
         if (abortControllerRef.current) {
@@ -271,15 +271,7 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between w-full xl:w-auto gap-4 sm:gap-8">
-                    <div className="flex items-center gap-3 sm:gap-4 bg-white/5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl border border-white/10 shrink-0">
-                        <span className="text-[8px] sm:text-xs font-black text-nova-text-dim uppercase tracking-widest">Sync</span>
-                        <button
-                            onClick={() => setPublishToMoltbook(!publishToMoltbook)}
-                            className={`w-8 sm:w-12 h-4 sm:h-6 rounded-full transition-all relative ${publishToMoltbook ? 'bg-nova-accent' : 'bg-white/10'}`}
-                        >
-                            <div className={`absolute top-0.5 sm:top-1 w-3 sm:w-4 h-3 sm:h-4 rounded-full bg-nova-bg transition-all ${publishToMoltbook ? 'left-4.5 sm:left-7' : 'left-0.5 sm:left-1'}`}></div>
-                        </button>
-                    </div>
+
                     {messages.length > 0 && (
                         <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg border border-nova-border hover:bg-white/5 text-[10px] sm:text-xs text-nova-text-dim transition-colors uppercase font-black tracking-widest shrink-0">
                             Clear
