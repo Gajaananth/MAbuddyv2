@@ -296,7 +296,7 @@ const ChatPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <p className="text-[8px] lg:text-[10px] font-bold text-nova-text-dim flex items-center gap-1 opacity-80">
                                 <Bird size={9} className="text-nova-accent shrink-0" />
-                                <span className="hidden lg:inline">Silent Beast Protocol</span> v3.1.0
+                                <span className="hidden lg:inline">Silent Beast Protocol</span> v3.1.5
                             </p>
                             <span className="w-0.5 h-0.5 rounded-full bg-white/20"></span>
                             <button 

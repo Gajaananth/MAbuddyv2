@@ -27,8 +27,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { name: 'Internet Ride', icon: <Bird size={26} />, path: '/intelligence' },
         { name: 'Task Tracking Center', icon: <Terminal size={26} />, path: '/command-center' },
         { name: 'Learning Outcomes', icon: <TrendingUp size={26} />, path: '/learning' },
-        { name: 'Important Reports', icon: <Database size={26} />, path: '/reports' },
+        { name: 'Important Reports', icon: <Shield size={26} />, path: '/reports' },
         
+        { name: 'Strategic Memory', icon: <Database size={26} />, path: '/memory' },
         { name: 'Global Pulse', icon: <Zap size={26} />, path: '/pulse' },
         { name: 'Chat', icon: <MessageSquare size={26} />, path: '/chat' },
         { name: 'Trends', icon: <TrendingUp size={26} />, path: '/trends' },
@@ -60,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl lg:text-base font-black tracking-tighter text-white truncate uppercase">ZIUM <span className="text-nova-accent">NOVA</span></h1>
-                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v3.1.0</p>
+                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v3.1.5</p>
                         </div>
                     </div>
 
