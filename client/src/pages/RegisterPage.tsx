@@ -160,7 +160,7 @@ const RegisterPage: React.FC = () => {
                 </div>
 
                 <p className="mt-8 text-center text-nova-text-dim text-[10px] font-bold uppercase tracking-widest">
-                    Authorized Access Only — All activity is logged via Protocol 2.1
+                    Authorized Access Only — All activity is logged via Protocol 3.2.0
                 </p>
             </div>
         </div>
