@@ -129,6 +129,28 @@ ${learningContext}
                     });
                 }
 
+                // 3. Autonomous Task Status Tracking
+                console.log(`[Autonomy] Syncing Agentic Task Statuses...`);
+                const activeNovaTasks = (await db.getTasks(userId)).filter(t => t.assigned_to === 'ZIUM_NOVA' && t.status !== 'COMPLETED');
+                if (activeNovaTasks.length > 0) {
+                    const taskSummary = activeNovaTasks.map(t => `[${t.task_id_str}] ${t.task_name} (Status: ${t.status})`).join('\n');
+                    const statusCheck = await think(`[AGENTIC SELF-AUDIT v3.2.0]
+                    Current Context: ${learningContext}
+                    My Active Tasks:
+                    ${taskSummary}
+                    
+                    Identify if any tasks are now IN-PROGRESS or COMPLETED based on my recent intelligence logs.
+                    Output EXACTLY: UPDATE: [ID] | STATUS: [NEW_STATUS] | REASON: [Short Reason]
+                    If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', {}, userId);
+
+                    const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*REASON:\s*(.*)/gi);
+                    for (const match of updateMatches) {
+                        const [_, id, status, reason] = match;
+                        await db.updateTaskStatus(userId, id.trim(), status.trim().toUpperCase() as any, reason.trim());
+                        console.log(`[Autonomy] Self-updated task ${id} to ${status}`);
+                    }
+                }
+
                 // 3. Humanize and Deliver Message (Only if there is conversational content)
                 const isUrgent = content.includes('Buddy') || content.includes('Operator') || content.includes('!') || content.length > 200;
                 
@@ -151,7 +173,19 @@ ${learningContext}
                             ALERT: "${naturalMessage}"`, '', {}, userId);
 
                             await db.addMessage(convId, 'nova', humanized.content, { proactive: true, alert_type: 'urgent' });
-                            console.log(`[Autonomy] delivered humanized message.`);
+                            
+                            // CREATE SYSTEM NOTIFICATION (Clickable to Chat)
+                            await db.createNotification(userId, {
+                                title: 'New Strategic Message',
+                                category: 'Strategic Intelligence',
+                                risk_level: 'Medium',
+                                monetization_potential: 'N/A',
+                                content: humanized.content.substring(0, 100) + '...',
+                                priority: isUrgent ? 'high' : 'normal',
+                                metadata: { path: '/chat', proactive: true }
+                            });
+
+                            console.log(`[Autonomy] delivered humanized message and notification.`);
                         } catch (chatError) {
                             console.error(`[Autonomy] Failed to deliver message:`, chatError);
                         }

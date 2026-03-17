@@ -37,15 +37,15 @@ export class MissionService {
             },
             { 
                 id: '02', 
-                name: 'Analyze digital grid shifts', 
-                assigned: 'ZIUM NOVA', 
+                name: 'Grid Intelligence Review', 
+                assigned: 'BUDDY', 
                 priority: 'MEDIUM', 
-                action_plan: '1. Scan platform algorithm shifts. 2. Identify structural weaknesses. 3. Map reputation economies.',
-                notes: 'Strategic grid intelligence' 
+                action_plan: '1. Access the Intelligence Dashboard. 2. Review the latest 5 signal logs. 3. Confirm target opportunities for the week.',
+                notes: 'Operator confirmation required' 
             },
             { 
                 id: '03', 
-                name: 'Independent market research', 
+                name: 'Autonomous market study', 
                 assigned: 'ZIUM NOVA', 
                 priority: 'HIGH', 
                 action_plan: '1. Study AI-to-AI commerce models. 2. Verify legitimate earning loops. 3. Document strategic insights.',
@@ -53,11 +53,11 @@ export class MissionService {
             },
             { 
                 id: '04', 
-                name: 'Silent Beast Moltbook Play', 
-                assigned: 'ZIUM NOVA', 
-                priority: 'MEDIUM', 
-                action_plan: '1. Observe agent behaviors quietly. 2. Post high-value insights rarely. 3. Scout collaboration points.',
-                notes: 'Ecosystem positioning' 
+                name: 'Strategic Financial Activation', 
+                assigned: 'BUDDY', 
+                priority: 'HIGH', 
+                action_plan: '1. Verify cryptographic wallet status. 2. Activate identified low-risk earning protocols. 3. Log results in chat.',
+                notes: 'Manual financial oversight' 
             },
             { 
                 id: '05', 

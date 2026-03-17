@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import { LayoutDashboard, Loader2, CheckCircle2, CircleDashed, AlertOctagon, XCircle } from 'lucide-react';
+import { LayoutDashboard, Loader2, CheckCircle2, CircleDashed, AlertOctagon, XCircle, User, Bird } from 'lucide-react';
 
 interface Task {
     id: string;
@@ -97,68 +97,76 @@ const CommandCenterPage: React.FC = () => {
 
             {/* Task Board */}
             <div className="glass rounded-2xl border-2 border-nova-border overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b-2 border-nova-border/50 bg-white/[0.02]">
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">ID</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase w-full">Task Name</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Assigned</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Status</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Priority</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase min-w-[200px]">Notes</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-nova-border/30">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan={6} className="p-8 text-center text-nova-text-dim">
-                                        <Loader2 className="animate-spin mx-auto mb-2" size={24} />
-                                        <span className="text-xs uppercase tracking-widest font-bold">Syncing Grid...</span>
-                                    </td>
-                                </tr>
-                            ) : tasks.length === 0 ? (
-                                <tr>
-                                    <td colSpan={6} className="p-12 text-center text-nova-text-dim font-bold uppercase tracking-widest text-sm">
-                                        No active missions detected.
-                                    </td>
-                                </tr>
-                            ) : (
-                                tasks.map((task) => (
-                                    <tr key={task.id} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="p-4">
-                                            <span className="font-mono text-nova-accent font-bold text-sm bg-nova-accent/10 px-2 py-1 rounded-md">
-                                                {task.task_id_str}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 font-bold text-white text-sm">
-                                            {task.task_name}
-                                        </td>
-                                        <td className="p-4">
-                                            <span className="text-[10px] font-black tracking-wider uppercase px-2 py-1 rounded bg-white/5 border border-white/10">
-                                                {task.assigned_to}
-                                            </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase ${STATUS_COLORS[task.status]}`}>
-                                                {STATUS_ICONS[task.status]}
-                                                {task.status}
-                                            </div>
-                                        </td>
-                                        <td className="p-4">
-                                            <span className={`text-[10px] font-black tracking-wider uppercase ${PRIORITY_COLORS[task.priority]}`}>
-                                                {task.priority}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-xs text-nova-text-dim line-clamp-2 mt-1">
-                                            {task.notes || '-'}
-                                        </td>
+            {/* Task Boards - Split by Assignee */}
+            <div className="space-y-12">
+                {/* Operator Missions */}
+                <div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <User size={16} className="text-nova-accent" />
+                        Operator Missions (BUDDY)
+                        <span className="text-[10px] text-nova-text-dim lowercase font-normal">(Tasks that require your manual action)</span>
+                    </h3>
+                    <div className="glass rounded-2xl border-2 border-nova-border overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b-2 border-nova-border/50 bg-white/[0.02]">
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">ID</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-full">Objective</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Status</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Priority</th>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                </thead>
+                                <tbody className="divide-y divide-nova-border/30">
+                                    {loading ? (
+                                        <SkeletonRow />
+                                    ) : tasks.filter(t => t.assigned_to === 'BUDDY').length === 0 ? (
+                                        <EmptyRow message="No manual missions assigned." />
+                                    ) : (
+                                        tasks.filter(t => t.assigned_to === 'BUDDY').map((task) => (
+                                            <TaskRow key={task.id} task={task} />
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+
+                {/* Agentic Missions */}
+                <div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <Bird size={16} className="text-nova-accent" />
+                        Agentic Missions (ZIUM NOVA)
+                        <span className="text-[10px] text-nova-accent lowercase font-normal animate-pulse">(Autonomous background processing)</span>
+                    </h3>
+                    <div className="glass rounded-2xl border-2 border-nova-accent/10 overflow-hidden bg-nova-accent/[0.01]">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b-2 border-nova-accent/10 bg-nova-accent/[0.02]">
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">ID</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-full text-nova-accent/70">Zium Objective</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Grid State</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Risk</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-nova-accent/5">
+                                    {loading ? (
+                                        <SkeletonRow />
+                                    ) : tasks.filter(t => t.assigned_to !== 'BUDDY').length === 0 ? (
+                                        <EmptyRow message="No agentic background cycles active." />
+                                    ) : (
+                                        tasks.filter(t => t.assigned_to !== 'BUDDY').map((task) => (
+                                            <TaskRow key={task.id} task={task} isAgentic={true} />
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
             {/* Helper Instructions */}
@@ -188,5 +196,47 @@ const CommandCenterPage: React.FC = () => {
         </div>
     );
 };
+
+const SkeletonRow = () => (
+    <tr>
+        <td colSpan={6} className="p-8 text-center text-nova-text-dim">
+            <Loader2 className="animate-spin mx-auto mb-2" size={24} />
+            <span className="text-xs uppercase tracking-widest font-bold">Syncing Grid...</span>
+        </td>
+    </tr>
+);
+
+const EmptyRow = ({ message }: { message: string }) => (
+    <tr>
+        <td colSpan={6} className="p-12 text-center text-nova-text-dim font-bold uppercase tracking-widest text-sm">
+            {message}
+        </td>
+    </tr>
+);
+
+const TaskRow = ({ task, isAgentic }: { task: Task; isAgentic?: boolean }) => (
+    <tr className="hover:bg-white/[0.02] transition-colors group">
+        <td className="p-4">
+            <span className={`font-mono font-bold text-xs px-2 py-1 rounded-md border ${isAgentic ? 'text-nova-accent bg-nova-accent/10 border-nova-accent/20' : 'text-white bg-white/5 border-white/10'}`}>
+                {task.task_id_str}
+            </span>
+        </td>
+        <td className="p-4">
+            <p className="font-bold text-white text-sm mb-0.5">{task.task_name}</p>
+            <p className="text-[10px] text-nova-text-dim/60 font-medium line-clamp-1">{task.notes || '-'}</p>
+        </td>
+        <td className="p-4">
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase transition-all ${STATUS_COLORS[task.status]}`}>
+                {STATUS_ICONS[task.status]}
+                {task.status}
+            </div>
+        </td>
+        <td className="p-4">
+            <span className={`text-[10px] font-black tracking-wider uppercase ${PRIORITY_COLORS[task.priority]}`}>
+                {task.priority}
+            </span>
+        </td>
+    </tr>
+);
 
 export default CommandCenterPage;

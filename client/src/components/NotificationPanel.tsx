@@ -206,7 +206,8 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                     onClick={() => {
                         if (!isRead(n)) handleMarkRead(n.id);
                         setIsOpen(false);
-                        navigate(`/reports`);
+                        const targetPath = (n.metadata as any)?.path || '/reports';
+                        navigate(targetPath);
                     }}
                     className={`
                         group flex items-start gap-2 px-3 py-3.5
