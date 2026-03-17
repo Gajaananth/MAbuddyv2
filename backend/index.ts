@@ -70,7 +70,7 @@ app.get('/api/health', (_req, res) => {
         status: 'online',
         agent: 'Zium Nova',
         identity: 'Silent Beast Intelligence',
-        version: 'v3.1.5',
+        version: 'v3.2.0',
         protocol: 'full_autonomous_agentic_ai',
         mode: process.env.OPENROUTER_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),
