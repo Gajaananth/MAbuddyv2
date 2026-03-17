@@ -204,7 +204,7 @@ export const commandCenterTool = tool({
         userId: z.string().describe('The Operator ID / User ID'),
         task_name: z.string().optional().describe('Required for "add": The objective or name of the task'),
         action_plan: z.string().optional().describe('Required for "add": Step-by-step guidance for execution'),
-        assigned_to: z.string().optional().describe('Optional for "add": Defaults to ZIUM NOVA, but can be BUDDY'),
+        assigned_to: z.string().optional().describe('Optional for "add": Defaults to ZIUM NOVA. Use "BUDDY" to assign a task to the Operator (User).'),
         priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Optional for "add": Defaults to MEDIUM'),
         task_id_str: z.string().optional().describe('Required for "update": The 3-digit ID string (e.g. "001")'),
         status: z.enum(['TODO', 'IN-PROGRESS', 'COMPLETED', 'BLOCKED']).optional().describe('Required for "update": The new status'),
