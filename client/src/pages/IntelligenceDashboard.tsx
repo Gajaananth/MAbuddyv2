@@ -156,7 +156,6 @@ const IntelligenceDashboard: React.FC = () => {
             // Status effect will take over polling
         } catch (error: any) {
             console.error('[Intelligence] Trigger Error:', error);
-            alert(error.response?.data?.error || 'Failed to trigger Internet Ride');
             setTriggerLoading(false);
         }
     };
@@ -373,6 +372,7 @@ const IntelligenceDashboard: React.FC = () => {
                     >
                         Internet Ride Findings ({rides.length})
                     </button>
+
                     <button
                         onClick={() => setActiveTab('reports')}
                         className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-sm uppercase tracking-widest transition-all ${activeTab === 'reports'

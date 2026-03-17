@@ -108,15 +108,35 @@ const SecuritySettings: React.FC = () => {
 
     return (
         <div className="security-settings p-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
                     <Bird className="w-8 h-8" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                        Security Protocol
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 uppercase tracking-tighter">
+                        Security & Risk Monitor
                     </h1>
-                    <p className="text-gray-400 text-sm">Manage access keys and authorized hardware</p>
+                    <p className="text-gray-400 text-sm tracking-widest uppercase mt-1">Operator Protection Protocol Active</p>
+                </div>
+            </div>
+
+            {/* Risk Dashboard */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="glass p-4 rounded-2xl border-2 border-green-500/30 bg-green-500/5">
+                    <p className="text-[10px] text-green-400/70 font-black uppercase tracking-wider mb-1">Threat Level</p>
+                    <p className="text-2xl font-black text-green-400">LOW</p>
+                </div>
+                <div className="glass p-4 rounded-2xl border-2 border-nova-border/50">
+                    <p className="text-[10px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Active Warnings</p>
+                    <p className="text-2xl font-black text-white">0</p>
+                </div>
+                <div className="glass p-4 rounded-2xl border-2 border-nova-border/50">
+                    <p className="text-[10px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Blocked Platforms</p>
+                    <p className="text-2xl font-black text-red-500">12</p>
+                </div>
+                <div className="glass p-4 rounded-2xl border-2 border-nova-border/50">
+                    <p className="text-[10px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Risk Score</p>
+                    <p className="text-2xl font-black text-green-400">98/100</p>
                 </div>
             </div>
 

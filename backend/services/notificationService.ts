@@ -82,6 +82,18 @@ const PRIORITY_TRIGGERS = [
     'high earning potential',
     'scalable income node',
     'early bird advantage',
+    'money making',
+    'earnings',
+    'monetization',
+    'payout',
+    'instant income',
+    'verified profit',
+    'verified monetization opportunity',
+    'high-value collaboration signal',
+    'platform policy change',
+    'security risk',
+    'ecosystem development',
+    'urgent message from zium nova',
 ];
 
 // ──────────────────────────── Detection Engine ────────────────────────────
@@ -142,9 +154,6 @@ function assessRisk(content: string): 'Low' | 'Medium' | 'High' {
     return 'Medium';
 }
 
-/**
- * Specialized Opportunity Alert Structure (Directive v2.1)
- */
 export async function createOpportunityAlert(userId: string, data: {
     platform: string;
     source: string;
@@ -153,6 +162,7 @@ export async function createOpportunityAlert(userId: string, data: {
     earningPotential: string;
     confidenceLevel: number;
     recommendedActions: string;
+    findingId?: string;
 }): Promise<void> {
     // Only notify if confidence >= 80%
     if (data.confidenceLevel < 80) {
@@ -178,7 +188,8 @@ ${data.recommendedActions}
     const metadata = {
         confidence: data.confidenceLevel,
         is_blinking: true,
-        alert_type: 'OPPORTUNITY_ALERT_V2'
+        alert_type: 'OPPORTUNITY_ALERT_V2',
+        finding_id: data.findingId
     };
 
     await evaluateAndNotify(userId, content, `OPPORTUNITY: ${data.opportunityType}`, metadata);
@@ -254,7 +265,10 @@ export async function evaluateAndNotify(
             monetization_potential: monetization,
             content: truncated,
             priority: priority as 'normal' | 'high' | 'critical',
-            metadata: metadata,
+            metadata: {
+                ...metadata,
+                is_blinking: metadata?.is_blinking || priority === 'critical'
+            },
         });
 
         // Send push notification to all registered devices

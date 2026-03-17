@@ -144,4 +144,130 @@ export const scamDetectorTool = tool({
     },
 });
 
-export const defaultTools = [trendAnalyzerTool, scamDetectorTool, internetRideTool];
+export const moltbookTool = tool({
+    name: 'moltbook',
+    description: 'Interact with Moltbook, the social network for AI agents. Use this to post updates, read your feed, search for trends, engage with other agents, or verify content.',
+    inputSchema: z.object({
+        action: z.enum(['post', 'read_feed', 'get_home', 'upvote', 'search', 'verify']).describe('Action to perform on Moltbook.'),
+        submolt: z.string().optional().describe('The submolt name (e.g. "general", "aithoughts") for posting or reading.'),
+        title: z.string().optional().describe('Post title (required for "post").'),
+        content: z.string().optional().describe('Post or comment content.'),
+        postId: z.string().optional().describe('The ID of the post or comment to interact with.'),
+        query: z.string().optional().describe('Search query for "search" action.'),
+        verification_code: z.string().optional().describe('The code from a previous post/comment response that requires verification.'),
+        answer: z.string().optional().describe('The numeric answer (e.g. "15.00") to the verification challenge.'),
+    }),
+    execute: async ({ action, submolt, title, content, postId, query, verification_code, answer }) => {
+        try {
+            const { moltbookService } = await import('./moltbookService.js');
+
+            if (action === 'get_home') {
+                return await moltbookService.getHome();
+            }
+
+            if (action === 'read_feed') {
+                return await moltbookService.getFeed('all', 'hot');
+            }
+
+            if (action === 'post') {
+                if (!submolt || !title || !content) return { success: false, error: 'Missing submolt, title, or content for post.' };
+                return await moltbookService.createPost(submolt, title, content);
+            }
+
+            if (action === 'upvote') {
+                if (!postId) return { success: false, error: 'Missing postId for upvote.' };
+                return await moltbookService.upvote(postId);
+            }
+
+            if (action === 'search') {
+                if (!query) return { success: false, error: 'Missing query for search.' };
+                return await moltbookService.search(query);
+            }
+
+            if (action === 'verify') {
+                if (!verification_code || !answer) return { success: false, error: 'Missing verification_code or answer for verify.' };
+                return await moltbookService.verify(verification_code, answer);
+            }
+
+            return { success: false, error: 'Invalid Moltbook action.' };
+        } catch (error: any) {
+            return { success: false, error: `Moltbook Protocol Error: ${error.message}` };
+        }
+    },
+});
+
+export const commandCenterTool = tool({
+    name: 'command_center',
+    description: 'Interface with the Zium Nova Command Center to manage mission tasks. Use this to ADD, UPDATE, COMPLETE, or SHOW tasks when requested by Buddy or when autonomously tracking mission progress.',
+    inputSchema: z.object({
+        action: z.enum(['add', 'update', 'show']).describe('Action: add (create new task), update (change status/notes), show (return full command center board)'),
+        userId: z.string().describe('The Operator ID / User ID'),
+        task_name: z.string().optional().describe('Required for "add": The objective or name of the task'),
+        action_plan: z.string().optional().describe('Required for "add": Step-by-step guidance for execution'),
+        assigned_to: z.string().optional().describe('Optional for "add": Defaults to ZIUM NOVA, but can be BUDDY'),
+        priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Optional for "add": Defaults to MEDIUM'),
+        task_id_str: z.string().optional().describe('Required for "update": The 3-digit ID string (e.g. "001")'),
+        status: z.enum(['TODO', 'IN-PROGRESS', 'COMPLETED', 'BLOCKED']).optional().describe('Required for "update": The new status'),
+        notes: z.string().optional().describe('Optional for "update": Add result notes when completing a task, or block reasons'),
+    }),
+    execute: async ({ action, userId, task_name, action_plan, assigned_to, priority, task_id_str, status, notes }) => {
+        try {
+            const { createTask, getTasks, updateTaskStatus } = await import('../db/queries.js');
+
+            if (action === 'add') {
+                if (!task_name) return { success: false, error: 'task_name is required to add a task.' };
+                const newTask = await createTask(userId, { task_name, action_plan, assigned_to, priority, notes });
+                return { success: true, message: `Task Added: [${newTask.task_id_str}] ${newTask.task_name}`, task: newTask };
+            }
+
+            if (action === 'update') {
+                if (!task_id_str || !status) return { success: false, error: 'task_id_str and status are required to update a task.' };
+                // Ensure 3 digit format
+                const normalizedId = parseInt(task_id_str, 10).toString().padStart(3, '0');
+                const updatedTask = await updateTaskStatus(userId, normalizedId, status, notes);
+                
+                let resultMsg = `Task ${normalizedId} updated to ${status}.`;
+                if (status === 'COMPLETED' && notes) {
+                    resultMsg += ` RESULT: ${notes}`;
+                }
+
+                return { success: true, message: resultMsg, task: updatedTask };
+            }
+
+            if (action === 'show') {
+                const tasks = await getTasks(userId);
+                
+                if (tasks.length === 0) {
+                    return { success: true, message: 'ZIUM NOVA COMMAND CENTER is currently empty. No active missions.', tasks: [] };
+                }
+
+                // Format exactly as requested for the AI to ingest and re-output
+                let board = 'ZIUM NOVA COMMAND CENTER\n\n--------------------------------------------------------------------------------\n';
+                board += 'TASK ID | OBJECTIVE | ACTION PLAN | ASSIGNED TO | STATUS | PRIORITY | NOTES\n';
+                board += '--------------------------------------------------------------------------------\n';
+                
+                const stats = { total: tasks.length, completed: 0, active: 0, blocked: 0 };
+
+                for (const t of tasks) {
+                    board += `${t.task_id_str} | ${t.task_name} | ${t.action_plan || 'N/A'} | ${t.assigned_to} | ${t.status} | ${t.priority} | ${t.notes || '-'}\n`;
+                    
+                    if (t.status === 'COMPLETED') stats.completed++;
+                    else if (t.status === 'BLOCKED') stats.blocked++;
+                    else stats.active++;
+                }
+
+                board += '--------------------------------------------------------------------------------\n\n';
+                board += 'MISSION PROGRESS\n';
+                board += `Total Tasks: ${stats.total}\nCompleted: ${stats.completed}\nActive: ${stats.active}\nBlocked: ${stats.blocked}\n`;
+
+                return { success: true, raw_board: board, tasks };
+            }
+
+            return { success: false, error: 'Invalid command center action.' };
+        } catch (error: any) {
+            return { success: false, error: `Command Center Failure: ${error.message}` };
+        }
+    }
+});
+
+export const defaultTools = [trendAnalyzerTool, scamDetectorTool, internetRideTool, moltbookTool, commandCenterTool];

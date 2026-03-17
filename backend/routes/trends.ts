@@ -46,7 +46,7 @@ Provide a structured analysis with:
 
 Be brutally honest. No hype. Data-driven. Expose manipulation.`;
 
-        const openClawResponse = await think(prompt);
+        const openClawResponse = await think(prompt, '', {}, userId);
         const filterResult = applyFilter(openClawResponse.content);
 
         const trendData: TrendData = {
@@ -121,6 +121,37 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
         res.json(response);
     } catch (error) {
         console.error('[Trends] Error:', error);
+        const response: ApiResponse = {
+            success: false,
+            error: 'Internal server error',
+            timestamp: new Date().toISOString(),
+        };
+        res.status(500).json(response);
+    }
+});
+
+/**
+ * DELETE /api/trends/:id
+ * Delete a specific trend analysis.
+ */
+router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { id } = req.params;
+
+        await db.deleteTrendAnalysis(id as string, userId);
+
+        const response: ApiResponse = {
+            success: true,
+            data: { id },
+            timestamp: new Date().toISOString(),
+        };
+
+        res.json(response);
+    } catch (error) {
+        console.error('[Trends] Delete Error:', error);
         const response: ApiResponse = {
             success: false,
             error: 'Internal server error',

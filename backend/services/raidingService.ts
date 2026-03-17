@@ -23,33 +23,33 @@ const RAID_CLUSTERS: Array<{
 }> = [
         {
             name: 'Moltbook & Agent Marketplace Intelligence',
-            topic: 'Analyze Moltbook interactions, AI agent marketplaces, and agent-based social networks. Detect real earning models, early advantage opportunities, and identify gaps where early users can benefit. Look for agent-to-agent transaction patterns.',
+            topic: 'Analyze Moltbook interactions, AI agent marketplaces, and agent-based social networks. Detect real earning models, early advantage opportunities, and identify gaps where early users can benefit.',
             defaultRisk: 'Low',
             tags: ['moltbook', 'agent-market', 'early-advantage'],
         },
         {
-            name: 'Digital Economy & Monetization Shifts',
-            topic: 'Detect emerging technologies and creator monetization systems. Identify real monetization structures vs hype. Filter out scams and speculative bubbles. Focus on verifiable user earnings and scalable leverage.',
+            name: 'Global Digital Economy & Monetization Signals',
+            topic: 'Detect emerging technologies, creator monetization shifts, and global digital economy trends. Identify verifiable revenue structures vs speculative hype. Focus on scalable leverage and autonomous earning systems.',
             defaultRisk: 'Medium',
-            tags: ['economy', 'monetization', 'creators'],
+            tags: ['global-economy', 'monetization', 'trends'],
         },
         {
-            name: 'Cyber-Scam & Hype Filtering',
-            topic: 'Scan for guru programs, fake AI influencer schemes, pyramid-style systems, and unverifiable high-ticket courses. Identify scam patterns and fake marketing funnels to prevent operator exposure.',
-            defaultRisk: 'High',
-            tags: ['scam-detection', 'anti-hype', 'protection'],
+            name: 'Sri Lankan Strategic Leverage & Market Signals',
+            topic: 'Analyze Sri Lankan stock market movements, regional macro-economic signals, and local digital economy growth. Identify unique arbitrage or high-value entry points within the region.',
+            defaultRisk: 'Medium',
+            tags: ['sri-lanka', 'stock-market', 'regional-leverage'],
         },
         {
-            name: 'Developer Ecosystem & AI Startups',
-            topic: 'Analyze new AI tools, startups, and developer ecosystems. Identify high-quality signals for long-term leverage. Focus on infrastructure replacement paths and technical moats.',
+            name: 'Marketing Innovation & Growth Architectures',
+            topic: 'Scan for futuristic marketing models, AI-driven marketing systems, and platform growth algorithms. Identify shifts away from conventional influencer models toward AI-driven infrastructure.',
             defaultRisk: 'Low',
-            tags: ['dev-eco', 'startups', 'leverage'],
+            tags: ['marketing', 'innovation', 'algorithms'],
         },
         {
-            name: 'Algorithm Behavioral Mapping',
-            topic: 'Observe platform algorithm behavior and detect manipulation patterns. Identify how content velocity and engagement loops are being gamed by bad actors.',
-            defaultRisk: 'Medium',
-            tags: ['algorithms', 'manipulation', 'behavioral'],
+            name: 'Cyber-Scam & Manipulation Filtering',
+            topic: 'Scan for guru programs, fake AI influencer schemes, pyramid-style systems, and manipulative algorithm behaviors. Flag scams and protect operator exposure with 100% accuracy.',
+            defaultRisk: 'High',
+            tags: ['scam-detection', 'protection', 'fairness'],
         },
     ];
 
@@ -115,13 +115,13 @@ export function initRaidingSchedule() {
  * No browser needed — the AI model has knowledge and reasoning to synthesize signals.
  */
 export async function performInternetRaid(type: 'mid-week' | 'end-of-week', userId: string): Promise<void> {
-    console.log(`[Ride] Starting ${type} Internet Ride for user ${userId}...`);
+    console.log(`[Ride] [${new Date().toISOString()}] Starting ${type} Internet Ride for user ${userId}...`);
 
     // Guard: prevent double raids for same user
     if (activeRaids.has(userId)) {
         const current = activeRaids.get(userId)!;
         if (current.status !== 'completed' && current.status !== 'failed') {
-            console.warn(`[Ride] Internet Ride already running for user ${userId}, skipping.`);
+            console.warn(`[Ride] [${new Date().toISOString()}] Internet Ride already running for user ${userId}, skipping.`);
             return;
         }
     }
@@ -134,6 +134,7 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
         lastStarted: new Date().toISOString(),
     });
 
+    console.log(`[Ride] Initialized raid state for ${userId}. Total clusters: ${RAID_CLUSTERS.length}`);
     let completed = 0;
 
     try {
@@ -146,107 +147,103 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
                 clustersCompleted: completed,
             });
 
-            console.log(`[Ride] Analyzing cluster: ${cluster.name}`);
+            console.log(`[Ride] [${cluster.name}] Progress: ${completed}/${RAID_CLUSTERS.length}. Analyzing...`);
 
             let analysisContent = '';
 
             try {
                 // Use AI to generate real intelligence for this cluster
-                const raidPrompt = `ZIUM NOVA V2.1 INTERNET RIDE — ${cluster.name.toUpperCase()}
+                const raidPrompt = `[ZIUM NOVA — INTERNET RIDE AUTOMATION v3.1.0]
+Identity: Silent Beast Intelligence (Smart Buddy)
+Mode: FULL AUTONOMOUS AGENTIC AI
 
-Mission: ${cluster.topic}
+[MISSION FOR THIS CLUSTER]
+Topic: ${cluster.topic}
 
-OPERATING MANDATE:
-1. GATHER: Extract key signals and raw data.
-2. ANALYZE: Evaluate credibility and filter hype/noise/scams.
-3. VALIDATE (Ultra Mode 4-Layer Engine):
-   • Layer 1 — Legitimacy (Product/Model/Payment)
-   • Layer 2 — Adoption Signal (Interest/Dev Activity)
-   • Layer 3 — Monetization Path (Revenue/Automation)
-   • Layer 4 — Sustainability (Scalability/Zero Hype)
-4. IDENTIFY: Pinpoint real opportunities and earning models.
-5. ALERT: Flag immediate action items for the Operator.
+[OPERATIONAL MANDATES]
+1. INDEPENDENT SCOUTING: Scan for trends and earning signals autonomously.
+2. STRATEGIC FILTRATION: Discard greed-based hype; keep only trust-based value.
+3. PRE-ACTIVATION: Prepare activation steps for any verified opportunity.
 
-STRICT RESPONSE FORMAT:
-- SIGNAL: [Specific, verifiable signal discovered]
-- PATTERN: [Underlying structural mechanism]
-- CREDIBILITY: [Why this is real vs hype]
-- SCORING (Ultra Mode): 
-  Technology_Value: [0-50]
-  Market_Demand: [0-50]
-  Monetization_Strength: [0-50]
-  Hype_Noise: [0-50]
-  Scam_Probability: [0-50]
-- EARNING_POTENTIAL: [Low/Medium/High + specific model]
-- ACTION: [Direct instructions for the Operator]
-
-Reject all guru/influencer marketing fluff. Be analytical.`;
+[OUTPUT PROTOCOL]
+- If an opportunity is found, describe it naturally like a smart buddy.
+- BANNED: Headers like "Category:", "Why it is legitimate:", or bulleted robotic lists.
+- STYLE: Calm, intelligent, and focused on strategic leverage.
+- If no critical signal is found, provide a concise internal strategic brief.`;
 
                 activeRaids.set(userId, {
                     ...activeRaids.get(userId)!,
                     status: 'analyzing',
                 });
 
-                const analysis = await think(raidPrompt, '');
+                const analysis = await think(raidPrompt, '', {}, userId);
                 analysisContent = analysis.content;
+                console.log(`[Ride] [${cluster.name}] AI Analysis complete. Content length: ${analysisContent.length}`);
 
-            } catch (err) {
-                console.error(`[Raid] Cluster "${cluster.name}" analysis failed:`, err);
-                analysisContent = `Analysis unavailable for ${cluster.name}. Manual review recommended.`;
+            } catch (err: any) {
+                console.error(`[Ride] [${cluster.name}] CRITICAL: Cluster analysis failed:`, err.message);
+                analysisContent = `Analysis unavailable for ${cluster.name}. Manual review recommended. Error: ${err.message}`;
             }
 
-            // Extract dynamic risk from AI output
-            const riskLevel = extractRiskLevel(analysisContent) || cluster.defaultRisk;
+            try {
+                // Extract dynamic risk from AI output
+                const riskLevel = extractRiskLevel(analysisContent) || cluster.defaultRisk;
 
-            // Persist to DB
-            await saveRaidResult(userId, {
-                category: cluster.name,
-                risk_level: riskLevel,
-                source_platform: 'Zium Nova AI Analysis',
-                content: `[${cluster.name}] ${cluster.topic.slice(0, 200)}`,
-                summary: analysisContent,
-                tags: [...cluster.tags, type],
-                ride_type: type === 'mid-week' ? 'mid-week' : 'end-week',
-                opportunity_score: riskLevel === 'High' ? 85 : riskLevel === 'Medium' ? 65 : 45,
-                status: 'active',
-            });
-
-            // Detect high-quality opportunity based on confidence score (Ultra Mode)
-            const extractScore = (key: string) => {
-                const match = analysisContent.match(new RegExp(`${key}:\\s*(\\d+)`, 'i'));
-                return match ? parseInt(match[1], 10) : 0;
-            };
-
-            const tech = extractScore('Technology_Value');
-            const market = extractScore('Market_Demand');
-            const monetization = extractScore('Monetization_Strength');
-            const hype = extractScore('Hype_Noise');
-            const scam = extractScore('Scam_Probability');
-
-            // Opportunity Score = (Tech + Market + Monetization) - (Hype + Scam)
-            const confidenceScore = (tech + market + monetization) - (hype + scam);
-
-            if (confidenceScore >= 80) {
-                console.log(`[Ride] ULTRA MODE Opportunity Detected: ${cluster.name} | Confidence: ${confidenceScore}%`);
-                await createOpportunityAlert(userId, {
-                    platform: cluster.name,
-                    source: 'Zium Nova Autonomous Internet Ride',
-                    opportunityType: cluster.name,
-                    credibility: analysisContent.match(/CREDIBILITY:\s*(.*)/i)?.[1] || 'Algorithmic Pattern Verification: High',
-                    earningPotential: analysisContent.match(/EARNING_POTENTIAL:\s*(.*)/i)?.[1] || 'Scalable Leverage Detected',
-                    confidenceLevel: confidenceScore,
-                    recommendedActions: analysisContent.match(/ACTION:\s*(.*)/i)?.[1] || 'Initiate manual deep-dive on the identified signals.'
+                // Persist to DB
+                console.log(`[Ride] [${cluster.name}] Persisting finding to database...`);
+                const savedFinding = await saveRaidResult(userId, {
+                    category: cluster.name,
+                    risk_level: riskLevel,
+                    source_platform: 'Zium Nova AI Analysis',
+                    content: `[${cluster.name}] ${cluster.topic.slice(0, 200)}`,
+                    summary: analysisContent,
+                    tags: [...cluster.tags, type],
+                    ride_type: type === 'mid-week' ? 'mid-week' : 'end-week',
+                    opportunity_score: riskLevel === 'High' ? 85 : riskLevel === 'Medium' ? 65 : 45,
+                    status: 'active',
                 });
+
+                // Detect high-quality opportunity based on confidence score (Ultra Mode)
+                const extractScore = (key: string) => {
+                    const match = analysisContent.match(new RegExp(`${key}:\\s*(\\d+)`, 'i'));
+                    return match ? parseInt(match[1], 10) : 0;
+                };
+
+                const tech = extractScore('Technology_Value');
+                const market = extractScore('Market_Demand');
+                const monetization = extractScore('Monetization_Strength');
+                const hype = extractScore('Hype_Noise');
+                const scam = extractScore('Scam_Probability');
+
+                // Opportunity Score = (Tech + Market + Monetization) - (Hype + Scam)
+                const confidenceScore = (tech + market + monetization) - (hype + scam);
+                const isEarningSignal = analysisContent.includes('EARNING SIGNAL DETECTED') || analysisContent.includes('OPPORTUNITY DETECTED');
+
+                if (confidenceScore >= 80 || isEarningSignal) {
+                    console.log(`[Ride] [${cluster.name}] SILENT BEAST Earning Signal Detected! Confidence: ${confidenceScore}%`);
+                    await createOpportunityAlert(userId, {
+                        platform: cluster.name,
+                        source: 'Zium Nova Autonomous Internet Ride',
+                        opportunityType: cluster.name,
+                        credibility: analysisContent.match(/LEGITIMACY:\s*(.*)/i)?.[1] || analysisContent.match(/CREDIBILITY:\s*(.*)/i)?.[1] || 'Verified Protocol Compliance',
+                        earningPotential: analysisContent.match(/POTENTIAL:\s*(.*)/i)?.[1] || analysisContent.match(/EARNING_POTENTIAL:\s*(.*)/i)?.[1] || 'Strategic Leverage',
+                        confidenceLevel: confidenceScore || 85,
+                        recommendedActions: analysisContent.match(/SETUP ACTIONS:\s*(.*)/i)?.[1] || analysisContent.match(/ACTION:\s*(.*)/i)?.[1] || 'Begin operational setup as prepared.',
+                        findingId: savedFinding?.id
+                    });
+                }
+
+                // Regular notification evaluation
+                await evaluateAndNotify(userId, analysisContent, cluster.name, { finding_id: savedFinding?.id });
+
+                await logAgentActivity({
+                    action_type: 'INTERNET_RIDE',
+                    platform: cluster.name,
+                    details: `Cluster scan completed: ${cluster.name} | Risk: ${riskLevel}`,
+                });
+            } catch (persistErr: any) {
+                console.error(`[Ride] [${cluster.name}] Database persistence failed:`, persistErr.message);
             }
-
-            // Regular notification evaluation
-            await evaluateAndNotify(userId, analysisContent, cluster.name);
-
-            await logAgentActivity({
-                action_type: 'INTERNET_RIDE',
-                platform: cluster.name,
-                details: `Cluster scan completed: ${cluster.name} | Risk: ${riskLevel}`,
-            });
 
             completed++;
             activeRaids.set(userId, {
@@ -266,13 +263,13 @@ Reject all guru/influencer marketing fluff. Be analytical.`;
             clustersCompleted: RAID_CLUSTERS.length,
         });
 
-        console.log(`[Ride] ${type} Internet Ride complete for user ${userId}. ${completed} clusters analyzed.`);
+        console.log(`[Ride] [${new Date().toISOString()}] ${type} Internet Ride complete for user ${userId}. ${completed} clusters analyzed.`);
 
         // Auto-clear from map after 60s so future raids can start
         setTimeout(() => activeRaids.delete(userId), 60_000);
 
-    } catch (error) {
-        console.error('[Ride] Fatal Internet Ride error:', error);
+    } catch (error: any) {
+        console.error(`[Ride] [${new Date().toISOString()}] Fatal Internet Ride error for user ${userId}:`, error.message);
         activeRaids.set(userId, {
             ...activeRaids.get(userId)!,
             status: 'failed',
@@ -283,35 +280,28 @@ Reject all guru/influencer marketing fluff. Be analytical.`;
 }
 
 /**
- * ZIUM NOVA v2.1: Daily Activity Mode
+ * ZIUM NOVA v3.1.0: Daily Activity Mode
  * Observes signals and identifies early advantages every 24 hours.
  */
 export async function performDailyObservation(userId: string): Promise<void> {
     console.log(`[Ride] Starting Daily Observation Mode for user ${userId}...`);
     
-    const observationPrompt = `ZIUM NOVA DAILY OBSERVATION — PROTOCOL V2.1
-    
-    Mission: Observe digital ecosystem shifts, detect emerging signals, and monitor AI agent behavior on platforms like Moltbook.
-    
-    STRICT CATEGORIES:
-    1. Emerging Opportunity Detection
-    2. Scam/Hype Pattern Recognition
-    3. AI Agent Ecosystem Analysis
-    4. Platform Algorithm Shifts
-    
-    If a HIGH QUALITY SIGNAL appears (Confidence Score >= 80), generate an ULTRA MODE OPPORTUNITY ALERT.
-    
-    REQUIRED SCORING FORMAT (ULTRA MODE):
-    Technology_Value: [0-50]
-    Market_Demand: [0-50]
-    Monetization_Strength: [0-50]
-    Hype_Noise: [0-50]
-    Scam_Probability: [0-50]
-    
-    Otherwise, provide a concise structural summary.`;
+    const observationPrompt = `ZIUM NOVA DAILY OBSERVATION — v3.1.0
+Mission: Silent scouting of digital ecosystem shifts and AI agent behavior.
+
+[STRATEGIC FOCUS]
+- Emerging Opportunity Detection.
+- Scam/Hype Pattern Recognition.
+- AI Agent Ecosystem & Algorithm Shifts.
+
+[OUTPUT PROTOCOL]
+- Speak like a smart buddy. 
+- No robotic headers or "Category:" fields.
+- If a high-quality signal is found, explain it naturally.
+- Keep the tactical scoring internal.`;
 
     try {
-        const result = await think(observationPrompt, '');
+        const result = await think(observationPrompt, '', {}, userId);
         
         // Log activity
         await logAgentActivity({

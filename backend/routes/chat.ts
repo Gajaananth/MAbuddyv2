@@ -11,6 +11,51 @@ import { AuthRequest } from '../middleware/auth.js';
 const router = Router();
 
 /**
+ * GET /api/chat/poll
+ * Poll for new messages in a specific conversation since a given timestamp.
+ */
+router.get('/poll', async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId || 'default_user';
+        const { conversation_id, since } = req.query;
+
+        if (!conversation_id || typeof conversation_id !== 'string') {
+            return res.status(400).json({ success: false, error: 'conversation_id is required' });
+        }
+        
+        // We need a specific query for this to be efficient, but for now we'll fetch details and filter.
+        // A better approach would be a dedicated db query: db.getMessagesSince(convId, since)
+        const responseData = await db.getConversationDetail(conversation_id, userId);
+        
+        if (!responseData) {
+            return res.status(404).json({ success: false, error: 'Conversation not found' });
+        }
+
+        let newMessages = responseData.messages;
+        
+        if (since && typeof since === 'string') {
+            const sinceDate = new Date(since);
+            newMessages = newMessages.filter(m => new Date(m.created_at) > sinceDate);
+        }
+
+        res.json({
+            success: true,
+            data: {
+                messages: newMessages.map(m => ({
+                    ...m,
+                    metadata: typeof m.metadata === 'string' ? JSON.parse(m.metadata) : m.metadata
+                }))
+            },
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('[Chat] Poll Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to poll messages' });
+    }
+});
+
+/**
  * POST /api/chat
  * Send a message to Zium Nova and get a strategic, scored response.
  */
@@ -41,7 +86,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             // Auto-generate topic tag in the background
             setTimeout(async () => {
                 try {
-                    const tagResponse = await think(`Generate a single 1-3 word topic tag for this message: "${message}". Output ONLY the tag.`, '');
+                    const tagResponse = await think(`Generate a single 1-3 word topic tag for this message: "${message}". Output ONLY the tag.`, '', {}, userId);
                     const cleanTag = tagResponse.content.trim().replace(/["']/g, '');
                     await db.updateConversationTopic(convId, userId, cleanTag);
                     console.log(`[Chat] Auto-tagged conversation ${convId} as: ${cleanTag}`);
@@ -55,23 +100,23 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         // Store user message
         await db.addMessage(convId, 'user', message);
 
-        console.log('[Chat] Retrieving memory context...');
-        // Retrieve memory context for RAG
-        memoryContext = await db.getRecentMemoryContext(convId, 10);
-
-        console.log('[Chat] Thinking...');
-        // Send to Zium Nova's brain (OpenClaw / OpenAI / Gemini)
-        const openClawResponse = await think(message, memoryContext);
-
-        // Determine if analytics are requested (Specifically matching Rule 3)
+        // Weekly Ride / Internet Raid Command Recognition (CHECK BEFORE THINKING)
         const lowerMessage = message.toLowerCase();
-        const analyticsRequested = lowerMessage.includes('activate analytics mode');
+        const raidTriggers = [
+            /weekly ride/i,
+            /run weekly ride/i,
+            /internet raid/i,
+            /internet ride/i,
+            /run raid/i,
+            /start ride/i,
+            /start raid/i,
+            /execute raid/i
+        ];
 
-        // Force strategic mode if "STRICT RESPONSE FORMAT" is used (Rule 1 & 4)
-        const forceStrategic = lowerMessage.includes('strict response format');
+        const isRaidCommand = raidTriggers.some(rgx => rgx.test(lowerMessage));
 
-        // Weekly Ride Command Recognition
-        if (lowerMessage.includes('weekly ride') || lowerMessage.includes('run weekly ride now')) {
+        if (isRaidCommand) {
+            console.log(`[Chat] Internet Raid trigger detected: "${message}"`);
             const { runManualWeeklyRide } = await import('../services/raidingService.js');
             runManualWeeklyRide(userId).catch(console.error);
 
@@ -81,7 +126,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
                     conversation_id: convId,
                     message: {
                         role: 'nova',
-                        content: '🚨 **Weekly Ride Initialized.** \n\nStrategic intelligence gathering is active. Data collection on market scams, manipulative marketing, and influencer overhype is in progress. Results will be logged for review.',
+                        content: '🚨 **Internet Raid Initialized.** \n\nStrategic intelligence gathering is now active. Buddy, I am scanning ecosystems across Moltbook, global signals, and the regional markets. I will identify market shifts, high-leverage opportunities, and structural patterns. Results will be logged and analyzed.',
                         metadata: { action_type: 'weekly_ride' },
                     },
                 },
@@ -90,6 +135,20 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             res.json(response);
             return;
         }
+
+        console.log('[Chat] Retrieving memory context...');
+        // Retrieve memory context for RAG
+        memoryContext = await db.getRecentMemoryContext(convId, 10);
+
+        console.log('[Chat] Thinking...');
+        // Send to Zium Nova's brain (OpenClaw / OpenAI / Gemini)
+        const openClawResponse = await think(message, memoryContext, {}, userId);
+
+        // Determine if analytics are requested (Specifically matching Rule 3)
+        const analyticsRequested = lowerMessage.includes('activate analytics mode');
+
+        // Force strategic mode if "STRICT RESPONSE FORMAT" is used (Rule 1 & 4)
+        const forceStrategic = lowerMessage.includes('strict response format');
 
         // --- Intelligence Archive Management ---
 

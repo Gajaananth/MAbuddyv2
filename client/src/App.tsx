@@ -8,6 +8,10 @@ import AgentsPage from './pages/AgentsPage';
 import MemoryPage from './pages/MemoryPage';
 import IntelligenceDashboard from './pages/IntelligenceDashboard';
 import NotificationPanel from './components/NotificationPanel';
+import CommandCenterPage from './pages/CommandCenterPage';
+import LearningPage from './pages/LearningPage';
+import ReportsPage from './pages/ReportsPage';
+import CommandDashboard from './pages/CommandDashboard';
 import { Menu, Bird } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -76,12 +80,16 @@ function App() {
 
 
                     <Routes>
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/" element={<CommandDashboard />} />
+                      <Route path="/pulse" element={<Dashboard />} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/trends" element={<TrendsPage />} />
                       <Route path="/agents" element={<AgentsPage />} />
                       <Route path="/memory" element={<MemoryPage />} />
                       <Route path="/intelligence" element={<IntelligenceDashboard />} />
+                      <Route path="/command-center" element={<CommandCenterPage />} />
+                      <Route path="/learning" element={<LearningPage />} />
+                      <Route path="/reports" element={<ReportsPage />} />
                       <Route path="/security" element={<SecuritySettings />} />
                     </Routes>
                   </div>

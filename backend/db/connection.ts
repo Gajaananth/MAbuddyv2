@@ -16,17 +16,25 @@ const dbConfig = {
   max: 10,
   idleTimeoutMillis: 60000,
   connectionTimeoutMillis: 30000,
-  ssl: process.env.VERCEL || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: { rejectUnauthorized: false }
 };
 
-const pool = (dbConfig.connectionString ? new Pool(dbConfig) : null) as any;
+let pool: any = null;
 
-if (!pool) {
-  console.warn('[DB] CRITICAL: DATABASE_URL is empty. Grid disconnected.');
-} else {
+export function getPool() {
+  if (pool) return pool;
+  
+  if (!dbConfig.connectionString) {
+    console.warn('[DB] CRITICAL: DATABASE_URL is empty. Grid disconnected.');
+    return null;
+  }
+  
+  pool = new Pool(dbConfig);
   pool.on('error', (err: any) => {
     console.error('[DB] PostgreSQL Pool Error:', err);
   });
+  
+  return pool;
 }
 
 const DB_PATH = path.join(process.cwd(), 'zium_nova.sqlite');
@@ -46,6 +54,7 @@ export async function initDatabase(): Promise<void> {
   initPromise = (async () => {
     console.log('[DB] Protocol: Establishing Grid Connection...');
     try {
+      const pool = getPool();
       if (!pool) throw new Error('DATABASE_URL mission critical environment variable is MISSING.');
 
       const client = await pool.connect();
@@ -162,7 +171,34 @@ export async function initDatabase(): Promise<void> {
             IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'metadata') THEN
               ALTER TABLE notifications ADD COLUMN metadata JSONB DEFAULT NULL;
             END IF;
+            IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'action_plan') THEN
+              ALTER TABLE tasks ADD COLUMN action_plan TEXT DEFAULT '';
+            END IF;
           END $$;
+
+          CREATE TABLE IF NOT EXISTS tasks (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            task_id_str VARCHAR(10) NOT NULL,
+            task_name TEXT NOT NULL,
+            assigned_to VARCHAR(50) DEFAULT 'ZIUM NOVA',
+            status VARCHAR(20) DEFAULT 'TODO' CHECK (status IN ('TODO', 'IN-PROGRESS', 'COMPLETED', 'BLOCKED')),
+            priority VARCHAR(20) DEFAULT 'MEDIUM' CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+            action_plan TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(user_id, task_id_str)
+          );
+
+          CREATE TABLE IF NOT EXISTS intelligence_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            category VARCHAR(50) NOT NULL,
+            lesson TEXT NOT NULL,
+            source TEXT NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
 
           CREATE TABLE IF NOT EXISTS devices (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -208,27 +244,50 @@ export async function initDatabase(): Promise<void> {
             created_at TIMESTAMPTZ DEFAULT NOW()
           );
 
+          CREATE TABLE IF NOT EXISTS intelligence_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+            category VARCHAR(100) NOT NULL, -- Knowledge Expansion, Pattern Recognition, Mistake Correction, Strategy Evolution
+            lesson TEXT NOT NULL,
+            source_context TEXT,
+            metadata JSONB DEFAULT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          );
+
           CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
           CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at DESC);
           CREATE INDEX IF NOT EXISTS idx_trends_created ON trend_analyses(created_at DESC);
           CREATE INDEX IF NOT EXISTS idx_agents_trust ON agent_network(trust_score DESC);
           CREATE INDEX IF NOT EXISTS idx_raids_category ON intelligence_raids(category);
           CREATE INDEX IF NOT EXISTS idx_raids_created ON intelligence_raids(created_at DESC);
+
+          -- Seeding: Ensure System User exists for autonomous operations
+          INSERT INTO users (id, dob_hash, pin_hash, q1_hash, q2_hash, q3_hash)
+          VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT')
+          ON CONFLICT (id) DO NOTHING;
         `);
         isPostgresActive = true;
-        console.log('[DB] PostgreSQL Grid: ONLINE');
+        const dbHost = new URL(process.env.DATABASE_URL!).hostname;
+        console.log(`[DB] PostgreSQL Grid: ONLINE | Host: ${dbHost}`);
       } finally {
         client.release();
       }
     } catch (error: any) {
       initPromise = null; // Allow retry on failure
-      console.error('[DB] Grid Failure Detailed:', error);
+      console.error('[DB] CRITICAL: Grid Connection Failed.');
+      console.error('[DB] Error Details:', {
+        message: error.message,
+        code: error.code,
+        detail: error.detail,
+        hint: error.hint,
+        stack: error.stack
+      });
 
       if (process.env.VERCEL || (process.env.DATABASE_URL && process.env.NODE_ENV === 'production')) {
         throw new Error(`[Zium Nova] Database Grid Timeout: ${error.message} (Code: ${error.code || 'UNKNOWN'})`);
       }
 
-      console.warn('[DB] Activating Local Shadow Logic.');
+      console.warn('[DB] CONNECTION REJECTED. Activating Local Shadow Logic (SQLite Fallback).');
       isPostgresActive = false;
     }
   })();

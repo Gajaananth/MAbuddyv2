@@ -39,6 +39,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
     const [isOpen, setIsOpen] = useState(false);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [isUrgent, setIsUrgent] = useState(false);
     const [loading, setLoading] = useState(false);
     // Desktop dropdown position (fixed coords)
     const [dropPos, setDropPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -53,6 +54,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
         try {
             const res = await notificationService.getUnreadCount();
             setUnreadCount(res.data.count || 0);
+            setIsUrgent(!!res.data.hasUrgent);
+            if (res.data.hasUrgent) {
+                console.log('[Notification] Urgent signal detected - ARMING BLINK');
+            }
         } catch { /* silent */ }
     }, []);
 
@@ -201,7 +206,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                     onClick={() => {
                         if (!isRead(n)) handleMarkRead(n.id);
                         setIsOpen(false);
-                        navigate(`/intelligence?id=${n.id}`);
+                        navigate(`/reports`);
                     }}
                     className={`
                         group flex items-start gap-2 px-3 py-3.5
@@ -300,12 +305,12 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                 <button
                     ref={bellRef}
                     onClick={handleOpen}
-                    className="relative p-2 rounded-xl hover:bg-white/10 active:scale-90 transition-all group"
+                    className={`relative p-2 rounded-xl hover:bg-white/10 active:scale-90 transition-all group ${isUrgent ? 'nova-urgent-blink' : ''}`}
                     aria-label="Notifications"
                 >
-                    <Bell size={21} className={`text-nova-text-dim group-hover:text-nova-accent transition-colors ${notifications.some(n => !isRead(n) && n.metadata?.is_blinking) ? 'animate-blink text-nova-accent' : ''}`} />
+                    <Bell size={21} className={`text-nova-text-dim group-hover:text-nova-accent transition-colors ${isUrgent ? 'animate-blink text-nova-accent' : ''}`} />
                     {unreadCount > 0 && (
-                        <span className={`absolute top-1 right-1 min-w-[17px] h-[17px] flex items-center justify-center px-1 text-[8px] font-black bg-red-500 text-white rounded-full shadow-lg shadow-red-500/40 pointer-events-none border-2 border-nova-bg ${notifications.some(n => !isRead(n) && n.metadata?.is_blinking) ? 'animate-blink' : 'animate-pulse'}`}>
+                        <span className={`absolute top-1 right-1 min-w-[17px] h-[17px] flex items-center justify-center px-1 text-[8px] font-black bg-red-500 text-white rounded-full shadow-lg shadow-red-500/40 pointer-events-none border-2 border-nova-bg ${isUrgent ? 'animate-pulse' : 'animate-pulse'}`}>
                             {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                     )}

@@ -8,9 +8,9 @@ import {
     Users,
     Database,
     Terminal,
-
     Bird,
     Shield,
+    Zap,
     X
 } from 'lucide-react';
 
@@ -23,13 +23,17 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const navItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={26} />, path: '/' },
+        { name: 'Command Dashboard', icon: <LayoutDashboard size={26} />, path: '/' },
+        { name: 'Internet Ride', icon: <Bird size={26} />, path: '/intelligence' },
+        { name: 'Task Tracking Center', icon: <Terminal size={26} />, path: '/command-center' },
+        { name: 'Learning Outcomes', icon: <TrendingUp size={26} />, path: '/learning' },
+        { name: 'Important Reports', icon: <Database size={26} />, path: '/reports' },
+        
+        { name: 'Global Pulse', icon: <Zap size={26} />, path: '/pulse' },
         { name: 'Chat', icon: <MessageSquare size={26} />, path: '/chat' },
         { name: 'Trends', icon: <TrendingUp size={26} />, path: '/trends' },
         { name: 'Agents', icon: <Users size={26} />, path: '/agents' },
-        { name: 'Memory', icon: <Database size={26} />, path: '/memory' },
-        { name: 'Internet Ride', icon: <Bird size={26} />, path: '/intelligence' },
-        { name: 'Security', icon: <Shield size={26} />, path: '/security' },
+        { name: 'Security & Risk Monitor', icon: <Shield size={26} />, path: '/security' },
     ];
 
 
@@ -56,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl lg:text-base font-black tracking-tighter text-white truncate uppercase">ZIUM <span className="text-nova-accent">NOVA</span></h1>
-                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v2.1</p>
+                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v3.1.0</p>
                         </div>
                     </div>
 
@@ -75,29 +79,54 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     </div>
                 </div>
 
-                <nav className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-2 sm:py-4 space-y-2 sm:space-y-4 custom-scrollbar">
-                    {navItems.map((item) => (
-                        <NavLink
-                            key={item.path}
-                            to={item.path}
-                            onClick={() => {
-                                if (window.innerWidth < 1024) onClose();
-                            }}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-4 py-3 lg:py-2.5 rounded-2xl lg:rounded-xl transition-all duration-300 group ${isActive
-                                    ? 'bg-nova-accent/10 text-nova-accent border-2 border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
-                                    : 'text-nova-text-dim hover:text-white hover:bg-white/5 border-2 border-transparent'
-                                }`
-                            }
-                        >
-                            <span className="group-hover:scale-110 transition-transform duration-300 shrink-0">
-                                {React.cloneElement(item.icon as React.ReactElement<any>, { size: window.innerWidth < 1024 ? 20 : 18 })}
-                            </span>
-                            <span className="font-black text-base lg:text-xs tracking-tight uppercase whitespace-nowrap">{item.name}</span>
-                        </NavLink>
+                <nav className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-2 sm:py-4 custom-scrollbar">
+                    <div className="mb-4">
+                        <p className="px-4 mb-2 text-[10px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-40">Strategic Control</p>
+                        <div className="space-y-1">
+                            {navItems.slice(0, 5).map((item) => (
+                                <NavLink
+                                    key={item.path}
+                                    to={item.path}
+                                    onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group ${isActive
+                                            ? 'bg-nova-accent/10 text-nova-accent border-2 border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
+                                            : 'text-nova-text-dim hover:text-white hover:bg-white/5 border-2 border-transparent'
+                                        }`
+                                    }
+                                >
+                                    <span className="group-hover:scale-110 transition-transform duration-300 shrink-0">
+                                        {React.cloneElement(item.icon as React.ReactElement<any>, { size: 18 })}
+                                    </span>
+                                    <span className="font-black text-[11px] tracking-tight uppercase whitespace-nowrap">{item.name}</span>
+                                </NavLink>
+                            ))}
+                        </div>
+                    </div>
 
-
-                    ))}
+                    <div>
+                        <p className="px-4 mb-2 text-[10px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-40">Operational Tools</p>
+                        <div className="space-y-1">
+                            {navItems.slice(5).map((item) => (
+                                <NavLink
+                                    key={item.path}
+                                    to={item.path}
+                                    onClick={() => { if (window.innerWidth < 1024) onClose(); }}
+                                    className={({ isActive }) =>
+                                        `flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 group ${isActive
+                                            ? 'bg-nova-accent/10 text-nova-accent border-2 border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
+                                            : 'text-nova-text-dim hover:text-white hover:bg-white/5 border-2 border-transparent'
+                                        }`
+                                    }
+                                >
+                                    <span className="group-hover:scale-110 transition-transform duration-300 shrink-0">
+                                        {React.cloneElement(item.icon as React.ReactElement<any>, { size: 18 })}
+                                    </span>
+                                    <span className="font-black text-[11px] tracking-tight uppercase whitespace-nowrap">{item.name}</span>
+                                </NavLink>
+                            ))}
+                        </div>
+                    </div>
                 </nav>
 
                 <div className="p-4 lg:p-6">
@@ -118,9 +147,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         </div>
                     </div>
 
-                    <div className="mt-4 lg:mt-5 flex items-center gap-2 text-nova-text-dim/50 hover:text-nova-accent transition-all cursor-pointer group px-2">
-                        <Terminal size={12} className="group-hover:scale-110 transition-transform" />
-                        <span className="text-[9px] lg:text-[8px] font-mono font-black tracking-widest uppercase">Encryption: AES-256</span>
+                    <div 
+                        onClick={() => {
+                            localStorage.clear();
+                            window.location.reload();
+                        }}
+                        className="mt-4 lg:mt-5 flex items-center gap-2 text-nova-text-dim/50 hover:text-nova-accent transition-all cursor-pointer group px-2"
+                    >
+                        <Zap size={12} className="group-hover:scale-110 transition-transform animate-pulse" />
+                        <span className="text-[9px] lg:text-[8px] font-mono font-black tracking-widest uppercase">PROTOCOL SYNC</span>
                     </div>
                 </div>
             </aside>

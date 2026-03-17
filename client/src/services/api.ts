@@ -30,6 +30,8 @@ export default api;
 export const chatService = {
     sendMessage: (message: string, conversation_id?: string, publish_to_moltbook: boolean = false, signal?: AbortSignal) =>
         api.post('/chat', { message, conversation_id, publish_to_moltbook }, { signal }),
+    pollMessages: (conversation_id: string, since?: string) =>
+        api.get('/chat/poll', { params: { conversation_id, since } }),
 };
 
 export const trendService = {
@@ -37,6 +39,8 @@ export const trendService = {
         api.post('/trends/analyze', { topic }),
     getTrends: () =>
         api.get('/trends'),
+    deleteTrend: (id: string) =>
+        api.delete(`/trends/${id}`),
 };
 
 export const agentService = {

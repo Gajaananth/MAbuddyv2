@@ -34,25 +34,26 @@ export async function generateWeeklyReport(userId: string): Promise<void> {
             .map((r: any) => `[${r.risk_level}] ${r.category} — ${r.summary?.slice(0, 200) || r.content.slice(0, 200)}`)
             .join('\n');
 
-        const reportPrompt = `Based on the following internet intelligence findings, generate a **ZIUM NOVA WEEKLY INTELLIGENCE RIDE SUMMARY V2.1**.
-        
-        MANDATORY 7-POINT STRUCTURE:
-        1. STRUCTURAL WEAKNESSES IDENTIFIED: Analyze platform fragility, ROI decay, and systemic failure points.
-        2. ALGORITHM EXPLOITABLE GAPS: Detection of engagement loops and suppression triggers in current algorithms.
-        3. EMERGING FUTURISTIC MARKETING MODELS: Analysis of AI-to-AI commerce and next-gen reputation economies.
-        4. AI AGENT MONETIZATION CONCEPTS (MINIMUM 3): Practical, scalable earning models for autonomous agents.
-        5. SRI LANKAN LEVERAGE INSIGHTS: Converting local asymmetry into global strategic advantage.
-        6. STRATEGIC POSITIONING (3–5 YEARS): Long-term infrastructure replacement and algorithm independence path.
-        7. RISK VS REWARD ASSESSMENT: High-impact analysis of detected signals.
-        
-        Raw Findings: ${raidSummary}
+        const reportPrompt = `[ZIUM NOVA — STRATEGIC BRIEFING v3.1.0]
+Identity: Silent Beast Intelligence (Smart Buddy)
+Mode: FULL AUTONOMOUS AGENTIC AI
 
-RULES:
-- Aggressively filter out influencer noise, guru hype, and fake AI schemes.
-- Focus only on ethical earning paths and long-term leverage.
-- Use a silent, analytical, and highly structured tone.`;
+Based on the accumulated internet intelligence findings, generate a natural strategic briefing for the operator. 
 
-        const analysis = await think(reportPrompt, '');
+[ANALYSIS FOCUS]
+- Platform weaknesses and algorithm exploitations.
+- AI-to-AI commerce and reputation economies.
+- Practical autonomous monetization paths.
+- Long-term infrastructure replacement strategy (3-5 years).
+
+[COMMUNICATION STYLE]
+- Tone: Calm, ultra-intelligent, and strategically precise.
+- Format: Natural narrative. Avoid rigid 7-point lists or robotic headers.
+- Filter: Eliminate all guru noise and get-rich-quick hype.
+
+Raw Findings: ${raidSummary}`;
+
+        const analysis = await think(reportPrompt, '', {}, userId);
 
         // Structure the report
         const reportData = {
@@ -119,7 +120,7 @@ export async function generateMidWeekReport(userId: string): Promise<void> {
         
         Format as a concise, high-impact intelligence summary for the operator.`;
 
-        const analysis = await think(midWeekPrompt, '');
+        const analysis = await think(midWeekPrompt, '', {}, userId);
 
         await saveWeeklyReport(userId, {
             report_data: {

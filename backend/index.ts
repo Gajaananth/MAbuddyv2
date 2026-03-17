@@ -1,6 +1,15 @@
+import dotenv from 'dotenv';
+// Load environment variables immediately
+dotenv.config();
+
+// Fix for self-signed certificate issues in local development (Supabase).
+// This MUST be set before any database pool is created.
+if (!process.env.VERCEL) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { initDatabase } from './db/connection.js';
 import chatRoutes from './routes/chat.js';
 import trendsRoutes from './routes/trends.js';
@@ -9,16 +18,14 @@ import memoryRoutes from './routes/memory.js';
 import intelligenceRoutes from './routes/intelligence.js';
 import notificationRoutes from './routes/notifications.js';
 import authRoutes from './routes/auth.js';
+import tasksRoutes from './routes/tasks.js';
 import { authenticate } from './middleware/auth.js';
 import { initRaidingSchedule } from './services/raidingService.js';
-
+import { autonomyService } from './services/autonomyService.js';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
-if (!process.env.VERCEL) {
-    console.log(`[System] Loading environment from local .env...`);
-    dotenv.config(); // dotenv automatically looks for .env in process.cwd()
-}
+// Rate limit is configured but heartbeat will start after DB is ready
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -62,9 +69,10 @@ app.get('/api/health', (_req, res) => {
     res.json({
         status: 'online',
         agent: 'Zium Nova',
-        version: 'v1.8.14',
-        protocol: 'antigravity_esm_bond_v8',
-        mode: process.env.OPENCLAW_API_KEY ? 'live' : 'demo',
+        identity: 'Silent Beast Intelligence',
+        version: 'v3.1.5',
+        protocol: 'full_autonomous_agentic_ai',
+        mode: process.env.OPENROUTER_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
     });
@@ -99,6 +107,7 @@ app.use('/api/agents', authenticate, agentsRoutes);
 app.use('/api/memory', authenticate, memoryRoutes);
 app.use('/api/intelligence', authenticate, intelligenceRoutes);
 app.use('/api/notifications', authenticate, notificationRoutes);
+app.use('/api/tasks', authenticate, tasksRoutes);
 
 // ─── Export for Serverless ────────────────────────────────────
 export default app;
@@ -107,6 +116,10 @@ export default app;
 async function start() {
     await initDatabase();
     initRaidingSchedule();
+    
+    if (!process.env.VERCEL) {
+        autonomyService.startHeartbeat(30);
+    }
 
     if (!process.env.VERCEL) {
         app.listen(PORT, () => {

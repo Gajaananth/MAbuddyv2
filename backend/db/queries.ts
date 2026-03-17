@@ -9,6 +9,17 @@ function getSqlite() {
 
 // ──────────────────────────── Conversations ────────────────────────────
 
+export async function getConversationDetail(conversationId: string, userId: string): Promise<any> {
+    const conv = await getConversationById(conversationId, userId); // Changed from getConversation to getConversationById
+    if (!conv) return null;
+
+    const messages = await getMessages(conversationId);
+    return {
+        ...conv,
+        messages
+    };
+}
+
 export async function createConversation(userId: string, title: string = 'New Conversation'): Promise<Conversation> {
     if (isPostgresActive) {
         const result = await pool.query(
@@ -212,6 +223,14 @@ export async function getTrendAnalyses(userId: string, limit: number = 20): Prom
     }
 }
 
+export async function deleteTrendAnalysis(id: string, userId: string): Promise<void> {
+    if (isPostgresActive) {
+        await pool.query('DELETE FROM trend_analyses WHERE id = $1 AND user_id = $2', [id, userId]);
+    } else {
+        getSqlite().prepare('DELETE FROM trend_analyses WHERE id = ? AND user_id = ?').run(id, userId);
+    }
+}
+
 // ──────────────────────────── Agent Network ────────────────────────────
 
 export async function addAgent(
@@ -285,17 +304,19 @@ export async function saveRaidResult(userId: string, raid: {
     ride_type?: 'mid-week' | 'end-week' | 'emergency';
     opportunity_score?: number;
     status?: 'active' | 'archived' | 'deleted';
-}): Promise<void> {
+}): Promise<any> {
     if (isPostgresActive) {
-        await pool.query(
-            'INSERT INTO intelligence_raids (user_id, category, risk_level, source_platform, content, summary, tags, metadata, ride_type, opportunity_score, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
+        const result = await pool.query(
+            'INSERT INTO intelligence_raids (user_id, category, risk_level, source_platform, content, summary, tags, metadata, ride_type, opportunity_score, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
             [userId, raid.category, raid.risk_level, raid.source_platform, raid.content, raid.summary, raid.tags, raid.metadata || null, raid.ride_type || 'mid-week', raid.opportunity_score || 0, raid.status || 'active']
         );
+        return result.rows[0];
     } else {
         const id = uuidv4();
-        getSqlite().prepare(
+        const stmt = getSqlite().prepare(
             'INSERT INTO intelligence_raids (id, user_id, category, risk_level, source_platform, content, summary, tags, metadata, ride_type, opportunity_score, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        ).run(
+        );
+        stmt.run(
             id,
             userId,
             raid.category,
@@ -309,6 +330,7 @@ export async function saveRaidResult(userId: string, raid: {
             raid.opportunity_score || 0,
             raid.status || 'active'
         );
+        return getSqlite().prepare('SELECT * FROM intelligence_raids WHERE id = ?').get(id);
     }
 }
 
@@ -499,18 +521,24 @@ export async function getNotifications(userId: string, limit: number = 30, inclu
     }
 }
 
-export async function getUnreadNotificationCount(userId: string): Promise<number> {
+export async function getUnreadNotificationCount(userId: string): Promise<{ count: number; hasUrgent: boolean }> {
     if (isPostgresActive) {
         const result = await pool.query(
-            'SELECT COUNT(*) FROM notifications WHERE user_id = $1 AND is_read = FALSE AND is_archived = FALSE',
+            'SELECT COUNT(*), COUNT(*) FILTER (WHERE priority = \'critical\') as urgent_count FROM notifications WHERE user_id = $1 AND is_read = FALSE AND is_archived = FALSE',
             [userId]
         );
-        return parseInt(result.rows[0].count, 10);
+        return {
+            count: parseInt(result.rows[0].count, 10),
+            hasUrgent: parseInt(result.rows[0].urgent_count, 10) > 0
+        };
     } else {
         const result = getSqlite().prepare(
-            'SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0 AND is_archived = 0'
+            'SELECT COUNT(*) as count, SUM(CASE WHEN priority = \'critical\' THEN 1 ELSE 0 END) as urgent_count FROM notifications WHERE user_id = ? AND is_read = 0 AND is_archived = 0'
         ).get(userId) as any;
-        return result.count;
+        return {
+            count: result.count,
+            hasUrgent: result.urgent_count > 0
+        };
     }
 }
 
@@ -597,5 +625,145 @@ export async function logAgentActivity(action: {
         getSqlite().prepare(
             'INSERT INTO agent_activity_logs (id, agent_id, action_type, platform, details, metadata) VALUES (?, ?, ?, ?, ?, ?)'
         ).run(id, action.agent_id || 'ZIUM_NOVA', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata ? JSON.stringify(action.metadata) : null);
+    }
+}
+
+export async function saveIntelligenceLog(userId: string, data: {
+    category: string;
+    lesson: string;
+    source_context?: string;
+    metadata?: object;
+}): Promise<any> {
+    if (isPostgresActive) {
+        const result = await pool.query(
+            'INSERT INTO intelligence_logs (user_id, category, lesson, source_context, metadata) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [userId, data.category, data.lesson, data.source_context || null, data.metadata || null]
+        );
+        return result.rows[0];
+    } else {
+        const id = uuidv4();
+        getSqlite().prepare(
+            'INSERT INTO intelligence_logs (id, user_id, category, lesson, source_context, metadata) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(id, userId, data.category, data.lesson, data.source_context || null, data.metadata ? JSON.stringify(data.metadata) : null);
+        return getSqlite().prepare('SELECT * FROM intelligence_logs WHERE id = ?').get(id);
+    }
+}
+
+export async function getIntelligenceLogs(userId: string, limit: number = 50): Promise<any[]> {
+    if (isPostgresActive) {
+        const result = await pool.query(
+            'SELECT * FROM intelligence_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
+            [userId, limit]
+        );
+        return result.rows;
+    } else {
+        const rows = getSqlite().prepare(
+            'SELECT * FROM intelligence_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?'
+        ).all(userId, limit) as any[];
+        return rows.map(r => ({ ...r, metadata: r.metadata ? JSON.parse(r.metadata) : null }));
+    }
+}
+
+// ──────────────────────────── Command Center Tasks ────────────────────────────
+
+export async function createTask(userId: string, task: {
+    task_name: string;
+    assigned_to?: string;
+    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    action_plan?: string;
+    notes?: string;
+}, customTaskIdStr?: string): Promise<any> {
+    const isPg = isPostgresActive;
+    try {
+        let taskIdStr = customTaskIdStr;
+
+        if (!taskIdStr) {
+            // Auto-increment logic
+            let nextIdNum = 1;
+            if (isPg) {
+                const result = await pool.query('SELECT task_id_str FROM tasks WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [userId]);
+                if (result.rows.length > 0) {
+                    const lastId = parseInt(result.rows[0].task_id_str, 10);
+                    if (!isNaN(lastId)) nextIdNum = lastId + 1;
+                }
+            } else {
+                const db = getSqlite();
+                const result = db.prepare('SELECT task_id_str FROM tasks WHERE user_id = ? ORDER BY created_at DESC LIMIT 1').get(userId) as any;
+                if (result) {
+                    const lastId = parseInt(result.task_id_str, 10);
+                    if (!isNaN(lastId)) nextIdNum = lastId + 1;
+                }
+            }
+            taskIdStr = nextIdNum.toString().padStart(3, '0');
+        }
+
+        const assignedTo = task.assigned_to || 'ZIUM NOVA';
+        const priority = task.priority || 'MEDIUM';
+        const actionPlan = task.action_plan || '';
+        const notes = task.notes || '';
+
+        if (isPg) {
+            const res = await pool.query(
+                `INSERT INTO tasks (user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+                [userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes]
+            );
+            return res.rows[0];
+        } else {
+            const db = getSqlite();
+            const id = uuidv4();
+            db.prepare(
+                `INSERT INTO tasks (id, user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            ).run(id, userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes);
+            return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+        }
+    } catch (error) {
+        console.error('[DB] Task Creation Error:', error);
+        throw error;
+    }
+}
+
+export async function getTasks(userId: string): Promise<any[]> {
+    if (isPostgresActive) {
+        const result = await pool.query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY task_id_str ASC', [userId]);
+        return result.rows;
+    } else {
+        return getSqlite().prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY task_id_str ASC').all(userId) as any[];
+    }
+}
+
+export async function updateTaskStatus(userId: string, taskIdStr: string, status: 'TODO' | 'IN-PROGRESS' | 'COMPLETED' | 'BLOCKED', notes?: string): Promise<any> {
+    const isPg = isPostgresActive;
+    let queryArgs: any[] = [];
+    let queryStr = '';
+    
+    // Normalize taskIdStr
+    const normalizedIdStr = parseInt(taskIdStr, 10).toString().padStart(3, '0');
+
+    if (notes !== undefined) {
+        if (isPg) {
+            queryStr = 'UPDATE tasks SET status = $1, notes = $2, updated_at = NOW() WHERE user_id = $3 AND task_id_str = $4 RETURNING *';
+            queryArgs = [status, notes, userId, normalizedIdStr];
+        } else {
+            queryStr = 'UPDATE tasks SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND task_id_str = ?';
+            queryArgs = [status, notes, userId, normalizedIdStr];
+        }
+    } else {
+        if (isPg) {
+            queryStr = 'UPDATE tasks SET status = $1, updated_at = NOW() WHERE user_id = $2 AND task_id_str = $3 RETURNING *';
+            queryArgs = [status, userId, normalizedIdStr];
+        } else {
+            queryStr = 'UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND task_id_str = ?';
+            queryArgs = [status, userId, normalizedIdStr];
+        }
+    }
+
+    if (isPg) {
+        const result = await pool.query(queryStr, queryArgs);
+        return result.rows[0];
+    } else {
+        getSqlite().prepare(queryStr).run(...queryArgs);
+        return getSqlite().prepare('SELECT * FROM tasks WHERE user_id = ? AND task_id_str = ?').get(userId, normalizedIdStr);
     }
 }

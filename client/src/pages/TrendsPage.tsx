@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bird, AlertCircle, CheckCircle2, Search, Zap, BarChart3 } from 'lucide-react';
+import { Bird, AlertCircle, CheckCircle2, Search, Zap, BarChart3, Trash2 } from 'lucide-react';
 import { trendService } from '../services/api';
 import type { TrendAnalysis } from '../types';
 
@@ -38,6 +38,16 @@ const TrendsPage: React.FC = () => {
             console.error('Analyze Trend Error:', error);
         } finally {
             setAnalyzing(false);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('Are you sure you want to delete this intelligence brief?')) return;
+        try {
+            await trendService.deleteTrend(id);
+            await loadTrends();
+        } catch (error) {
+            console.error('Delete Trend Error:', error);
         }
     };
 
@@ -91,7 +101,16 @@ const TrendsPage: React.FC = () => {
                             <div className="px-2 py-1 rounded bg-nova-accent/10 border border-nova-accent/20 text-[10px] font-bold text-nova-accent uppercase tracking-wider">
                                 Intelligence Brief
                             </div>
-                            <span className="text-[10px] text-nova-text-dim font-mono">{new Date(trend.created_at).toLocaleDateString()}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-nova-text-dim font-mono">{new Date(trend.created_at).toLocaleDateString()}</span>
+                                <button
+                                    onClick={() => handleDelete(trend.id)}
+                                    className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all border border-red-500/20"
+                                    title="Delete intelligence"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
                         </div>
 
                         <h4 className="text-lg font-bold text-white mb-2 group-hover:text-nova-accent transition-colors">{trend.topic}</h4>

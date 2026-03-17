@@ -240,34 +240,100 @@ router.get('/raid/status', authenticate, async (req: AuthRequest, res: Response)
 
 /**
  * POST /api/intelligence/raid/trigger
- * Manually trigger an Internet Ride.
+ * Manually trigger a regional/global intelligence scan.
  */
-router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/raid/trigger', async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        console.log(`[Intelligence] DEBUG: RAID_TRIGGER_HIT. User: ${userId}`);
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { type } = req.body;
+        console.log(`[Intelligence] Manually triggering ${type || 'standard'} Internet Ride for ${userId}`);
+        
+        // Use performInternetRaid for standard scans
+        performInternetRaid(type || 'mid-week', userId).catch(err => {
+            console.error('[Intelligence] Background Raid Error:', err);
+        });
+
+        res.json({
+            success: true,
+            message: 'Internet Ride protocol triggered successfully in background.',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('[Intelligence] Trigger Error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error while triggering ride' });
+    }
+});
+
+/**
+ * GET /api/intelligence/logs
+ * Retrieve internal intelligence logs (Continuous Learning Protocol).
+ */
+router.get('/logs', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        // Check if a raid is already actively running (not completed/failed)
-        const existing = activeRaids.get(userId);
-        if (existing && existing.status !== 'completed' && existing.status !== 'failed') {
-            return res.status(400).json({
-                success: false,
-                error: `INTERNET RIDE IN PROGRESS: ${existing.currentCluster} (${existing.clustersCompleted}/${existing.totalClusters} clusters done).`
-            });
-        }
-
-        const result = await runManualWeeklyRide(userId);
+        const limit = parseInt((req.query.limit as string) || '50', 10);
+        const logs = await db.getIntelligenceLogs(userId, limit);
 
         res.json({
             success: true,
-            message: result.message,
-            timestamp: new Date().toISOString(),
+            data: logs,
+            timestamp: new Date().toISOString()
         });
     } catch (error) {
-        console.error('[Intelligence] Ride Trigger Error:', error);
-        res.status(500).json({ success: false, error: 'Internet Ride trigger failed. Check server logs.' });
+        console.error('[Intelligence] Logs Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to retrieve intelligence logs' });
     }
 });
 
+/**
+ * POST /api/intelligence/ride
+ * Unified endpoint for Internet Ride actions (analyze, report).
+ */
+router.post('/ride', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const { action, userId } = req.body;
+        
+        // UUID Validation & Fallback
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        let targetUserId = (userId && uuidRegex.test(userId)) 
+            ? userId 
+            : '00000000-0000-0000-0000-000000000000';
+            
+        // Map common placeholders to System User
+        if (targetUserId === '11111111-1111-1111-1111-111111111111') {
+            targetUserId = '00000000-0000-0000-0000-000000000000';
+        }
+
+        if (action === 'analyze') {
+            console.log(`[Intelligence] API Action: Analyze for ${targetUserId}`);
+            const result = await runManualWeeklyRide(targetUserId);
+            return res.json({
+                success: true,
+                message: result.message,
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        if (action === 'report') {
+            console.log(`[Intelligence] API Action: Report for ${targetUserId}`);
+            const results = await db.getRaidResults(targetUserId, 50);
+            return res.json({
+                success: true,
+                data: results,
+                timestamp: new Date().toISOString(),
+            });
+        }
+
+        res.status(400).json({ success: false, error: 'Invalid action. Use "analyze" or "report".' });
+    } catch (error) {
+        console.error('[Intelligence] Ride API Error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error in Ride API' });
+    }
+});
 
 export default router;

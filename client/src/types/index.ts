@@ -83,6 +83,7 @@ export interface Notification {
         confidence?: number;
         is_blinking?: boolean;
         alert_type?: string;
+        finding_id?: string;
     } | null;
     created_at: string;
 }

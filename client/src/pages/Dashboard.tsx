@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TrendingUp, Zap, Bird, Loader2 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useLiveTime } from '../hooks/useLiveTime';
+import { trendService, intelligenceService } from '../services/api';
 import NotificationActivationBanner from '../components/NotificationActivationBanner';
 
 const Dashboard: React.FC = () => {
@@ -16,16 +17,35 @@ const Dashboard: React.FC = () => {
         setIsSyncing(false);
     };
 
-    const stats = [
-        { label: 'Trend Fairness', value: '42%', icon: <TrendingUp className="text-nova-accent" />, color: 'from-nova-accent/20' },
-        { label: 'Trust Score', value: '95/100', icon: <Bird className="text-green-400" />, color: 'from-green-400/20' },
-        { label: 'Active Memory', value: '1.2 GB', icon: <Zap className="text-yellow-400" />, color: 'from-yellow-400/20' },
-    ];
+    const [stats, setStats] = useState<any[]>([]);
+    const [recentTrends, setRecentTrends] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const recentTrends = [
-        { topic: 'AI Influencer ROI', status: 'HYPE_DETECTED', score: 32 },
-        { topic: 'Open Source Strategy', status: 'HIGH_FAIRNESS', score: 88 }
-    ];
+    const loadData = async () => {
+        try {
+            const [trendsRes, reportsRes] = await Promise.all([
+                trendService.getTrends(),
+                intelligenceService.getReports(3)
+            ]);
+            
+            setRecentTrends(trendsRes.data?.data?.slice(0, 2) || []);
+            
+            // Derive some stats
+            setStats([
+                { label: 'Earning Sigals', value: reportsRes.data?.data?.length || 0, icon: <TrendingUp className="text-nova-accent" />, color: 'from-nova-accent/20' },
+                { label: 'Trust Score', value: '98/100', icon: <Bird className="text-green-400" />, color: 'from-green-400/20' },
+                { label: 'Agent Uptime', value: '100%', icon: <Zap className="text-yellow-400" />, color: 'from-yellow-400/20' },
+            ]);
+        } catch (err) {
+            console.error('Failed to load dashboard data', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        loadData();
+    }, []);
 
     return (
         <div className="flex flex-col items-start space-y-8 sm:space-y-16 animate-in fade-in duration-700 text-left w-full h-full pb-10 sm:pb-20 max-w-7xl mx-auto">
@@ -84,10 +104,18 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                        {recentTrends.map((trend, i) => (
+                        {isLoading ? (
+                            <div className="col-span-2 flex items-center justify-center p-12">
+                                <Loader2 size={32} className="animate-spin text-nova-accent opacity-50" />
+                            </div>
+                        ) : recentTrends.length === 0 ? (
+                            <div className="col-span-2 text-center p-8 glass rounded-2xl border border-dashed border-nova-border">
+                                <p className="text-nova-text-dim text-xs uppercase font-black tracking-widest">No signals detected in this cycle.</p>
+                            </div>
+                        ) : recentTrends.map((trend, i) => (
                             <div key={i} className="p-6 sm:p-8 bg-nova-bg/40 rounded-2xl sm:rounded-3xl border border-nova-border relative overflow-hidden group hover:border-nova-accent/20 transition-all">
                                 <div className={`absolute inset-y-0 left-0 w-1.5 sm:w-2 ${trend.score > 70 ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_15px_rgba(0,0,0,0.5)]`}></div>
-                                <div className="text-[8px] sm:text-[9px] font-black text-nova-text-dim uppercase tracking-wider mb-2 opacity-50">{trend.status}</div>
+                                <div className="text-[8px] sm:text-[9px] font-black text-nova-text-dim uppercase tracking-wider mb-2 opacity-50">{trend.status || 'ANALYZING'}</div>
                                 <div className="font-black text-white text-base sm:text-lg mb-3 sm:mb-4 tracking-tight group-hover:text-nova-accent transition-colors truncate">{trend.topic}</div>
                                 <div className="w-full bg-white/5 h-1.5 sm:h-2 rounded-full overflow-hidden shadow-inner">
                                     <div className={`h-full ${trend.score > 70 ? 'bg-green-500' : 'bg-red-500'} shadow-[0_0_10px_rgba(0,242,255,0.3)] transition-all duration-1000`} style={{ width: `${trend.score}%` }}></div>

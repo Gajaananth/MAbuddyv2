@@ -40,9 +40,9 @@ router.get('/unread-count', authenticate, async (req: AuthRequest, res: Response
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const count = await db.getUnreadNotificationCount(userId);
+        const { count, hasUrgent } = await db.getUnreadNotificationCount(userId);
 
-        res.json({ success: true, count });
+        res.json({ success: true, count, hasUrgent });
     } catch (error) {
         console.error('[Notifications] Count Error:', error);
         res.status(500).json({ success: false, error: 'Failed to get count' });

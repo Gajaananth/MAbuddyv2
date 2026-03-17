@@ -17,6 +17,17 @@ const ChatPage: React.FC = () => {
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editContent, setEditContent] = useState('');
     const [showModeMenu, setShowModeMenu] = useState(false);
+    const [publishToMoltbook, setPublishToMoltbook] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const modes = [
         { label: 'Normal Mode', command: 'MODE NORMAL', icon: <User size={14} /> },
@@ -30,6 +41,32 @@ const ChatPage: React.FC = () => {
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
+
+    // Polling mechanics
+    useEffect(() => {
+        let pollInterval: ReturnType<typeof setInterval>;
+        if (conversationId && !loading) {
+            pollInterval = setInterval(async () => {
+                try {
+                    const lastMessage = messages[messages.length - 1];
+                    const since = lastMessage ? lastMessage.created_at : undefined;
+                    const res = await chatService.pollMessages(conversationId, since);
+                    
+                    if (res.data.data.messages && res.data.data.messages.length > 0) {
+                        setMessages(prev => {
+                            // Merge ensuring no duplicates
+                            const existingIds = new Set(prev.map(m => m.id));
+                            const newMsgs = res.data.data.messages.filter((m: any) => !existingIds.has(m.id));
+                            return [...prev, ...newMsgs];
+                        });
+                    }
+                } catch (e) {
+                    console.error('Polling error', e);
+                }
+            }, 30000); // Poll every 30 seconds
+        }
+        return () => clearInterval(pollInterval);
+    }, [conversationId, messages, loading]);
 
     useEffect(() => {
         scrollToBottom();
@@ -259,8 +296,16 @@ const ChatPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <p className="text-[8px] lg:text-[10px] font-bold text-nova-text-dim flex items-center gap-1 opacity-80">
                                 <Bird size={9} className="text-nova-accent shrink-0" />
-                                <span className="hidden lg:inline">Silent Beast Protocol</span> v2.1
+                                <span className="hidden lg:inline">Silent Beast Protocol</span> v3.1.0
                             </p>
+                            <span className="w-0.5 h-0.5 rounded-full bg-white/20"></span>
+                            <button 
+                                onClick={() => setPublishToMoltbook(!publishToMoltbook)}
+                                className={`text-[8px] lg:text-[10px] font-bold flex items-center gap-1 transition-all ${publishToMoltbook ? 'text-nova-accent' : 'text-nova-text-dim opacity-50'}`}
+                            >
+                                <Bird size={9} className={publishToMoltbook ? 'animate-pulse' : ''} />
+                                <span>Moltbook: {publishToMoltbook ? 'ACTIVE' : 'SILENT'}</span>
+                            </button>
                             <span className="w-0.5 h-0.5 rounded-full bg-white/20"></span>
                             <p className="text-[8px] lg:text-[10px] font-bold text-green-400 flex items-center gap-1 truncate">
                                 <User size={9} className="shrink-0" />
@@ -338,7 +383,13 @@ const ChatPage: React.FC = () => {
                                     <textarea
                                         value={editContent}
                                         onChange={(e) => setEditContent(e.target.value)}
-                                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleEditSave(); } if (e.key === 'Escape') handleEditCancel(); }}
+                                        onKeyDown={(e) => { 
+                                            if (e.key === 'Enter' && !e.shiftKey && !isMobile) { 
+                                                e.preventDefault(); 
+                                                handleEditSave(); 
+                                            } 
+                                            if (e.key === 'Escape') handleEditCancel(); 
+                                        }}
                                         autoFocus
                                         rows={3}
                                         className="w-full bg-nova-bg border-2 border-nova-accent text-white p-3 sm:p-4 rounded-xl sm:rounded-2xl focus:outline-none text-sm sm:text-base font-medium resize-none shadow-[0_0_30px_rgba(0,242,255,0.1)]"
@@ -472,7 +523,7 @@ const ChatPage: React.FC = () => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
                                 e.preventDefault();
                                 handleSend();
                             }
