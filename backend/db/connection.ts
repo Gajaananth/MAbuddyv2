@@ -198,6 +198,21 @@ async function runMigrations(client: any) {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS improvement_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        cycle_id VARCHAR(100) NOT NULL,
+        insight TEXT NOT NULL,
+        strategy_adjustment TEXT DEFAULT '',
+        performance_delta TEXT DEFAULT '',
+        metadata JSONB DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_improvement_logs_user ON improvement_logs(user_id);
+      CREATE INDEX IF NOT EXISTS idx_notifications_user_title ON notifications(user_id, title, created_at);
+      CREATE INDEX IF NOT EXISTS idx_raids_user_category ON intelligence_raids(user_id, category, created_at);
+
       CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
       CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
       

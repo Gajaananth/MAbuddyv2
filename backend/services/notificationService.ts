@@ -3,7 +3,7 @@
  * Handles persistent notifications, priority signal detection, push delivery, and strategic alerts.
  */
 
-import { createNotification, getPushSubscriptions } from '../db/queries.js';
+import { createNotification, getPushSubscriptions, findRecentDuplicateNotification } from '../db/queries.js';
 import webpush from 'web-push';
 import dotenv from 'dotenv';
 
@@ -257,6 +257,13 @@ export async function evaluateAndNotify(
     const truncated = content.length > 500 ? content.slice(0, 497) + '...' : content;
     const notifTitle = isPriority ? `🔴 PRIORITY SIGNAL: ${title}` : `📡 ${title}`;
 
+    // Duplicate prevention — skip if same notification was created in last 60 minutes
+    const isDuplicate = await findRecentDuplicateNotification(userId, notifTitle, 60);
+    if (isDuplicate) {
+        console.log(`[Notification] Suppressed duplicate: ${notifTitle}`);
+        return;
+    }
+
     try {
         await createNotification(userId, {
             title: notifTitle,
@@ -271,15 +278,18 @@ export async function evaluateAndNotify(
             },
         });
 
-        // Send push notification to all registered devices
-        await sendPushToUser(userId, {
-            title: notifTitle,
-            body: truncated.slice(0, 200),
-            tag: `zn-${category.toLowerCase().replace(/\s+/g, '-')}`,
-            data: { category, risk, priority, url: '/' },
-        });
-
-        console.log(`[Notification] ${priority.toUpperCase()} signal stored + pushed for user ${userId}: ${title}`);
+        // Push notifications — CRITICAL ONLY to minimize operator noise
+        if (priority === 'critical') {
+            await sendPushToUser(userId, {
+                title: notifTitle,
+                body: truncated.slice(0, 200),
+                tag: `zn-${category.toLowerCase().replace(/\s+/g, '-')}`,
+                data: { category, risk, priority, url: '/' },
+            });
+            console.log(`[Notification] CRITICAL signal stored + pushed for user ${userId}: ${title}`);
+        } else {
+            console.log(`[Notification] ${priority.toUpperCase()} signal stored silently for user ${userId}: ${title}`);
+        }
     } catch (err) {
         console.error('[Notification] Failed to persist:', err);
     }

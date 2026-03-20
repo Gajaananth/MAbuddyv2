@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { think } from './openClawService.js';
-import { saveRaidResult, logAgentActivity } from '../db/queries.js';
+import { saveRaidResult, logAgentActivity, findRecentDuplicateRaid } from '../db/queries.js';
 import { getAllUsers } from '../db/authQueries.js';
 import { generateWeeklyReport, generateMidWeekReport } from './intelligenceService.js';
 import { evaluateAndNotify, createOpportunityAlert } from './notificationService.js';
@@ -188,6 +188,14 @@ Topic: ${cluster.topic}
             try {
                 // Extract dynamic risk from AI output
                 const riskLevel = extractRiskLevel(analysisContent) || cluster.defaultRisk;
+
+                // Duplicate raid prevention — skip if same cluster was saved in last 12 hours
+                const isDuplicateRaid = await findRecentDuplicateRaid(userId, cluster.name, 12);
+                if (isDuplicateRaid) {
+                    console.log(`[Ride] [${cluster.name}] DUPLICATE DETECTED (12h window). Skipping persistence.`);
+                    completed++;
+                    continue;
+                }
 
                 // Persist to DB
                 console.log(`[Ride] [${cluster.name}] Persisting finding to database...`);
