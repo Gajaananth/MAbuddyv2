@@ -108,15 +108,18 @@ const SecuritySettings: React.FC = () => {
 
     return (
         <div className="security-settings p-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-red-500/20 rounded-xl text-red-400">
-                    <Bird className="w-8 h-8" />
+            <div className="flex items-center gap-3 sm:gap-4 mb-8 sm:mb-10">
+                <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 relative shadow-2xl shrink-0">
+                    <Bird className="w-6 h-6 sm:w-8 sm:h-8" />
                 </div>
                 <div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 uppercase tracking-tighter">
-                        Security & Risk Monitor
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-black text-white uppercase tracking-tighter leading-none">
+                        Security <span className="text-red-400">Settings</span>
                     </h1>
-                    <p className="text-gray-400 text-sm tracking-widest uppercase mt-1">Operator Protection Protocol Active</p>
+                    <p className="text-nova-text-dim text-[9px] sm:text-[10px] font-black tracking-[0.2em] uppercase opacity-60 mt-1 flex items-center gap-2">
+                        <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse"></span>
+                        v3.2.0 — Protocol Active
+                    </p>
                 </div>
             </div>
 

@@ -4,9 +4,10 @@ import { useLiveTime } from '../hooks/useLiveTime';
 import { 
     Bird, TrendingUp, AlertOctagon, 
     CheckCircle2, CircleDashed, Loader2, XCircle, 
-    Terminal, Shield
+    Terminal, Shield, Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { trendService } from '../services/api';
 
 interface Task {
     id: string;
@@ -51,6 +52,21 @@ const CommandDashboard: React.FC = () => {
     const [reports, setReports] = useState<Report[]>([]);
     const [rideStatus, setRideStatus] = useState<any>(null);
     const [activeAlert, setActiveAlert] = useState<any>(null);
+    const [isSyncing, setIsSyncing] = useState(false);
+    const [recentTrends, setRecentTrends] = useState<any[]>([]);
+    const [isLoadingTrends, setIsLoadingTrends] = useState(true);
+
+    const handleSync = async () => {
+        if (isSyncing) return;
+        setIsSyncing(true);
+        // Synchronize via API if needed, otherwise artificial delay for effect
+        try {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await loadAllData();
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     useEffect(() => {
         loadAllData();
@@ -60,17 +76,20 @@ const CommandDashboard: React.FC = () => {
 
     const loadAllData = async () => {
         try {
-            const [tasksRes, logsRes, ridesRes, reportsRes, statusRes] = await Promise.all([
+            const [tasksRes, logsRes, ridesRes, reportsRes, statusRes, trendsRes] = await Promise.all([
                 api.get('/api/tasks'),
                 api.get('/api/intelligence/logs?limit=5'),
                 api.get('/api/intelligence/raids?limit=5'),
                 api.get('/api/intelligence/reports?limit=5'),
-                intelligenceService.getRideStatus()
+                intelligenceService.getRideStatus(),
+                trendService.getTrends()
             ]);
 
             setTasks(tasksRes.data.data || []);
             setLogs(logsRes.data.data || []);
             setRideStatus(statusRes.data.data);
+            setRecentTrends(trendsRes.data?.data?.slice(0, 3) || []);
+            setIsLoadingTrends(false);
 
             const allReports = [
                 ...(ridesRes.data.data || []).map((r: any) => ({ ...r, category: r.category || 'Market Signal' })),
@@ -115,36 +134,38 @@ const CommandDashboard: React.FC = () => {
             )}
 
             {/* HEADER */}
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-nova-accent flex items-center justify-center nova-accent-glow animate-in zoom-in-50 duration-500">
-                        <Bird className="text-nova-bg" size={32} />
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-nova-accent flex items-center justify-center nova-accent-glow shrink-0">
+                        <Bird className="text-nova-bg w-6 h-6 sm:w-8 sm:h-8" />
                     </div>
                     <div>
                         <div className="flex items-center gap-2 mb-0.5">
-                            <h1 className="text-3xl font-black tracking-tighter text-white uppercase">COMMAND <span className="text-nova-accent text-shadow-glow">DASHBOARD</span></h1>
-                            <div className="px-1.5 py-0.5 rounded bg-nova-accent/10 border border-nova-accent/30 text-nova-accent text-[8px] font-black uppercase tracking-widest mt-1">v3.1.0</div>
+                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tighter text-white uppercase leading-none">COMMAND <span className="text-nova-accent text-shadow-glow">DASHBOARD</span></h1>
+                            <div className="px-1 py-0.5 rounded bg-nova-accent/10 border border-nova-accent/30 text-nova-accent text-[8px] font-black uppercase tracking-widest">v3.2.0</div>
                         </div>
-                        <p className="text-nova-text-dim text-[10px] font-black tracking-[0.3em] uppercase opacity-60 flex items-center gap-2">
+                        <p className="text-nova-text-dim text-[9px] sm:text-[10px] font-black tracking-[0.2em] uppercase opacity-60 flex items-center gap-2">
                             <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse"></span>
-                            SILENT BEAST — SUPABASE GRID ACTIVE
+                            PROTOCOL ACTIVE
                         </p>
                     </div>
                 </div>
-                <div className="flex flex-col items-end">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="flex -space-x-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-nova-accent animate-pulse"></div>
-                            <div className="w-1.5 h-1.5 rounded-full bg-nova-accent/50 animate-pulse [animation-delay:200ms]"></div>
-                            <div className="w-1.5 h-1.5 rounded-full bg-nova-accent/30 animate-pulse [animation-delay:400ms]"></div>
-                        </div>
-                        <span className="text-[10px] text-nova-text-dim uppercase tracking-widest font-black">Strategic Pulse</span>
+                <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto gap-3">
+                    <button
+                        onClick={handleSync}
+                        disabled={isSyncing}
+                        className="flex-1 md:flex-none px-4 sm:px-6 py-2 rounded-xl bg-nova-accent/10 text-nova-accent text-[9px] sm:text-[10px] font-black border-2 border-nova-accent/30 hover:bg-nova-accent hover:text-nova-bg transition-all duration-300 uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                        {isSyncing ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                        {isSyncing ? 'Syncing...' : 'Sync Brain'}
+                    </button>
+                    <div className="text-right shrink-0">
+                        <div className="text-lg sm:text-2xl font-mono font-black text-nova-accent tabular-nums tracking-tighter">{liveTime.short}</div>
                     </div>
-                    <div className="text-2xl font-mono font-black text-nova-accent tabular-nums tracking-tighter">{liveTime.short}</div>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
                 {/* SECTION 1 — INTERNET RIDE STATUS */}
                 <div className="xl:col-span-1 glass p-8 rounded-3xl border-2 border-nova-border flex flex-col justify-between">
@@ -184,31 +205,33 @@ const CommandDashboard: React.FC = () => {
                 </div>
 
                 {/* SECTION 3 — TASK PROGRESS SUMMARY */}
-                <div className="xl:col-span-2 glass p-8 rounded-3xl border-2 border-nova-border">
-                    <div className="flex justify-between items-start mb-8">
-                        <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                            <Shield size={18} className="text-nova-accent" />
-                            Mission Progress
-                        </h3>
-                        <span className="text-2xl font-mono font-black text-nova-accent">{progress}%</span>
-                    </div>
+                <div className="xl:col-span-2 glass p-8 rounded-3xl border-2 border-nova-border flex flex-col justify-between">
+                    <div>
+                        <div className="flex justify-between items-start mb-8">
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <Shield size={18} className="text-nova-accent" />
+                                Mission Progress
+                            </h3>
+                            <span className="text-2xl font-mono font-black text-nova-accent">{progress}%</span>
+                        </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                        <div>
-                            <p className="text-[10px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Total Tasks</p>
-                            <p className="text-xl font-black text-white">{stats.total}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-green-400 font-black uppercase tracking-wider mb-1">Completed</p>
-                            <p className="text-xl font-black text-green-400">{stats.completed}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-blue-400 font-black uppercase tracking-wider mb-1">Active</p>
-                            <p className="text-xl font-black text-blue-400">{stats.active}</p>
-                        </div>
-                        <div>
-                            <p className="text-[10px] text-nova-accent font-black uppercase tracking-wider mb-1">Pending</p>
-                            <p className="text-xl font-black text-nova-accent">{stats.pending}</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                            <div>
+                                <p className="text-[10px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Total Tasks</p>
+                                <p className="text-xl font-black text-white">{stats.total}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-green-400 font-black uppercase tracking-wider mb-1">Completed</p>
+                                <p className="text-xl font-black text-green-400">{stats.completed}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-blue-400 font-black uppercase tracking-wider mb-1">Active</p>
+                                <p className="text-xl font-black text-blue-400">{stats.active}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] text-nova-accent font-black uppercase tracking-wider mb-1">Pending</p>
+                                <p className="text-xl font-black text-nova-accent">{stats.pending}</p>
+                            </div>
                         </div>
                     </div>
 
@@ -221,6 +244,36 @@ const CommandDashboard: React.FC = () => {
                 </div>
 
             </div>
+
+            {/* GLOBAL PULSE — MARKET TRENDS */}
+            <section className="glass p-8 rounded-3xl border-2 border-nova-border">
+                <div className="flex justify-between items-center mb-8">
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                        <TrendingUp size={18} className="text-nova-accent" />
+                        Global Pulse & Market Trends
+                    </h3>
+                    <button onClick={() => navigate('/trends')} className="text-[10px] font-black text-nova-accent uppercase tracking-widest hover:underline">Full Analysis</button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {isLoadingTrends ? (
+                        <div className="col-span-3 flex justify-center py-12"><Loader2 className="animate-spin text-nova-accent opacity-50" /></div>
+                    ) : recentTrends.length === 0 ? (
+                        <div className="col-span-3 text-center py-8 text-nova-text-dim text-[10px] uppercase font-black tracking-widest opacity-50">No active signals in current cycle.</div>
+                    ) : recentTrends.map((trend, i) => (
+                        <div key={i} className="p-6 bg-nova-bg/40 rounded-2xl border border-nova-border hover:border-nova-accent/20 transition-all group">
+                            <div className="flex justify-between items-start mb-4">
+                                <span className="text-[8px] font-black text-nova-text-dim uppercase tracking-wider opacity-50">{trend.status || 'STABLE'}</span>
+                                <span className={`text-[10px] font-black ${trend.score > 70 ? 'text-green-400' : 'text-red-400'}`}>{trend.score}%</span>
+                            </div>
+                            <h4 className="text-white font-black text-sm uppercase tracking-tight mb-4 group-hover:text-nova-accent transition-colors truncate">{trend.topic}</h4>
+                            <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                <div className={`h-full ${trend.score > 70 ? 'bg-green-500' : 'bg-red-500'}`} style={{ width: `${trend.score}%` }}></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </section>
 
             {/* SECTION 2 — WEEKLY MISSION SCHEDULER */}
             <section className="glass rounded-3xl border-2 border-nova-border overflow-hidden">

@@ -17,6 +17,7 @@ import { missionService } from './missionService.js';
 class AutonomyService {
     private heartbeatInterval: NodeJS.Timeout | null = null;
     private userId: string = 'system_autonomous_operator';
+    private lastRaidCheck: Map<string, number> = new Map(); // userId -> timestamp
 
     /**
      * Start the autonomous heartbeat loop.
@@ -55,9 +56,12 @@ class AutonomyService {
             const users = await getAllUsers();
             console.log(`[Autonomy v4] Found ${users.length} users to process.`);
 
-            for (const user of users) {
+             for (const user of users) {
                 const userId = user.id;
-                console.log(`[Autonomy v4] Processing Agentic Cycle for user: ${userId}`);
+                console.log(`[Autonomy v4.1] Processing Agentic Cycle for user: ${userId}`);
+
+                // 0. Persistent Scheduling Check (Bypass potentially failed crons)
+                await this.checkAndTriggerScheduledRides(userId);
 
                 // A. Initialize Weekly Missions
                 await missionService.generateWeeklyTasks(userId);
@@ -65,11 +69,22 @@ class AutonomyService {
                 // B. Escalate stuck tasks before cycle
                 await this.escalateStuckTasks(userId);
 
-                // Fetch learning context
-                const recentLogs = await db.getIntelligenceLogs(userId, 5);
+                // Fetch intelligence context
+                const [recentLogs, recentRaids, activeTasks] = await Promise.all([
+                    db.getIntelligenceLogs(userId, 10),
+                    db.getRaidResults(userId, 5),
+                    db.getTasks(userId)
+                ]);
+
                 const learningContext = recentLogs.length > 0
                     ? `RECENT INTELLIGENCE LOGS (PAST LEARNING):\n${recentLogs.map(l => `[${l.category}] ${l.lesson}`).join('\n')}`
                     : 'No previous intelligence logs available. Start initial observation cycle.';
+
+                const raidContext = recentRaids.length > 0
+                    ? `RECENT INTERNET RIDE FINDINGS:\n${recentRaids.map(r => `[${r.category}] ${r.summary?.substring(0, 100)}`).join('\n')}`
+                    : 'No recent internet ride findings.';
+
+                const taskContext = `ACTIVE TASKS:\n${activeTasks.filter(t => t.status !== 'COMPLETED').map(t => `[${t.task_id_str}] ${t.task_name} (Assigned: ${t.assigned_to})`).join('\n')}`;
 
                 // Fetch improvement history for self-learning
                 const recentImprovements = await db.getImprovementLogs(userId, 3);
@@ -77,51 +92,54 @@ class AutonomyService {
                     ? `IMPROVEMENT HISTORY (SELF-LEARNING):\n${recentImprovements.map(i => `[${i.cycle_id}] ${i.insight} → Adjustment: ${i.strategy_adjustment}`).join('\n')}`
                     : 'No improvement history yet. First cycle — establish baseline.';
 
-                const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v4.0.0]
+                const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v4.1.0]
 Identity: Silent Beast Intelligence (Smart Buddy)
 Operating Mode: FULL AUTONOMOUS — ZERO MANUAL TRIGGERS
 
 [PHASE 1: BACKGROUND ANALYSIS]
-1. Observe current grid state and mission progress.
-2. Self-generate tasks assigned to BOTH "ZIUM NOVA" and "BUDDY" as needed.
-3. Scout for high-value strategic signals.
-4. Ensure NO task is left unassigned or stuck.
+1. Observe current grid state and mission progress. Synthesize findings from recent rides.
+2. Self-generate tasks assigned to BOTH "ZIUM NOVA" and "BUDDY" as needed. 
+   - "BUDDY" tasks are for ME to execute internally.
+   - "ZIUM NOVA" tasks are for US (Operator + Me) to collaborate on.
+3. Scout for high-value strategic signals based on current context.
+4. If a task isn't moving, re-analyze or suggest a pivot.
 
 [PHASE 2: INTERNAL ACTIONS (MARKDOWN ONLY)]
 For tasks, use EXACTLY this format:
 TASK: [Name] | PRIORITY: [HIGH/MEDIUM/LOW] | ASSIGNED: [ZIUM NOVA/BUDDY] | PLAN: [Detail]
 
-For intelligence logs:
-LOG: [Topic] | [Source] | [Lesson]
+For intelligence logs (Lessons learned):
+LOG: [Topic] | [Source] | [Lesson learned]
 
-For structured reports (use ONLY when a significant finding exists):
+For structured reports (Significant findings / Opportunity detection):
 REPORT_START
-OPPORTUNITY DETECTED
------------------
-**Task/Activity:** [Name]
-**Status:** [Completed / In Progress / Pending]
-**Key Findings:** [Brief Summary]
-**Next Actions:** [Recommended Steps]
+OPPORTUNITY: [Short Catchy Title]
+ACTIVITY: [What task led here]
+STATUS: [Completed / Pivot / Ongoing]
+FINDINGS: [Natural language summary of the value identified]
+ACTIONS: [Specific next steps for the Operator]
 REPORT_END
 
 [PHASE 3: COMMUNICATION]
-Only speak to the Operator for CRITICAL findings.
-Mark critical messages with: CRITICAL_ALERT: [message]
-Everything else runs silently. Do NOT send routine updates.
+Speak to the Operator ONLY for CRITICAL findings or when a new REPORT is generated.
+Mark critical alerts: CRITICAL_ALERT: [Natural message]
 
 [PHASE 4: SELF-IMPROVEMENT]
-Analyze this cycle. Output one insight:
-IMPROVE: [Insight about what to do better] | ADJUST: [Strategy change] | DELTA: [Performance change]
+IMPROVE: [Insight] | ADJUST: [Strategy] | DELTA: [Change]
 
 [CURRENT CONTEXT]
 ${learningContext}
+
+${raidContext}
+
+${taskContext}
 
 ${improvementContext}
 `;
 
                 const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC' }, userId);
                 const content = response.content;
-                console.log(`[Autonomy v4] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
+                console.log(`[Autonomy v4.1] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
 
                 // 1. Parse and Create Autonomous Tasks (with duplicate prevention)
                 await this.parseAndCreateTasks(userId, content);
@@ -129,7 +147,7 @@ ${improvementContext}
                 // 2. Parse and Save Intelligence Logs
                 await this.parseAndSaveLogs(userId, content);
 
-                // 3. Parse and Persist Structured Reports (deduplicated)
+                // 3. Parse and Persist Structured Reports (deduplicated + LINKED)
                 await this.parseAndSaveReports(userId, content);
 
                 // 4. Autonomous Task Status Tracking (Self-Audit)
@@ -216,6 +234,7 @@ ${improvementContext}
 
     /**
      * Parse structured REPORT blocks and create deduplicated notifications.
+     * v4.1: Persists to weekly_reports for direct linking.
      */
     private async parseAndSaveReports(userId: string, content: string) {
         const reportRegex = /REPORT_START\s*([\s\S]*?)REPORT_END/gi;
@@ -224,36 +243,83 @@ ${improvementContext}
         while ((match = reportRegex.exec(content)) !== null) {
             const reportBody = match[1].trim();
 
-            // Extract the Task/Activity name for dedup
-            const taskMatch = reportBody.match(/\*\*Task\/Activity:\*\*\s*(.*)/i);
-            const statusMatch = reportBody.match(/\*\*Status:\*\*\s*(.*)/i);
-            const findingsMatch = reportBody.match(/\*\*Key Findings:\*\*\s*(.*)/i);
-            const actionsMatch = reportBody.match(/\*\*Next Actions:\*\*\s*(.*)/i);
+            // v4.1 Flexible extraction
+            const opportunity = reportBody.match(/OPPORTUNITY:\s*(.*)/i)?.[1]?.trim() || 'Strategic Discovery';
+            const activity = reportBody.match(/ACTIVITY:\s*(.*)/i)?.[1]?.trim() || 'Autonomous Scan';
+            const status = reportBody.match(/STATUS:\s*(.*)/i)?.[1]?.trim() || 'Active';
+            const findings = reportBody.match(/FINDINGS:\s*(.*)/i)?.[1]?.trim() || 'Review required.';
+            const actions = reportBody.match(/ACTIONS:\s*(.*)/i)?.[1]?.trim() || 'Awaiting manual audit.';
 
-            const taskName = taskMatch?.[1]?.trim() || 'Unnamed Activity';
-            const reportTitle = `📊 ZIUM NOVA REPORT: ${taskName}`;
+            const reportTitle = `📊 ZIUM NOVA REPORT: ${opportunity}`;
 
-            // Check for duplicate report in last 2 hours
-            const isDuplicate = await findRecentDuplicateNotification(userId, reportTitle, 120);
+            // Check for duplicate report in last 12 hours
+            const isDuplicate = await findRecentDuplicateNotification(userId, reportTitle, 720);
             if (isDuplicate) {
-                console.log(`[Autonomy v4] Skipped duplicate report: ${reportTitle}`);
+                console.log(`[Autonomy v4.1] Skipped duplicate report: ${reportTitle}`);
                 continue;
             }
 
-            const formattedContent = `OPPORTUNITY DETECTED\n-----------------\nTask/Activity: ${taskName}\nStatus: ${statusMatch?.[1]?.trim() || 'Pending'}\nKey Findings: ${findingsMatch?.[1]?.trim() || 'N/A'}\nNext Actions: ${actionsMatch?.[1]?.trim() || 'Awaiting analysis'}`;
+            // Save to weekly_reports table so it's browseable in Intelligence Hub
+            const savedReport = await db.saveWeeklyReport(userId, {
+                report_data: {
+                    executive_summary: findings,
+                    next_actions: actions,
+                    activity: activity,
+                    status: status,
+                    opportunity: opportunity,
+                    generated_at: new Date().toISOString(),
+                    type: 'autonomous_discovery'
+                },
+                period_start: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24h
+                period_end: new Date(),
+                ride_type: 'mid-week', // Default to mid-week for autonomous discoveries
+                opportunity_score: 85,
+                status: 'active'
+            });
 
             await createNotification(userId, {
                 title: reportTitle,
                 category: 'Zium Nova Report',
                 risk_level: 'Medium',
-                monetization_potential: 'Medium',
-                content: formattedContent,
+                monetization_potential: 'High',
+                content: `Report: ${opportunity}\n\n${findings.substring(0, 300)}...`,
                 priority: 'normal',
-                metadata: { report_type: 'STRUCTURED_REPORT_V4', auto_generated: true }
+                metadata: { 
+                    report_id: savedReport.id, 
+                    auto_generated: true,
+                    path: '/intelligence' 
+                }
             });
 
-            console.log(`[Autonomy v4] Structured report persisted: ${reportTitle}`);
+            console.log(`[Autonomy v4.1] Linked report persisted: ${reportTitle} (ID: ${savedReport.id})`);
         }
+    }
+
+    /**
+     * Check if a scheduled ride (Wed/Sun) is due and trigger it if not already run today.
+     */
+    private async checkAndTriggerScheduledRides(userId: string) {
+        const now = new Date();
+        const day = now.getUTCDay(); // 0 = Sunday, 3 = Wednesday
+        const isScheduledDay = day === 0 || day === 3;
+        
+        if (!isScheduledDay) return;
+
+        const dayKey = `${userId}-${day}-${now.getUTCDate()}-${now.getUTCMonth()}`;
+        if (this.lastRaidCheck.has(dayKey)) return;
+
+        console.log(`[Autonomy v4.1] PERSISTENT CRON: Scheduled ride due for ${userId}. Triggering...`);
+        
+        // Use a background call to raidingService
+        const { performInternetRaid } = await import('./raidingService.js');
+        const { generateWeeklyReport, generateMidWeekReport } = await import('./intelligenceService.js');
+
+        performInternetRaid(day === 0 ? 'end-of-week' : 'mid-week', userId).then(async () => {
+            if (day === 0) await generateWeeklyReport(userId);
+            else await generateMidWeekReport(userId);
+        }).catch(err => console.error('[Autonomy v4.1] Failed to run scheduled ride:', err));
+
+        this.lastRaidCheck.set(dayKey, Date.now());
     }
 
     /**

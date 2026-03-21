@@ -738,8 +738,8 @@ export async function updateTaskStatus(userId: string, taskIdStr: string, status
     let queryArgs: any[] = [];
     let queryStr = '';
     
-    // Normalize taskIdStr
-    const normalizedIdStr = parseInt(taskIdStr, 10).toString().padStart(3, '0');
+    // Use raw taskIdStr for lookups to support both auto-increment (001) and weekly IDs (W12-26-01)
+    const normalizedIdStr = taskIdStr;
 
     if (notes !== undefined) {
         if (isPg) {

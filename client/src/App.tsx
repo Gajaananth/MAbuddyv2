@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import Dashboard from './pages/Dashboard';
 import ChatPage from './pages/ChatPage';
 import TrendsPage from './pages/TrendsPage';
 import AgentsPage from './pages/AgentsPage';
@@ -45,17 +44,17 @@ function App() {
             <ProtectedRoute>
               <div className="flex bg-nova-bg text-nova-text min-h-screen selection:bg-nova-accent/30 selection:text-white overflow-x-hidden relative">
                 {/* Mobile Header Bar - Fixed for consistency */}
-                <header className="fixed top-0 left-0 right-0 h-16 glass z-50 flex lg:hidden items-center px-3 sm:px-6 border-b border-nova-border/50 justify-between">
-                  <div className="flex items-center gap-2 sm:gap-4">
+                <header className="fixed top-0 left-0 right-0 h-14 glass z-50 flex lg:hidden items-center px-4 border-b border-nova-border/50 justify-between">
+                  <div className="flex items-center gap-3">
                     <button
                       onClick={() => setSidebarOpen(true)}
-                      className="p-1.5 sm:p-3 -ml-1 sm:-ml-2 text-nova-accent hover:bg-white/10 rounded-xl active:scale-90 transition-all shadow-lg"
+                      className="p-2 -ml-2 text-nova-accent hover:bg-white/10 rounded-xl transition-all"
                     >
-                      <Menu size={22} />
+                      <Menu size={20} />
                     </button>
-                    <h1 className="text-lg sm:text-2xl font-black tracking-tighter text-white uppercase truncate flex items-center gap-1.5">
-                      <Bird size={18} className="text-nova-accent" />
-                      <div>Zium <span className="text-nova-accent">Nova</span></div>
+                    <h1 className="text-lg font-black tracking-tighter text-white uppercase truncate flex items-center gap-2">
+                      <Bird size={16} className="text-nova-accent" />
+                      <span>ZIUM NOVA</span>
                     </h1>
                   </div>
                   <NotificationPanel />
@@ -81,7 +80,6 @@ function App() {
 
                     <Routes>
                       <Route path="/" element={<CommandDashboard />} />
-                      <Route path="/pulse" element={<Dashboard />} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/trends" element={<TrendsPage />} />
                       <Route path="/agents" element={<AgentsPage />} />

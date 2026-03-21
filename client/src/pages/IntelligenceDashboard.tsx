@@ -110,19 +110,29 @@ const IntelligenceDashboard: React.FC = () => {
             setReports(fetchedReports);
 
             // Check for highlighted ID from search params
-            const targetId = searchParams.get('id');
+            const reportId = searchParams.get('reportId');
+            const findingId = searchParams.get('findingId');
+            const targetId = reportId || findingId || searchParams.get('id');
+
             if (targetId) {
                 setHighlightedId(targetId);
+                
                 // Determine if it's a ride or report
-                const isRide = fetchedRides.some((r: RideResult) => r.id === targetId);
-                const isReport = fetchedReports.some((r: WeeklyReport) => r.id === targetId);
+                const isRide = fetchedRides.some((r: RideResult) => r.id === targetId) || !!findingId;
+                const isReport = fetchedReports.some((r: WeeklyReport) => r.id === targetId) || !!reportId;
 
-                if (isRide) setActiveTab('rides');
-                else if (isReport) setActiveTab('reports');
+                if (isReport) {
+                    setActiveTab('reports');
+                    if (reportId) setExpandedReports(prev => [...new Set([...prev, reportId])]);
+                } else if (isRide) {
+                    setActiveTab('rides');
+                }
 
                 // Clear search params to avoid persistent highlighting
                 const newParams = new URLSearchParams(searchParams);
                 newParams.delete('id');
+                newParams.delete('reportId');
+                newParams.delete('findingId');
                 setSearchParams(newParams, { replace: true });
             }
         } catch (error) {
@@ -136,14 +146,15 @@ const IntelligenceDashboard: React.FC = () => {
     useEffect(() => {
         if (highlightedId && !loading) {
             const timer = setTimeout(() => {
-                const element = document.getElementById(`finding-${highlightedId}`);
+                const element = document.getElementById(`finding-${highlightedId}`) || 
+                                document.getElementById(`report-${highlightedId}`);
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                // Fade out highlight after 3 seconds
-                const fadeTimer = setTimeout(() => setHighlightedId(null), 3000);
+                // Fade out highlight after 5 seconds
+                const fadeTimer = setTimeout(() => setHighlightedId(null), 5000);
                 return () => clearTimeout(fadeTimer);
-            }, 500);
+            }, 600);
             return () => clearTimeout(timer);
         }
     }, [highlightedId, loading]);
@@ -284,17 +295,16 @@ const IntelligenceDashboard: React.FC = () => {
         <div className="w-full max-w-7xl mx-auto pb-20 px-0 sm:px-0 flex flex-col">
             {/* Header */}
             <header className="mb-8 sm:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-                <div className="flex items-center gap-4 lg:gap-3">
-                    <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl lg:rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 relative shadow-2xl shrink-0">
-                        <Bird size={24} className="lg:hidden" />
-                        <Bird size={30} className="hidden lg:block" />
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 lg:w-3.5 lg:h-3.5 bg-red-500 rounded-full border-2 border-nova-bg animate-pulse"></div>
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-nova-accent flex items-center justify-center nova-accent-glow shrink-0">
+                        <Bird className="text-nova-bg w-6 h-6 sm:w-8 sm:h-8" />
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-red-500 rounded-full border-2 border-nova-bg animate-pulse"></div>
                     </div>
                     <div className="min-w-0">
-                        <h2 className="text-xl lg:text-base font-black text-white tracking-tight uppercase truncate">Intelligence Hub</h2>
-                        <p className="text-[10px] lg:text-[10px] text-nova-text-dim font-bold flex items-center gap-1.5 lg:gap-1 truncate">
+                        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase truncate">Intelligence Hub</h2>
+                        <p className="text-[9px] sm:text-[10px] text-nova-text-dim font-bold flex items-center gap-1.5 truncate">
                             <Radio size={10} className="text-red-400 animate-pulse shrink-0" />
-                            <span className="truncate">{liveTime.full} — {rides.length} findings</span>
+                            <span className="truncate">{liveTime.full} — v3.2.0</span>
                         </p>
                     </div>
                 </div>
@@ -524,7 +534,8 @@ const IntelligenceDashboard: React.FC = () => {
                         reports.map((report: WeeklyReport) => (
                             <div
                                 key={report.id}
-                                className={`glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all group relative overflow-hidden ${selectedIds.includes(report.id) ? 'border-nova-accent bg-nova-accent/5' : 'border-nova-border hover:border-nova-accent/30'}`}
+                                id={`report-${report.id}`}
+                                className={`glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all group relative overflow-hidden ${selectedIds.includes(report.id) ? 'border-nova-accent bg-nova-accent/5' : highlightedId === report.id ? 'border-nova-accent bg-nova-accent/10 shadow-[0_0_30px_rgba(0,242,255,0.2)] scale-[1.01] z-20' : 'border-nova-border hover:border-nova-accent/30'}`}
                             >
                                 <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-6 mb-6">
                                     <div className="flex items-center gap-4">

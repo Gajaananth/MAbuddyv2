@@ -10,7 +10,6 @@ import {
     Terminal,
     Bird,
     Shield,
-    Zap,
     X
 } from 'lucide-react';
 
@@ -30,9 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { name: 'Important Reports', icon: <Shield size={26} />, path: '/reports' },
         
         { name: 'Strategic Memory', icon: <Database size={26} />, path: '/memory' },
-        { name: 'Global Pulse', icon: <Zap size={26} />, path: '/pulse' },
         { name: 'Chat', icon: <MessageSquare size={26} />, path: '/chat' },
-        { name: 'Trends', icon: <TrendingUp size={26} />, path: '/trends' },
         { name: 'Agents', icon: <Users size={26} />, path: '/agents' },
         { name: 'Security & Risk Monitor', icon: <Shield size={26} />, path: '/security' },
     ];
@@ -61,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl lg:text-base font-black tracking-tighter text-white truncate uppercase">ZIUM <span className="text-nova-accent">NOVA</span></h1>
-                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v3.1.5</p>
+                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v3.2.0</p>
                         </div>
                     </div>
 
@@ -146,17 +143,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                 <span className="text-nova-accent">ARMED</span>
                             </div>
                         </div>
-                    </div>
-
-                    <div 
-                        onClick={() => {
-                            localStorage.clear();
-                            window.location.reload();
-                        }}
-                        className="mt-4 lg:mt-5 flex items-center gap-2 text-nova-text-dim/50 hover:text-nova-accent transition-all cursor-pointer group px-2"
-                    >
-                        <Zap size={12} className="group-hover:scale-110 transition-transform animate-pulse" />
-                        <span className="text-[9px] lg:text-[8px] font-mono font-black tracking-widest uppercase">PROTOCOL SYNC</span>
                     </div>
                 </div>
             </aside>

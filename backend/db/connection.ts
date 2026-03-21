@@ -209,12 +209,94 @@ async function runMigrations(client: any) {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS devices (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        device_identifier TEXT NOT NULL,
+        fingerprint TEXT NOT NULL,
+        os_type TEXT,
+        public_key TEXT,
+        credential_id TEXT,
+        counter INTEGER DEFAULT 0,
+        current_challenge TEXT,
+        notifications_enabled BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS push_subscriptions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+        subscription_data TEXT NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(device_id)
+      );
+
+      CREATE TABLE IF NOT EXISTS intelligence_raids (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        risk_level VARCHAR(10) DEFAULT 'Medium',
+        source_platform VARCHAR(255),
+        content TEXT,
+        summary TEXT,
+        tags JSONB DEFAULT '[]',
+        metadata JSONB DEFAULT NULL,
+        ride_type VARCHAR(20) DEFAULT 'mid-week',
+        opportunity_score INTEGER DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS weekly_reports (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        report_data JSONB NOT NULL,
+        period_start TIMESTAMPTZ,
+        period_end TIMESTAMPTZ,
+        ride_type VARCHAR(20) DEFAULT 'end-week',
+        opportunity_score INTEGER DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS agent_network (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        capabilities JSONB DEFAULT '[]',
+        trust_score INTEGER DEFAULT 0,
+        status VARCHAR(20) DEFAULT 'active',
+        last_collaboration TIMESTAMPTZ,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS agent_activity_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        agent_id VARCHAR(100) DEFAULT 'ZIUM_NOVA',
+        action_type VARCHAR(100) NOT NULL,
+        platform VARCHAR(100),
+        details TEXT,
+        metadata JSONB DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS trend_analyses (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        topic VARCHAR(255) NOT NULL,
+        analysis JSONB NOT NULL,
+        score INTEGER DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
       CREATE INDEX IF NOT EXISTS idx_improvement_logs_user ON improvement_logs(user_id);
       CREATE INDEX IF NOT EXISTS idx_notifications_user_title ON notifications(user_id, title, created_at);
       CREATE INDEX IF NOT EXISTS idx_raids_user_category ON intelligence_raids(user_id, category, created_at);
-
       CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
       CREATE INDEX IF NOT EXISTS idx_tasks_user ON tasks(user_id);
+      CREATE INDEX IF NOT EXISTS idx_devices_user ON devices(user_id);
+      CREATE INDEX IF NOT EXISTS idx_weekly_reports_user ON weekly_reports(user_id);
       
       -- Seeding
       INSERT INTO users (id, dob_hash, pin_hash, q1_hash, q2_hash, q3_hash)

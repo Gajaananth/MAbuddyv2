@@ -98,7 +98,7 @@ export class MissionService {
         const now = new Date();
         const weekNumber = this.getWeekNumber(now);
         const year = now.getFullYear();
-        const weekId = `W${weekNumber}-${year}`;
+        const weekId = `W${weekNumber}-${year.toString().slice(-2)}`;
         
         const tasks = await db.getTasks(userId);
         const targetTask = tasks.find(t => 

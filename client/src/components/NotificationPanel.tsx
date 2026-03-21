@@ -206,7 +206,17 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                     onClick={() => {
                         if (!isRead(n)) handleMarkRead(n.id);
                         setIsOpen(false);
-                        const targetPath = (n.metadata as any)?.path || '/reports';
+                        const metadata = n.metadata as any;
+                        let targetPath = metadata?.path || '/intelligence';
+                        
+                        if (metadata?.report_id) {
+                            targetPath = `/intelligence?reportId=${metadata.report_id}`;
+                        } else if (metadata?.finding_id) {
+                            targetPath = `/intelligence?findingId=${metadata.finding_id}`;
+                        } else if (metadata?.task_id) {
+                            targetPath = `/?taskId=${metadata.task_id}`;
+                        }
+                        
                         navigate(targetPath);
                     }}
                     className={`
