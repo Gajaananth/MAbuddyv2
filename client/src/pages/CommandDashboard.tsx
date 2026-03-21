@@ -190,7 +190,7 @@ const CommandDashboard: React.FC = () => {
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-nova-text-dim uppercase tracking-tighter">Verified Opportunities:</span>
-                                <span className="text-green-400 font-bold">3</span>
+                                <span className="truncate">{liveTime.full} — v4.1.2</span>
                             </div>
                         </div>
                     </div>

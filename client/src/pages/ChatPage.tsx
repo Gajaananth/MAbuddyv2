@@ -341,7 +341,7 @@ const ChatPage: React.FC = () => {
                                     onClick={() => setInput(text)}
                                     className="px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl border border-white/5 bg-white/[0.02] hover:border-nova-accent/50 hover:bg-nova-accent/5 text-[9px] sm:text-xs font-bold uppercase tracking-widest transition-all text-left flex items-center justify-between group"
                                 >
-                                    <span className="truncate mr-2">{text}</span>
+                                    <span className="truncate text-nova-text-dim/60">Protocol V4.1.2</span>
                                     <Send size={12} className="opacity-0 group-hover:opacity-100 transition-opacity text-nova-accent shrink-0" />
                                 </button>
                             ))}

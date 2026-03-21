@@ -304,7 +304,7 @@ const IntelligenceDashboard: React.FC = () => {
                         <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase truncate">Intelligence Hub</h2>
                         <p className="text-[9px] sm:text-[10px] text-nova-text-dim font-bold flex items-center gap-1.5 truncate">
                             <Radio size={10} className="text-red-400 animate-pulse shrink-0" />
-                            <span className="truncate">{liveTime.full} — v3.2.0</span>
+                            <span className="truncate">{liveTime.full} — v4.1.2</span>
                         </p>
                     </div>
                 </div>

@@ -58,7 +58,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl lg:text-base font-black tracking-tighter text-white truncate uppercase">ZIUM <span className="text-nova-accent">NOVA</span></h1>
-                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v3.2.0</p>
+                            <p className="text-[8px] lg:text-[7px] text-nova-text-dim tracking-[0.2em] lg:tracking-[0.2em] uppercase font-black opacity-60 truncate">Silent Beast - v4.1.2</p>
                         </div>
                     </div>
 
