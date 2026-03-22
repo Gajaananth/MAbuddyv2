@@ -222,8 +222,8 @@ export const commandCenterTool = tool({
 
             if (action === 'update') {
                 if (!task_id_str || !status) return { success: false, error: 'task_id_str and status are required to update a task.' };
-                // Ensure 3 digit format
-                const normalizedId = parseInt(task_id_str, 10).toString().padStart(3, '0');
+                // Use raw taskIdStr to support both auto-increment and weekly IDs
+                const normalizedId = task_id_str;
                 const updatedTask = await updateTaskStatus(userId, normalizedId, status, notes);
                 
                 let resultMsg = `Task ${normalizedId} updated to ${status}.`;

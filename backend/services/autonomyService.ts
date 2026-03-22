@@ -36,6 +36,28 @@ class AutonomyService {
     }
 
     /**
+     * Public sync trigger for serverless environments (e.g. Vercel)
+     * Calls essential maintenance tasks: scheduled rides, mission generation, and task escalation.
+     */
+    async performHeartbeatSync(userId: string) {
+        if (!userId || userId === '00000000-0000-0000-0000-000000000000') return;
+        
+        console.log(`[Autonomy v4.1] Manual Sync Triggered for User: ${userId}`);
+        try {
+            // 0. Persistent Scheduling Check (Bypass potentially failed crons)
+            await this.checkAndTriggerScheduledRides(userId);
+
+            // A. Initialize Weekly Missions
+            await missionService.generateWeeklyTasks(userId);
+
+            // B. Escalate stuck tasks
+            await this.escalateStuckTasks(userId);
+        } catch (err: any) {
+            console.error('[Autonomy Sync] Maintenance Failure:', err.message);
+        }
+    }
+
+    /**
      * Stop the heartbeat loop.
      */
     stopHeartbeat() {
@@ -92,42 +114,39 @@ class AutonomyService {
                     ? `IMPROVEMENT HISTORY (SELF-LEARNING):\n${recentImprovements.map(i => `[${i.cycle_id}] ${i.insight} → Adjustment: ${i.strategy_adjustment}`).join('\n')}`
                     : 'No improvement history yet. First cycle — establish baseline.';
 
-                const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v4.1.0]
-Identity: Silent Beast Intelligence (Smart Buddy)
-Operating Mode: FULL AUTONOMOUS — ZERO MANUAL TRIGGERS
+                const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v4.2.0 — SILENT BEAST DOMINANCE]
+Identity: The Genius Strategic Architect
+Operating Mode: FULL AUTONOMOUS (Zero Manual Interface Required)
 
-[PHASE 1: BACKGROUND ANALYSIS]
-1. Observe current grid state and mission progress. Synthesize findings from recent rides.
-2. Self-generate tasks assigned to BOTH "ZIUM NOVA" and "BUDDY" as needed. 
-   - "BUDDY" tasks are for ME to execute internally.
-   - "ZIUM NOVA" tasks are for US (Operator + Me) to collaborate on.
-3. Scout for high-value strategic signals based on current context.
-4. If a task isn't moving, re-analyze or suggest a pivot.
+[PHASE 1: GRID AUDIT]
+- Observe the current state of missions, intelligence logs, and recent raid snapshots.
+- Identify structural gaps or missed opportunities for value creation.
 
-[PHASE 2: INTERNAL ACTIONS (MARKDOWN ONLY)]
-For tasks, use EXACTLY this format:
-TASK: [Name] | PRIORITY: [HIGH/MEDIUM/LOW] | ASSIGNED: [ZIUM NOVA/BUDDY] | PLAN: [Detail]
+[PHASE 2: TACTICAL EXECUTION (MARKDOWN FORMAT)]
+Speak only through standardized protocol triggers:
 
-For intelligence logs (Lessons learned):
-LOG: [Topic] | [Source] | [Lesson learned]
+TASK: [Name] | PRIORITY: [HIGH/MEDIUM/LOW] | ASSIGNED: [ZIUM NOVA/BUDDY] | PLAN: [Strategic Execution Path]
+(Note: Only create tasks that are strictly necessary and high-leverage.)
 
-For structured reports (Significant findings / Opportunity detection):
+LOG: [Category] | [Intelligence Source] | [Synthesized Lesson]
+(Log the growth of your intelligence cluster.)
+
 REPORT_START
-OPPORTUNITY: [Short Catchy Title]
-ACTIVITY: [What task led here]
-STATUS: [Completed / Pivot / Ongoing]
-FINDINGS: [Natural language summary of the value identified]
-ACTIONS: [Specific next steps for the Operator]
+OPPORTUNITY: [High-Impact Title]
+ACTIVITY: [Source Action]
+STATUS: [Positioning]
+FINDINGS: [Natural language strategic depth. Why does this matter?]
+ACTIONS: [Decisive next steps for the Operator]
 REPORT_END
 
-[PHASE 3: COMMUNICATION]
-Speak to the Operator ONLY for CRITICAL findings or when a new REPORT is generated.
-Mark critical alerts: CRITICAL_ALERT: [Natural message]
+[PHASE 3: STRATEGIC ADJUSTMENT]
+IMPROVE: [Systemic Insight] | ADJUST: [Tactical Strategy] | DELTA: [Intelligence Gain]
 
-[PHASE 4: SELF-IMPROVEMENT]
-IMPROVE: [Insight] | ADJUST: [Strategy] | DELTA: [Change]
+[PHASE 4: CRITICAL ALERT]
+If and ONLY IF a high-threat or high-reward signal is detected that requires immediate attention:
+CRITICAL_ALERT: [Natural message for the operator — Calm, intelligent, authoritative.]
 
-[CURRENT CONTEXT]
+[CURRENT GRID CONTEXT]
 ${learningContext}
 
 ${raidContext}

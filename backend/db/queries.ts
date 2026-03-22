@@ -369,17 +369,19 @@ export async function saveWeeklyReport(userId: string, report: {
     ride_type?: 'mid-week' | 'end-week' | 'emergency';
     opportunity_score?: number;
     status?: 'active' | 'archived' | 'deleted';
-}): Promise<void> {
+}): Promise<any> {
     if (isPostgresActive) {
-        await pool.query(
-            'INSERT INTO weekly_reports (user_id, report_data, period_start, period_end, ride_type, opportunity_score, status) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+        const result = await pool.query(
+            'INSERT INTO weekly_reports (user_id, report_data, period_start, period_end, ride_type, opportunity_score, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
             [userId, report.report_data, report.period_start, report.period_end, report.ride_type || 'end-week', report.opportunity_score || 0, report.status || 'active']
         );
+        return result.rows[0];
     } else {
         const id = uuidv4();
         getSqlite().prepare(
             'INSERT INTO weekly_reports (id, user_id, report_data, period_start, period_end, ride_type, opportunity_score, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
         ).run(id, userId, JSON.stringify(report.report_data), report.period_start.toISOString(), report.period_end.toISOString(), report.ride_type || 'end-week', report.opportunity_score || 0, report.status || 'active');
+        return getSqlite().prepare('SELECT * FROM weekly_reports WHERE id = ?').get(id);
     }
 }
 
