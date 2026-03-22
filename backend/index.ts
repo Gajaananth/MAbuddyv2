@@ -68,10 +68,10 @@ app.use(express.json({ limit: '10mb' }));
 app.get('/api/health', (_req, res) => {
     res.json({
         status: 'online',
-        agent: 'Zium Nova',
-        identity: 'Silent Beast Intelligence',
-        version: 'v3.2.0',
-        protocol: 'full_autonomous_agentic_ai',
+        agent: 'ZIUM NOVA',
+        identity: 'SILENT BEAST DOMINANCE',
+        version: 'v4.2.0',
+        protocol: 'silent_beast_dominance_v2',
         mode: process.env.OPENROUTER_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
