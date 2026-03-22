@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { TrendingUp, Loader2 } from 'lucide-react';
+import { formatTimestamp } from '../utils/formatUtils';
 
 interface IntelligenceLog {
     id: string;
@@ -77,7 +78,7 @@ const LearningPage: React.FC = () => {
                             
                             <div className="space-y-3 font-mono text-sm">
                                 <div className="text-white font-black tracking-widest uppercase border-b border-white/10 pb-2 mb-3">
-                                    {new Date(log.created_at).toISOString().split('T')[0]}
+                                    {formatTimestamp(log.created_at)}
                                 </div>
                                 <div className="flex gap-2">
                                     <span className="text-nova-text-dim uppercase tracking-widest font-black w-24 shrink-0">Topic:</span>

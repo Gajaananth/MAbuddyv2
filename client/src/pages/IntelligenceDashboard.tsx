@@ -3,6 +3,7 @@ import { Bird, Search, Download, AlertTriangle, Clock, Radio, ChevronDown, Zap, 
 import { useSearchParams } from 'react-router-dom';
 import { intelligenceService } from '../services/api';
 import { useLiveTime } from '../hooks/useLiveTime';
+import { formatTimestamp } from '../utils/formatUtils';
 
 interface RideResult {
     id: string;
@@ -514,7 +515,7 @@ const IntelligenceDashboard: React.FC = () => {
                                                 </span>
                                             ))}
                                             <span className="ml-auto text-[8px] sm:text-[9px] font-mono text-nova-text-dim/40 self-center uppercase">
-                                                {new Date(ride.created_at).toLocaleDateString()}
+                                                {formatTimestamp(ride.created_at)}
                                             </span>
                                         </div>
                                     </div>
@@ -553,7 +554,7 @@ const IntelligenceDashboard: React.FC = () => {
                                         <div>
                                             <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-tight">Intelligence Report</h3>
                                             <p className="text-[10px] sm:text-xs text-nova-text-dim font-bold uppercase tracking-widest opacity-60">
-                                                {new Date(report.period_start).toLocaleDateString()} — {new Date(report.period_end).toLocaleDateString()}
+                                                {formatTimestamp(report.period_start)} — {formatTimestamp(report.period_end)}
                                             </p>
                                         </div>
                                     </div>

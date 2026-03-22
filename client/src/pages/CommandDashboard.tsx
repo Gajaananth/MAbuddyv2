@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { trendService } from '../services/api';
+import { formatTimestamp } from '../utils/formatUtils';
 
 interface Task {
     id: string;
@@ -332,7 +333,7 @@ const CommandDashboard: React.FC = () => {
                         {logs.map((log) => (
                             <div key={log.id} className="p-6 hover:bg-white/[0.02] transition-all">
                                 <div className="flex justify-between mb-2">
-                                    <span className="text-[10px] font-mono font-bold text-nova-text-dim">{new Date(log.created_at).toISOString().split('T')[0]}</span>
+                                    <span className="text-[10px] font-mono font-bold text-nova-text-dim">{formatTimestamp(log.created_at)}</span>
                                     <span className="text-[10px] font-black uppercase text-green-400">High Confidence</span>
                                 </div>
                                 <h4 className="text-white font-black uppercase tracking-tight text-sm mb-1">{log.category}</h4>
@@ -359,7 +360,7 @@ const CommandDashboard: React.FC = () => {
                                         <span className={`px-1.5 py-0.5 rounded-[4px] text-[8px] font-black uppercase tracking-widest ${report.risk_level === 'High' ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-nova-accent/10 text-nova-accent border border-nova-accent/20'}`}>
                                             {report.category}
                                         </span>
-                                        <span className="text-[9px] font-mono text-nova-text-dim opacity-50">{new Date(report.created_at).toLocaleDateString()}</span>
+                                        <span className="text-[9px] font-mono text-nova-text-dim opacity-50">{formatTimestamp(report.created_at)}</span>
                                     </div>
                                     <p className="text-xs font-bold text-white truncate">{report.summary}</p>
                                 </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bird, AlertCircle, CheckCircle2, Search, Zap, BarChart3, Trash2 } from 'lucide-react';
 import { trendService } from '../services/api';
 import type { TrendAnalysis } from '../types';
+import { formatTimestamp } from '../utils/formatUtils';
 
 const TrendsPage: React.FC = () => {
     const [topic, setTopic] = useState('');
@@ -102,7 +103,7 @@ const TrendsPage: React.FC = () => {
                                 Intelligence Brief
                             </div>
                             <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-nova-text-dim font-mono">{new Date(trend.created_at).toLocaleDateString()}</span>
+                                <span className="text-[10px] text-nova-text-dim font-mono">{formatTimestamp(trend.created_at)}</span>
                                 <button
                                     onClick={() => handleDelete(trend.id)}
                                     className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white transition-all border border-red-500/20"

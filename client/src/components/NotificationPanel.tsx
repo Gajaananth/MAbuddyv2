@@ -3,6 +3,7 @@ import { Bell, X, Archive, Check, AlertTriangle, TrendingUp, Bird, Zap, Clock } 
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../services/api';
 import type { Notification } from '../types';
+import { formatTimestamp } from '../utils/formatUtils';
 
 const RISK_COLORS: Record<string, string> = {
     Low: 'text-green-400 bg-green-500/10 border-green-500/30',
@@ -272,10 +273,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                         <div className="flex items-center justify-between gap-2">
                             <span className="flex items-center gap-1 text-[9px] text-nova-text-dim/40 font-medium shrink-0">
                                 <Clock size={8} />
-                                {new Date(n.created_at).toLocaleDateString([], {
-                                    month: 'short', day: 'numeric',
-                                    hour: '2-digit', minute: '2-digit'
-                                })}
+                                {formatTimestamp(n.created_at)}
                             </span>
                             <span className="text-[8px] text-nova-text-dim/40 font-bold uppercase truncate">
                                 {n.monetization_potential}

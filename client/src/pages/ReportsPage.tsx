@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Terminal, ScrollText, Database, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { formatTimestamp } from '../utils/formatUtils';
 
 interface Report {
     id: string;
@@ -105,7 +106,7 @@ const ReportsPage: React.FC = () => {
                                     </div>
                                     <div className="flex gap-2">
                                         <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">DATE:</span>
-                                        <span className="text-white">{new Date(report.created_at).toISOString().split('T')[0]}</span>
+                                        <span className="text-white">{formatTimestamp(report.created_at)}</span>
                                     </div>
                                     <div className="flex gap-2">
                                         <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">CATEGORY:</span>
@@ -147,7 +148,7 @@ const ReportsPage: React.FC = () => {
                                 </div>
                                 <div className="flex gap-2">
                                     <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">DATE:</span>
-                                    <span className="text-white">{new Date(raid.created_at).toISOString().split('T')[0]}</span>
+                                    <span className="text-white">{formatTimestamp(raid.created_at)}</span>
                                 </div>
                                 <div className="flex gap-2">
                                     <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">CATEGORY:</span>

@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Send, Terminal, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, RefreshCcw, Bird } from 'lucide-react';
 import { chatService, memoryService } from '../services/api';
 import type { Message } from '../types';
+import { formatTimestamp } from '../utils/formatUtils';
 
 const ChatPage: React.FC = () => {
     const [searchParams] = useSearchParams();
@@ -357,7 +358,7 @@ const ChatPage: React.FC = () => {
                                     {msg.role === 'user' ? 'Operator' : 'Zium Nova'}
                                 </span>
                                 <span className="text-[8px] lg:text-[9px] text-nova-text-dim/50 font-mono">
-                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {formatTimestamp(msg.created_at)}
                                 </span>
                                 {msg.role === 'nova' && msg.metadata?.production_scores?.overall !== undefined && (
                                     <span className="text-[8px] lg:text-[9px] font-black text-nova-accent ml-1 lg:ml-2">
