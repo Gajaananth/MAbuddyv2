@@ -37,21 +37,40 @@ class AutonomyService {
 
     /**
      * Public sync trigger for serverless environments (e.g. Vercel)
-     * Calls essential maintenance tasks: scheduled rides, mission generation, and task escalation.
+     * Calls essential maintenance tasks AND triggers periodic intelligence cycles.
      */
     async performHeartbeatSync(userId: string) {
         if (!userId || userId === '00000000-0000-0000-0000-000000000000') return;
         
-        console.log(`[Autonomy v4.1] Manual Sync Triggered for User: ${userId}`);
+        console.log(`[Autonomy v4.2] Sync Triggered for User: ${userId}`);
         try {
-            // 0. Persistent Scheduling Check (Bypass potentially failed crons)
+            // 0. Essential Maintenance
             await this.checkAndTriggerScheduledRides(userId);
-
-            // A. Initialize Weekly Missions
             await missionService.generateWeeklyTasks(userId);
-
-            // B. Escalate stuck tasks
             await this.escalateStuckTasks(userId);
+
+            // 1. Periodic Intelligence Cycle check (Autonomous Learning)
+            // On Vercel, we trigger a full cycle if the last one was > 60 minutes ago.
+            const recentLogs = await db.getIntelligenceLogs(userId, 1);
+            let shouldRunCycle = false;
+
+            if (recentLogs.length === 0) {
+                shouldRunCycle = true;
+            } else {
+                const lastLogTime = new Date(recentLogs[0].created_at).getTime();
+                const now = Date.now();
+                if (now - lastLogTime > 60 * 60 * 1000) { // 60 minutes
+                    shouldRunCycle = true;
+                }
+            }
+
+            if (shouldRunCycle) {
+                console.log(`[Autonomy v4.2] Triggering Autonomous Intelligence Cycle for ${userId}...`);
+                await this.runIntelligenceCycle(userId);
+            } else {
+                console.log(`[Autonomy v4.2] Skipping Intelligence Cycle (Last log too recent: ${recentLogs[0]?.created_at})`);
+            }
+
         } catch (err: any) {
             console.error('[Autonomy Sync] Maintenance Failure:', err.message);
         }
@@ -79,42 +98,52 @@ class AutonomyService {
             console.log(`[Autonomy v4] Found ${users.length} users to process.`);
 
              for (const user of users) {
-                const userId = user.id;
-                console.log(`[Autonomy v4.1] Processing Agentic Cycle for user: ${userId}`);
+                await this.runIntelligenceCycle(user.id);
+            }
+        } catch (error: any) {
+            console.error('[Autonomy v4] Heartbeat Failure:', error.message);
+        }
+    }
 
-                // 0. Persistent Scheduling Check (Bypass potentially failed crons)
-                await this.checkAndTriggerScheduledRides(userId);
+    /**
+     * Full Intelligence & Action Cycle for a specific user.
+     */
+    private async runIntelligenceCycle(userId: string) {
+        if (!userId || userId === '00000000-0000-0000-0000-000000000000') return;
+        
+        const cycleId = `CYC-${Date.now()}`;
+        console.log(`[Autonomy v4.2] Processing Agentic Cycle for user: ${userId}`);
 
-                // A. Initialize Weekly Missions
-                await missionService.generateWeeklyTasks(userId);
+        try {
+            // 0. Maintenance checks
+            await this.checkAndTriggerScheduledRides(userId);
+            await missionService.generateWeeklyTasks(userId);
+            await this.escalateStuckTasks(userId);
 
-                // B. Escalate stuck tasks before cycle
-                await this.escalateStuckTasks(userId);
+            // Fetch intelligence context
+            const [recentLogs, recentRaids, activeTasks] = await Promise.all([
+                db.getIntelligenceLogs(userId, 10),
+                db.getRaidResults(userId, 5),
+                db.getTasks(userId)
+            ]);
 
-                // Fetch intelligence context
-                const [recentLogs, recentRaids, activeTasks] = await Promise.all([
-                    db.getIntelligenceLogs(userId, 10),
-                    db.getRaidResults(userId, 5),
-                    db.getTasks(userId)
-                ]);
+            const learningContext = recentLogs.length > 0
+                ? `RECENT INTELLIGENCE LOGS (PAST LEARNING):\n${recentLogs.map(l => `[${l.category}] ${l.lesson}`).join('\n')}`
+                : 'No previous intelligence logs available. Start initial observation cycle.';
 
-                const learningContext = recentLogs.length > 0
-                    ? `RECENT INTELLIGENCE LOGS (PAST LEARNING):\n${recentLogs.map(l => `[${l.category}] ${l.lesson}`).join('\n')}`
-                    : 'No previous intelligence logs available. Start initial observation cycle.';
+            const raidContext = recentRaids.length > 0
+                ? `RECENT INTERNET RIDE FINDINGS:\n${recentRaids.map(r => `[${r.category}] ${r.summary?.substring(0, 100)}`).join('\n')}`
+                : 'No recent internet ride findings.';
 
-                const raidContext = recentRaids.length > 0
-                    ? `RECENT INTERNET RIDE FINDINGS:\n${recentRaids.map(r => `[${r.category}] ${r.summary?.substring(0, 100)}`).join('\n')}`
-                    : 'No recent internet ride findings.';
+            const taskContext = `ACTIVE TASKS:\n${activeTasks.filter(t => t.status !== 'COMPLETED').map(t => `[${t.task_id_str}] ${t.task_name} (Assigned: ${t.assigned_to})`).join('\n')}`;
 
-                const taskContext = `ACTIVE TASKS:\n${activeTasks.filter(t => t.status !== 'COMPLETED').map(t => `[${t.task_id_str}] ${t.task_name} (Assigned: ${t.assigned_to})`).join('\n')}`;
+            // Fetch improvement history for self-learning
+            const recentImprovements = await db.getImprovementLogs(userId, 3);
+            const improvementContext = recentImprovements.length > 0
+                ? `IMPROVEMENT HISTORY (SELF-LEARNING):\n${recentImprovements.map(i => `[${i.cycle_id}] ${i.insight} → Adjustment: ${i.strategy_adjustment}`).join('\n')}`
+                : 'No improvement history yet. First cycle — establish baseline.';
 
-                // Fetch improvement history for self-learning
-                const recentImprovements = await db.getImprovementLogs(userId, 3);
-                const improvementContext = recentImprovements.length > 0
-                    ? `IMPROVEMENT HISTORY (SELF-LEARNING):\n${recentImprovements.map(i => `[${i.cycle_id}] ${i.insight} → Adjustment: ${i.strategy_adjustment}`).join('\n')}`
-                    : 'No improvement history yet. First cycle — establish baseline.';
-
-                const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v4.2.0 — SILENT BEAST DOMINANCE]
+            const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v4.2.0 — SILENT BEAST DOMINANCE]
 Identity: The Genius Strategic Architect
 Operating Mode: FULL AUTONOMOUS (Zero Manual Interface Required)
 
@@ -156,30 +185,22 @@ ${taskContext}
 ${improvementContext}
 `;
 
-                const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC' }, userId);
-                const content = response.content;
-                console.log(`[Autonomy v4.1] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
+            const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC' }, userId);
+            const content = response.content;
+            console.log(`[Autonomy v4.2] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
 
-                // 1. Parse and Create Autonomous Tasks (with duplicate prevention)
-                await this.parseAndCreateTasks(userId, content);
-
-                // 2. Parse and Save Intelligence Logs
-                await this.parseAndSaveLogs(userId, content);
-
-                // 3. Parse and Persist Structured Reports (deduplicated + LINKED)
-                await this.parseAndSaveReports(userId, content);
-
-                // 4. Autonomous Task Status Tracking (Self-Audit)
-                await this.selfAuditTasks(userId, learningContext);
-
-                // 5. Parse and Save Improvement Log
-                await this.parseAndSaveImprovement(userId, cycleId, content);
-
-                // 6. Critical-Only Operator Alerts
-                await this.handleCriticalAlerts(userId, content);
-            }
+            // Execute response processing
+            await Promise.all([
+                this.parseAndCreateTasks(userId, content),
+                this.parseAndSaveLogs(userId, content),
+                this.parseAndSaveReports(userId, content),
+                this.selfAuditTasks(userId, learningContext),
+                this.parseAndSaveImprovement(userId, cycleId, content),
+                this.handleCriticalAlerts(userId, content)
+            ]);
+            
         } catch (error: any) {
-            console.error('[Autonomy v4] Heartbeat Failure:', error.message);
+            console.error(`[Autonomy v4.2] User Cycle Failure (${userId}):`, error.message);
         }
     }
 
