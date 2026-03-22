@@ -310,8 +310,7 @@ const IntelligenceDashboard: React.FC = () => {
                     </div>
                 </div>
 
-
-                <div className="flex items-center gap-3 w-full lg:w-auto">
+                <div className="flex items-center gap-3 w-full lg:w-auto mt-4 sm:mt-0">
                     <button
                         onClick={handleTriggerRide}
                         disabled={triggerLoading}
@@ -321,7 +320,6 @@ const IntelligenceDashboard: React.FC = () => {
                         <span className="truncate">{triggerLoading ? 'Riding...' : 'Trigger Internet Ride'}</span>
                     </button>
                 </div>
-
             </header>
 
             {/* Raid Progress Bar */}
@@ -417,15 +415,23 @@ const IntelligenceDashboard: React.FC = () => {
 
             {/* Search Bar */}
             {activeTab === 'rides' && (
-                <div className="mb-6 sm:mb-8 relative">
-                    <Search size={16} className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-nova-text-dim" />
+                <div className="mb-6 sm:mb-8 relative group">
+                    <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-nova-text-dim group-focus-within:text-nova-accent transition-colors" size={20} />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search intelligence archive..."
-                        className="w-full bg-nova-card border-2 border-nova-border text-white pl-12 sm:pl-14 pr-4 sm:pr-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl focus:outline-none focus:border-nova-accent transition-all placeholder:text-nova-text-dim/30 text-sm sm:text-base font-bold"
+                        className="w-full bg-nova-card border-2 border-nova-border hover:border-nova-accent/30 focus:border-nova-accent p-4 sm:p-5 pl-12 sm:pl-16 rounded-2xl sm:rounded-3xl outline-none transition-all placeholder:text-nova-text-dim/30 text-sm sm:text-base font-bold text-white shadow-xl"
                     />
+                    {searchQuery && (
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-full transition-colors"
+                        >
+                            <Zap size={14} />
+                        </button>
+                    )}
                 </div>
             )}
 

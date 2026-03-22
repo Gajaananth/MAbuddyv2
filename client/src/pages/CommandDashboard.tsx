@@ -286,7 +286,8 @@ const CommandDashboard: React.FC = () => {
                     <span className="text-xs font-mono font-bold text-nova-text-dim shrink-0">WEEK: {tasks.length > 0 ? tasks[0].task_id_str.split('-')[0] : 'W00'}</span>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    {/* Desktop Table View */}
+                    <table className="w-full text-left border-collapse hide-on-mobile">
                         <thead>
                             <tr className="border-b border-nova-border/50 bg-white/[0.01]">
                                 <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase">Task ID</th>
@@ -315,6 +316,35 @@ const CommandDashboard: React.FC = () => {
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Mobile Card View */}
+                    <div className="show-on-mobile divide-y divide-nova-border/30">
+                        {tasks.map((task) => (
+                            <div key={task.id} className="p-4 space-y-3 hover:bg-white/[0.01] transition-colors">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-mono text-nova-accent font-bold uppercase tracking-widest">{task.task_id_str}</span>
+                                        <h4 className="text-white font-black uppercase tracking-tight text-sm">{task.task_name}</h4>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                                            {STATUS_ICONS[task.status]}
+                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">{task.status}</span>
+                                        </div>
+                                        <span className="text-[8px] font-black text-orange-400 uppercase tracking-widest">{task.priority} PRIORITY</span>
+                                    </div>
+                                </div>
+                                <p className="text-[11px] text-nova-text-dim leading-relaxed bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                                    <span className="block text-[8px] font-black text-nova-accent uppercase tracking-[0.2em] mb-1 opacity-50">Operation Plan</span>
+                                    {task.action_plan}
+                                </p>
+                                <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
+                                    <span className="text-nova-text-dim">Assigned To:</span>
+                                    <span className="text-white opacity-80">{task.assigned_to}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </section>
 

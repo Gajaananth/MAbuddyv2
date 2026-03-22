@@ -80,20 +80,20 @@ const LearningPage: React.FC = () => {
                                 <div className="text-white font-black tracking-widest uppercase border-b border-white/10 pb-2 mb-3">
                                     {formatTimestamp(log.created_at)}
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-24 shrink-0">Topic:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-24 shrink-0">Topic:</span>
                                     <span className="text-white">{log.category}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-24 shrink-0">Source:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-24 shrink-0">Source:</span>
                                     <span className="text-white">{log.source || 'Autonomous Inference'}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-24 shrink-0">Learning:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-24 shrink-0">Learning:</span>
                                     <span className="text-nova-accent/90">{log.lesson}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-24 shrink-0">Confidence:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-24 shrink-0">Conf:</span>
                                     <span className="text-green-400 font-bold uppercase">High</span>
                                 </div>
                             </div>

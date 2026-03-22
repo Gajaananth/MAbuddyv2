@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 />
             )}
 
-            <aside className={`w-[280px] lg:w-60 h-screen glass border-r-2 border-nova-border flex flex-col fixed left-0 top-0 z-50 transition-transform duration-500 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full shadow-none'}`}>
+            <aside className={`w-[280px] lg:w-64 h-screen glass border-r-2 border-nova-border flex flex-col fixed left-0 top-0 z-50 transition-transform duration-500 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full shadow-none'}`}>
 
 
 

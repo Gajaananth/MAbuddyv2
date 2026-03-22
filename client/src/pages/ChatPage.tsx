@@ -293,25 +293,20 @@ const ChatPage: React.FC = () => {
                         <div className="absolute -bottom-0.5 -right-0.5 lg:-bottom-1 lg:-right-1 w-2.5 h-2.5 lg:w-4 lg:h-4 bg-nova-accent rounded-full border-2 lg:border-3 border-nova-bg animate-pulse"></div>
                     </div>
                     <div className="space-y-0.5 min-w-0">
-                        <h2 className="text-lg lg:text-base font-black text-white tracking-tight uppercase truncate">Zium Intelligence</h2>
-                        <div className="flex items-center gap-2">
-                            <p className="text-[8px] lg:text-[10px] font-bold text-nova-text-dim flex items-center gap-1 opacity-80">
+                        <h2 className="text-base lg:text-lg font-black text-white tracking-tight uppercase truncate">Zium Intelligence</h2>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <p className="text-[8px] lg:text-[10px] font-bold text-nova-text-dim flex items-center gap-1 opacity-80 whitespace-nowrap">
                                 <Bird size={9} className="text-nova-accent shrink-0" />
-                                <span className="hidden lg:inline">Silent Beast Protocol</span> v3.2.0
+                                <span className="hidden sm:inline">Silent Beast Protocol</span> v3.2.0
                             </p>
-                            <span className="w-0.5 h-0.5 rounded-full bg-white/20"></span>
+                            <span className="hidden sm:inline w-0.5 h-0.5 rounded-full bg-white/20"></span>
                             <button 
                                 onClick={() => setPublishToMoltbook(!publishToMoltbook)}
-                                className={`text-[8px] lg:text-[10px] font-bold flex items-center gap-1 transition-all ${publishToMoltbook ? 'text-nova-accent' : 'text-nova-text-dim opacity-50'}`}
+                                className={`text-[8px] lg:text-[10px] font-bold flex items-center gap-1 transition-all whitespace-nowrap ${publishToMoltbook ? 'text-nova-accent' : 'text-nova-text-dim opacity-50'}`}
                             >
                                 <Bird size={9} className={publishToMoltbook ? 'animate-pulse' : ''} />
                                 <span>Moltbook: {publishToMoltbook ? 'ACTIVE' : 'SILENT'}</span>
                             </button>
-                            <span className="w-0.5 h-0.5 rounded-full bg-white/20"></span>
-                            <p className="text-[8px] lg:text-[10px] font-bold text-green-400 flex items-center gap-1 truncate">
-                                <User size={9} className="shrink-0" />
-                                <span className="truncate">Normal Mode</span>
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -531,7 +526,7 @@ const ChatPage: React.FC = () => {
                         }}
                         disabled={loading}
                         placeholder={loading ? "Processing..." : "Provide strategic signal..."}
-                        className="w-full bg-nova-card border-2 border-nova-border text-white px-4 lg:px-5 py-3 lg:py-3.5 pr-14 lg:pr-20 rounded-2xl lg:rounded-2xl focus:outline-none focus:border-nova-accent transition-all placeholder:text-nova-text-dim/20 text-sm lg:text-[14px] font-bold shadow-2xl resize-none min-h-[50px] lg:min-h-[54px] max-h-[150px] lg:max-h-[150px]"
+                        className="w-full bg-nova-card border-2 border-nova-border text-white px-4 lg:px-5 py-3 lg:py-3.5 pr-14 lg:pr-20 rounded-2xl lg:rounded-3xl focus:outline-none focus:border-nova-accent transition-all placeholder:text-nova-text-dim/20 text-sm lg:text-[14px] font-bold shadow-2xl resize-none min-h-[52px] lg:min-h-[54px] max-h-[200px]"
                         rows={1}
                     />
 

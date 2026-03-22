@@ -372,6 +372,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                             shadow-2xl shadow-black/60
                             overflow-hidden
                             animate-slide-up
+                            pb-safe
                         "
                     >
                         {/* Drag handle */}

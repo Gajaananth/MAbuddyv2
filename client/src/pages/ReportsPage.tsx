@@ -100,29 +100,29 @@ const ReportsPage: React.FC = () => {
                             <div key={report.id} className="glass p-6 rounded-2xl border-2 border-nova-border/50 hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
                                 <div className="absolute top-0 left-0 w-1.5 h-full bg-nova-accent opacity-50 shadow-[0_0_10px_rgba(0,242,255,0.8)]"></div>
                                 <div className="space-y-3 font-mono text-sm">
-                                    <div className="flex gap-2">
-                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">REPORT ID:</span>
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">REPORT ID:</span>
                                         <span className="text-nova-accent font-bold">R-{report.id.substring(0, 8).toUpperCase()}</span>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">DATE:</span>
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">DATE:</span>
                                         <span className="text-white">{formatTimestamp(report.created_at)}</span>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">CATEGORY:</span>
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">CATEGORY:</span>
                                         <span className="text-white">Weekly Intelligence</span>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">SUMMARY:</span>
-                                        <span className="text-white line-clamp-2">{report.summary}</span>
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">SUMMARY:</span>
+                                        <span className="text-white line-clamp-3">{report.summary}</span>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">ACTION REQUIRED:</span>
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">ACTION:</span>
                                         <span className="text-yellow-400 font-bold uppercase">{report.opportunity_score >= 80 ? 'CRITICAL REVIEW REQUIRED' : 'REVIEW OPPORTUNITIES'}</span>
                                     </div>
-                                    <div className="flex gap-2 items-center">
-                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">LINK:</span>
-                                        <div className="flex gap-3">
+                                    <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-start sm:items-center">
+                                        <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">LINK:</span>
+                                        <div className="flex flex-wrap gap-3">
                                             <button onClick={() => navigate(`/intelligence?id=${report.id}`)} className="text-nova-accent hover:text-white transition-colors underline decoration-nova-accent/50 underline-offset-4">[VIEW REPORT]</button>
                                             <button onClick={() => handleExport(report.id, 'pdf', 'reports')} className="text-nova-accent hover:text-white transition-colors underline decoration-nova-accent/50 underline-offset-4">[EXPORT PDF]</button>
                                         </div>
@@ -142,29 +142,29 @@ const ReportsPage: React.FC = () => {
                         <div key={raid.id} className="glass p-6 rounded-2xl border-2 border-nova-border/50 hover:bg-white/[0.04] transition-colors relative overflow-hidden group">
                             <div className="absolute top-0 left-0 w-1.5 h-full bg-nova-accent opacity-50 shadow-[0_0_10px_rgba(0,242,255,0.8)]"></div>
                             <div className="space-y-3 font-mono text-sm">
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">REPORT ID:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">REPORT ID:</span>
                                     <span className="text-nova-accent font-bold">R-{raid.id.substring(0, 8).toUpperCase()}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">DATE:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">DATE:</span>
                                     <span className="text-white">{formatTimestamp(raid.created_at)}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">CATEGORY:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">CATEGORY:</span>
                                     <span className="text-white">Internet Raid Signal</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">SUMMARY:</span>
-                                    <span className="text-white line-clamp-2">{raid.summary}</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">SUMMARY:</span>
+                                    <span className="text-white line-clamp-3">{raid.summary}</span>
                                 </div>
-                                <div className="flex gap-2">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">ACTION REQUIRED:</span>
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">ACTION:</span>
                                     <span className="text-yellow-400 font-bold uppercase">{raid.risk_level === 'High' ? 'IMMEDIATE MITIGATION' : 'MONITOR FOR CHANGES'}</span>
                                 </div>
-                                <div className="flex gap-2 items-center">
-                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-36 shrink-0">LINK:</span>
-                                    <div className="flex gap-3">
+                                <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 items-start sm:items-center">
+                                    <span className="text-nova-text-dim uppercase tracking-widest font-black w-full sm:w-36 shrink-0">LINK:</span>
+                                    <div className="flex flex-wrap gap-3">
                                         <button onClick={() => navigate(`/intelligence?id=${raid.id}`)} className="text-nova-accent hover:text-white transition-colors underline decoration-nova-accent/50 underline-offset-4">[VIEW RAPID SIGNAL]</button>
                                         <button onClick={() => handleExport(raid.id, 'pdf', 'raids')} className="text-nova-accent hover:text-white transition-colors underline decoration-nova-accent/50 underline-offset-4">[EXPORT SIGNAL]</button>
                                     </div>
