@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Send, Terminal, User, Square, Pencil, Check, X, ChevronDown, Cpu, Zap, BarChart3, RefreshCcw, Bird } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { chatService, memoryService } from '../services/api';
 import type { Message } from '../types';
 import { formatTimestamp } from '../utils/formatUtils';
@@ -419,30 +421,24 @@ const ChatPage: React.FC = () => {
 
                                             return (
                                                 <>
-                                                    {mainContent.split('\n').map((line, j) => {
-                                                        if (line.startsWith('##')) {
-                                                            return <p key={j} className="text-nova-accent font-black mt-2 mb-1 lg:text-base uppercase tracking-wide">{line.replace('##', '').trim()}</p>;
-                                                        }
-                                                        
-                                                        // Simple regex for bold, italic, code
-                                                        const parts = line.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
-                                                        return (
-                                                            <p key={j} className="mb-1.5">
-                                                                {parts.map((part, k) => {
-                                                                    if (part.startsWith('**') && part.endsWith('**')) {
-                                                                        return <strong key={k} className="text-white font-black">{part.slice(2, -2)}</strong>;
-                                                                    }
-                                                                    if (part.startsWith('*') && part.endsWith('*')) {
-                                                                        return <em key={k} className="text-nova-text font-bold italic">{part.slice(1, -1)}</em>;
-                                                                    }
-                                                                    if (part.startsWith('`') && part.endsWith('`')) {
-                                                                        return <code key={k} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-nova-accent">{part.slice(1, -1)}</code>;
-                                                                    }
-                                                                    return part;
-                                                                })}
-                                                            </p>
-                                                        );
-                                                    })}
+                                                    <div className="markdown-container">
+                                                        <ReactMarkdown 
+                                                            remarkPlugins={[remarkGfm]}
+                                                            components={{
+                                                                p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+                                                                strong: ({ children }) => <strong className="text-white font-black">{children}</strong>,
+                                                                em: ({ children }) => <em className="text-nova-text font-bold italic">{children}</em>,
+                                                                code: ({ children }) => <code className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-nova-accent">{children}</code>,
+                                                                h2: ({ children }) => <h2 className="text-nova-accent font-black mt-3 mb-1 lg:text-base uppercase tracking-wide">{children}</h2>,
+                                                                ul: ({ children }) => <ul className="list-disc list-inside mb-1.5 space-y-1">{children}</ul>,
+                                                                ol: ({ children }) => <ol className="list-decimal list-inside mb-1.5 space-y-1">{children}</ol>,
+                                                                li: ({ children }) => <li className="text-[13px]">{children}</li>,
+                                                                blockquote: ({ children }) => <blockquote className="border-l-2 border-nova-accent/30 pl-3 my-2 italic text-nova-text-dim">{children}</blockquote>
+                                                            }}
+                                                        >
+                                                            {mainContent}
+                                                        </ReactMarkdown>
+                                                    </div>
                                                     
                                                     {taskJson && (
                                                         <div className="mt-4 p-4 rounded-xl bg-black/40 border border-nova-accent/20 shadow-[0_0_20px_rgba(0,242,255,0.05)] overflow-hidden relative group">
