@@ -419,9 +419,30 @@ const ChatPage: React.FC = () => {
 
                                             return (
                                                 <>
-                                                    {mainContent.split('\n').map((line, j) => (
-                                                        <p key={j} className={line.startsWith('##') ? 'text-nova-accent font-black mt-2 mb-1 lg:text-base uppercase tracking-wide' : 'mb-1.5'}>{line}</p>
-                                                    ))}
+                                                    {mainContent.split('\n').map((line, j) => {
+                                                        if (line.startsWith('##')) {
+                                                            return <p key={j} className="text-nova-accent font-black mt-2 mb-1 lg:text-base uppercase tracking-wide">{line.replace('##', '').trim()}</p>;
+                                                        }
+                                                        
+                                                        // Simple regex for bold, italic, code
+                                                        const parts = line.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`)/g);
+                                                        return (
+                                                            <p key={j} className="mb-1.5">
+                                                                {parts.map((part, k) => {
+                                                                    if (part.startsWith('**') && part.endsWith('**')) {
+                                                                        return <strong key={k} className="text-white font-black">{part.slice(2, -2)}</strong>;
+                                                                    }
+                                                                    if (part.startsWith('*') && part.endsWith('*')) {
+                                                                        return <em key={k} className="text-nova-text font-bold italic">{part.slice(1, -1)}</em>;
+                                                                    }
+                                                                    if (part.startsWith('`') && part.endsWith('`')) {
+                                                                        return <code key={k} className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-[11px] font-mono text-nova-accent">{part.slice(1, -1)}</code>;
+                                                                    }
+                                                                    return part;
+                                                                })}
+                                                            </p>
+                                                        );
+                                                    })}
                                                     
                                                     {taskJson && (
                                                         <div className="mt-4 p-4 rounded-xl bg-black/40 border border-nova-accent/20 shadow-[0_0_20px_rgba(0,242,255,0.05)] overflow-hidden relative group">
