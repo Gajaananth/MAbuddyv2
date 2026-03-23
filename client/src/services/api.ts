@@ -96,3 +96,8 @@ export const notificationService = {
     archive: (id: string) =>
         api.delete(`/notifications/${id}`),
 };
+
+export const missionService = {
+    getTasks: () => api.get('/missions/tasks'),
+    updateTask: (id: string, updates: any) => api.patch(`/missions/tasks/${id}`, updates),
+};

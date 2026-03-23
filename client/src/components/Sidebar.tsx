@@ -9,7 +9,8 @@ import {
     Database,
     Bird,
     Shield,
-    X
+    X,
+    Zap
 } from 'lucide-react';
 
 
@@ -22,6 +23,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const navItems = [
         { name: 'Command Dashboard', icon: <LayoutDashboard size={26} />, path: '/' },
+        { name: 'Task Center', icon: <Zap size={26} />, path: '/command-center' },
         { name: 'Internet Ride', icon: <Bird size={26} />, path: '/intelligence' },
         { name: 'Learning Outcomes', icon: <TrendingUp size={26} />, path: '/learning' },
         { name: 'Important Reports', icon: <Shield size={26} />, path: '/reports' },
@@ -79,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <div className="mb-4">
                         <p className="px-4 mb-2 text-[10px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-40">Strategic Control</p>
                         <div className="space-y-1">
-                            {navItems.slice(0, 5).map((item) => (
+                            {navItems.slice(0, 6).map((item) => (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}
@@ -103,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                     <div>
                         <p className="px-4 mb-2 text-[10px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-40">Operational Tools</p>
                         <div className="space-y-1">
-                            {navItems.slice(5).map((item) => (
+                            {navItems.slice(6).map((item) => (
                                 <NavLink
                                     key={item.path}
                                     to={item.path}

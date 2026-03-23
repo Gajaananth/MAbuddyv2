@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import ChatPage from './pages/ChatPage';
 import TrendsPage from './pages/TrendsPage';
@@ -10,6 +10,7 @@ import NotificationPanel from './components/NotificationPanel';
 import LearningPage from './pages/LearningPage';
 import ReportsPage from './pages/ReportsPage';
 import CommandDashboard from './pages/CommandDashboard';
+import CommandCenterPage from './pages/CommandCenterPage';
 import { Menu, Bird } from 'lucide-react';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -84,7 +85,7 @@ function App() {
                       <Route path="/agents" element={<AgentsPage />} />
                       <Route path="/memory" element={<MemoryPage />} />
                       <Route path="/intelligence" element={<IntelligenceDashboard />} />
-                      <Route path="/command-center" element={<Navigate to="/" replace />} />
+                      <Route path="/command-center" element={<CommandCenterPage />} />
                       <Route path="/learning" element={<LearningPage />} />
                       <Route path="/reports" element={<ReportsPage />} />
                       <Route path="/security" element={<SecuritySettings />} />
