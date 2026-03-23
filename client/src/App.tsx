@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import ChatPage from './pages/ChatPage';
 import TrendsPage from './pages/TrendsPage';
@@ -7,7 +7,6 @@ import AgentsPage from './pages/AgentsPage';
 import MemoryPage from './pages/MemoryPage';
 import IntelligenceDashboard from './pages/IntelligenceDashboard';
 import NotificationPanel from './components/NotificationPanel';
-import CommandCenterPage from './pages/CommandCenterPage';
 import LearningPage from './pages/LearningPage';
 import ReportsPage from './pages/ReportsPage';
 import CommandDashboard from './pages/CommandDashboard';
@@ -85,7 +84,7 @@ function App() {
                       <Route path="/agents" element={<AgentsPage />} />
                       <Route path="/memory" element={<MemoryPage />} />
                       <Route path="/intelligence" element={<IntelligenceDashboard />} />
-                      <Route path="/command-center" element={<CommandCenterPage />} />
+                      <Route path="/command-center" element={<Navigate to="/" replace />} />
                       <Route path="/learning" element={<LearningPage />} />
                       <Route path="/reports" element={<ReportsPage />} />
                       <Route path="/security" element={<SecuritySettings />} />

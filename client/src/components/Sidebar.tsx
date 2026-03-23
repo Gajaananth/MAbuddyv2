@@ -24,7 +24,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const navItems = [
         { name: 'Command Dashboard', icon: <LayoutDashboard size={26} />, path: '/' },
         { name: 'Internet Ride', icon: <Bird size={26} />, path: '/intelligence' },
-        { name: 'Task Tracking Center', icon: <Terminal size={26} />, path: '/command-center' },
         { name: 'Learning Outcomes', icon: <TrendingUp size={26} />, path: '/learning' },
         { name: 'Important Reports', icon: <Shield size={26} />, path: '/reports' },
         

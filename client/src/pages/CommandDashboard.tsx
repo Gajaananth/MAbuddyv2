@@ -4,7 +4,7 @@ import { useLiveTime } from '../hooks/useLiveTime';
 import { 
     Bird, TrendingUp, AlertOctagon, 
     CheckCircle2, CircleDashed, Loader2, XCircle, 
-    Terminal, Shield, Zap
+    Terminal, Shield, Zap, User
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { trendService } from '../services/api';
@@ -44,6 +44,47 @@ const STATUS_ICONS = {
     'COMPLETED': <CheckCircle2 size={14} className="text-green-400" />,
     'BLOCKED': <XCircle size={14} className="text-red-400" />
 };
+const STATUS_COLORS = {
+    'TODO': 'text-nova-text-dim bg-white/5 border-white/10',
+    'IN-PROGRESS': 'text-blue-400 bg-blue-500/10 border-blue-500/30',
+    'COMPLETED': 'text-green-400 bg-green-500/10 border-green-500/30',
+    'BLOCKED': 'text-red-400 bg-red-500/10 border-red-500/30'
+};
+
+const PRIORITY_COLORS = {
+    'LOW': 'text-nova-text-dim',
+    'MEDIUM': 'text-yellow-400',
+    'HIGH': 'text-orange-400',
+    'CRITICAL': 'text-red-500 font-bold animate-pulse'
+};
+
+const TaskRow = ({ task, isAgentic }: { task: Task; isAgentic?: boolean }) => (
+    <tr className="hover:bg-white/[0.02] transition-colors group">
+        <td className="p-4">
+            <span className={`font-mono font-bold text-[10px] px-2 py-1 rounded-md border ${isAgentic ? 'text-nova-accent bg-nova-accent/10 border-nova-accent/20' : 'text-white bg-white/5 border-white/10'}`}>
+                {task.task_id_str}
+            </span>
+        </td>
+        <td className="p-4">
+            <p className="font-bold text-white text-sm mb-0.5">{task.task_name}</p>
+            <p className="text-[10px] text-nova-text-dim/60 font-medium line-clamp-1">{task.notes || '-'}</p>
+        </td>
+        <td className="p-4">
+            <p className="text-xs text-nova-text-dim leading-relaxed whitespace-pre-wrap">{task.action_plan || 'No specific action plan logged.'}</p>
+        </td>
+        <td className="p-4">
+            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-black tracking-widest uppercase transition-all ${STATUS_COLORS[task.status]}`}>
+                {STATUS_ICONS[task.status]}
+                {task.status}
+            </div>
+        </td>
+        <td className="p-4">
+            <span className={`text-[10px] font-black tracking-wider uppercase ${PRIORITY_COLORS[task.priority]}`}>
+                {task.priority}
+            </span>
+        </td>
+    </tr>
+);
 
 const CommandDashboard: React.FC = () => {
     const liveTime = useLiveTime();
@@ -276,74 +317,71 @@ const CommandDashboard: React.FC = () => {
                 </div>
             </section>
 
-            {/* SECTION 2 — WEEKLY MISSION SCHEDULER */}
-            <section className="glass rounded-3xl border-2 border-nova-border overflow-hidden">
-                <div className="p-6 border-b-2 border-nova-border/50 bg-white/[0.02] flex justify-between items-center">
-                    <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                        <Terminal size={18} className="text-nova-accent" />
-                        Weekly Mission Scheduler
+            {/* SECTION 2 — MISSION CONTROL (Split Board) */}
+            <section className="space-y-12">
+                {/* Operator Missions */}
+                <div className="animate-in slide-in-from-left duration-700">
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <User size={18} className="text-nova-accent" />
+                        Operator Missions (BUDDY)
+                        <span className="text-[10px] text-nova-text-dim lowercase font-normal">(Manual Tactical Action Required)</span>
                     </h3>
-                    <span className="text-xs font-mono font-bold text-nova-text-dim shrink-0">WEEK: {tasks.length > 0 ? tasks[0].task_id_str.split('-')[0] : 'W00'}</span>
+                    <div className="glass rounded-3xl border-2 border-nova-border overflow-hidden bg-white/[0.01]">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b-2 border-nova-border/50 bg-white/[0.02]">
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">ID</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-1/3">Objective</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-2/5">Action Plan</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">Status</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">Risk</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-nova-border/30">
+                                    {tasks.filter(t => t.assigned_to === 'BUDDY').length === 0 ? (
+                                        <tr><td colSpan={5} className="p-12 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-50">No manual missions assigned.</td></tr>
+                                    ) : (
+                                        tasks.filter(t => t.assigned_to === 'BUDDY').map((task) => (
+                                            <TaskRow key={task.id} task={task} />
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
-                <div className="overflow-x-auto">
-                    {/* Desktop Table View */}
-                    <table className="w-full text-left border-collapse hide-on-mobile">
-                        <thead>
-                            <tr className="border-b border-nova-border/50 bg-white/[0.01]">
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase">Task ID</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase">Objective</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase w-full">Action Plan</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase whitespace-nowrap">Assigned To</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase">Status</th>
-                                <th className="p-4 text-[11px] font-black text-nova-text-dim tracking-widest uppercase">Priority</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-nova-border/30">
-                            {tasks.map((task) => (
-                                <tr key={task.id} className="hover:bg-white/[0.02] transition-colors">
-                                    <td className="p-4 font-mono text-nova-accent text-xs font-bold">{task.task_id_str}</td>
-                                    <td className="p-4 font-bold text-white text-sm whitespace-nowrap">{task.task_name}</td>
-                                    <td className="p-4 text-xs text-nova-text-dim leading-relaxed min-w-[300px]">{task.action_plan}</td>
-                                    <td className="p-4 text-[10px] font-black uppercase text-white opacity-70 whitespace-nowrap">{task.assigned_to}</td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-2">
-                                            {STATUS_ICONS[task.status]}
-                                            <span className="text-[10px] font-black uppercase tracking-widest">{task.status}</span>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 text-[10px] font-black uppercase tracking-widest text-orange-400">{task.priority}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
 
-                    {/* Mobile Card View */}
-                    <div className="show-on-mobile divide-y divide-nova-border/30">
-                        {tasks.map((task) => (
-                            <div key={task.id} className="p-4 space-y-3 hover:bg-white/[0.01] transition-colors">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-mono text-nova-accent font-bold uppercase tracking-widest">{task.task_id_str}</span>
-                                        <h4 className="text-white font-black uppercase tracking-tight text-sm">{task.task_name}</h4>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                                            {STATUS_ICONS[task.status]}
-                                            <span className="text-[8px] font-black text-white uppercase tracking-widest">{task.status}</span>
-                                        </div>
-                                        <span className="text-[8px] font-black text-orange-400 uppercase tracking-widest">{task.priority} PRIORITY</span>
-                                    </div>
-                                </div>
-                                <p className="text-[11px] text-nova-text-dim leading-relaxed bg-white/[0.02] p-3 rounded-xl border border-white/5">
-                                    <span className="block text-[8px] font-black text-nova-accent uppercase tracking-[0.2em] mb-1 opacity-50">Operation Plan</span>
-                                    {task.action_plan}
-                                </p>
-                                <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
-                                    <span className="text-nova-text-dim">Assigned To:</span>
-                                    <span className="text-white opacity-80">{task.assigned_to}</span>
-                                </div>
-                            </div>
-                        ))}
+                {/* Agentic Missions */}
+                <div className="animate-in slide-in-from-right duration-700">
+                    <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <Bird size={18} className="text-nova-accent" />
+                        Agentic Missions (ZIUM NOVA)
+                        <span className="text-[10px] text-nova-accent lowercase font-normal animate-pulse">(Autonomous Strategic Execution)</span>
+                    </h3>
+                    <div className="glass rounded-3xl border-2 border-nova-accent/10 overflow-hidden bg-nova-accent/[0.01]">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b-2 border-nova-accent/10 bg-nova-accent/[0.02]">
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">ID</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-1/3">Zium Objective</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-2/5 text-nova-accent/70">Grid Plan</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">Grid State</th>
+                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">Priority</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-nova-accent/5">
+                                    {tasks.filter(t => t.assigned_to !== 'BUDDY').length === 0 ? (
+                                        <tr><td colSpan={5} className="p-12 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-50">No agentic background cycles active.</td></tr>
+                                    ) : (
+                                        tasks.filter(t => t.assigned_to !== 'BUDDY').map((task) => (
+                                            <TaskRow key={task.id} task={task} isAgentic={true} />
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>

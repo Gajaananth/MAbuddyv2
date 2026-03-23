@@ -4,6 +4,7 @@ import { think } from '../services/openClawService.js';
 import { applyFilter } from '../filters/silentBeastFilter.js';
 import { calculateProductionScores } from '../services/scoringService.js';
 import { postToMoltbook } from '../services/moltbookService.js';
+import { missionService } from '../services/missionService.js';
 import * as db from '../db/queries.js';
 import { ApiResponse } from '../types/index.js';
 import { AuthRequest } from '../middleware/auth.js';
@@ -280,6 +281,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         console.log('[Chat] Storing Nova response...');
         // Store Nova's response
         await db.addMessage(convId, 'nova', content, metadata);
+
+        // Synchronize tasks from response content to the Command Center DB
+        missionService.parseAndSaveTasksFromChat(userId, content).catch(e => console.error('[Chat] Task sync failed:', e));
 
         // Optional: Post to Moltbook if strategic alignment is high
         if (publish_to_moltbook && (metadata?.production_scores?.overall > 70 || !analyticsRequested)) {

@@ -113,6 +113,53 @@ export class MissionService {
         }
     }
 
+    /**
+     * Parse tasks from a chat response (TASK_CENTER_UPDATE or TASK: blocks) and save them to the DB.
+     */
+    async parseAndSaveTasksFromChat(userId: string, content: string) {
+        // 1. Check for TASK_CENTER_UPDATE: { ... }
+        const updateMatch = content.match(/TASK_CENTER_UPDATE:\s*({[\s\S]*?})/i);
+        if (updateMatch) {
+            try {
+                const taskData = JSON.parse(updateMatch[1]);
+                if (taskData.tasks && Array.isArray(taskData.tasks)) {
+                    console.log(`[Mission] Parsing TASK_CENTER_UPDATE for ${userId}...`);
+                    for (const task of taskData.tasks) {
+                        const taskIdStr = task.id || `T-${uuidv4().slice(0, 8)}`;
+                        await db.createTask(userId, {
+                            task_name: task.name,
+                            assigned_to: task.assigned_to || 'BUDDY',
+                            priority: task.priority || 'MEDIUM',
+                            status: task.status || 'TODO',
+                            notes: task.notes || 'Added via chat synchronization.'
+                        }, taskIdStr);
+                    }
+                }
+            } catch (e) {
+                console.error('[Mission] Failed to parse TASK_CENTER_UPDATE JSON:', e);
+            }
+        }
+
+        // 2. Check for TASK: [Name] | PRIORITY: [P] | ASSIGNED: [A] | PLAN: [Plan]
+        const taskMatches = content.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*ASSIGNED:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
+        for (const match of taskMatches) {
+            const [ , name, priority, assigned, plan ] = match;
+            const taskIdStr = `T-${uuidv4().slice(0, 8)}`;
+            try {
+                await db.createTask(userId, {
+                    task_name: name.trim(),
+                    assigned_to: assigned.trim().toUpperCase(),
+                    priority: priority.trim().toUpperCase() as any,
+                    action_plan: plan.trim(),
+                    status: 'TODO'
+                }, taskIdStr);
+                console.log(`[Mission] Created task from chat: ${name.trim()}`);
+            } catch (err: any) {
+                console.error('[Mission] Failed to create chat task:', err.message);
+            }
+        }
+    }
+
     private getWeekNumber(d: Date): number {
         d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
