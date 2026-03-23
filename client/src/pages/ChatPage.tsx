@@ -22,6 +22,8 @@ const ChatPage: React.FC = () => {
     const [showModeMenu, setShowModeMenu] = useState(false);
     const [publishToMoltbook, setPublishToMoltbook] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const checkMobile = () => {
@@ -31,6 +33,13 @@ const ChatPage: React.FC = () => {
         window.addEventListener('resize', checkMobile);
         return () => window.removeEventListener('resize', checkMobile);
     }, []);
+
+    const handleScroll = () => {
+        if (!scrollContainerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        setShowScrollButton(!isNearBottom);
+    };
 
     const modes = [
         { label: 'Normal Mode', command: 'MODE NORMAL', icon: <User size={14} /> },
@@ -323,7 +332,11 @@ const ChatPage: React.FC = () => {
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-12 sm:space-y-24 scroll-smooth custom-scrollbar pb-6 mt-2 min-h-0">
+            <div 
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-12 sm:space-y-24 scroll-smooth custom-scrollbar pb-6 mt-2 min-h-0"
+            >
 
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center min-h-[60%] text-center space-y-4 sm:space-y-6 opacity-40 px-4">
@@ -541,6 +554,20 @@ const ChatPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
+                )}
+                {/* Floating Scroll Button - Only visible when scrolled up */}
+                {showScrollButton && (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            scrollToBottom();
+                        }}
+                        className="fixed bottom-32 right-4 sm:right-10 p-3 sm:p-4 rounded-full bg-nova-accent text-nova-bg shadow-[0_0_30px_rgba(0,242,255,0.4)] hover:scale-110 active:scale-95 transition-all z-50 border-2 border-white/20 animate-in fade-in slide-in-from-bottom-4 duration-300 group"
+                        title="Scroll to latest signal"
+                    >
+                        <ChevronDown size={20} className="group-hover:translate-y-0.5 transition-transform" />
+                    </button>
                 )}
                 <div ref={messagesEndRef} />
             </div>
