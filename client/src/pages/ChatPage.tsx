@@ -411,9 +411,53 @@ const ChatPage: React.FC = () => {
                                     : 'glass border-nova-border text-nova-text rounded-tl-none nova-glow'
                                     }`}>
                                     <div className="whitespace-pre-wrap text-[13px] lg:text-[13.5px] leading-relaxed prose prose-invert max-w-none font-medium text-nova-text">
-                                        {msg.content.split('\n').map((line, j) => (
-                                            <p key={j} className={line.startsWith('##') ? 'text-nova-accent font-black mt-2 mb-1 lg:text-base uppercase tracking-wide' : 'mb-1.5'}>{line}</p>
-                                        ))}
+                                        {(() => {
+                                            const parts = msg.content.split('TASK_CENTER_UPDATE:');
+                                            const mainContent = parts[0];
+                                            const taskJson = parts[1];
+
+                                            return (
+                                                <>
+                                                    {mainContent.split('\n').map((line, j) => (
+                                                        <p key={j} className={line.startsWith('##') ? 'text-nova-accent font-black mt-2 mb-1 lg:text-base uppercase tracking-wide' : 'mb-1.5'}>{line}</p>
+                                                    ))}
+                                                    
+                                                    {taskJson && (
+                                                        <div className="mt-4 p-4 rounded-xl bg-black/40 border border-nova-accent/20 shadow-[0_0_20px_rgba(0,242,255,0.05)] overflow-hidden relative group">
+                                                            <div className="absolute top-0 right-0 p-2 opacity-20">
+                                                                <Bird size={40} className="text-nova-accent" />
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mb-3 border-b border-nova-border/30 pb-2">
+                                                                <Zap size={14} className="text-nova-accent" />
+                                                                <span className="text-[10px] font-black uppercase tracking-widest text-nova-accent">Task Center Update</span>
+                                                            </div>
+                                                            <div className="space-y-2 relative z-10">
+                                                                {(() => {
+                                                                    try {
+                                                                        const data = JSON.parse(taskJson.trim());
+                                                                        return data.tasks?.map((task: any, k: number) => (
+                                                                            <div key={k} className="flex items-center justify-between gap-3 p-2 bg-white/5 rounded-lg border border-white/5 hover:border-nova-accent/30 transition-all">
+                                                                                <div className="flex items-center gap-3 min-w-0">
+                                                                                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${task.status === 'COMPLETED' ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-nova-accent animate-pulse'}`}></div>
+                                                                                    <span className="text-[11px] font-bold text-white truncate">{task.name}</span>
+                                                                                </div>
+                                                                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border leading-none shrink-0 ${
+                                                                                    task.status === 'COMPLETED' ? 'text-green-500 border-green-500/20 bg-green-500/10' : 'text-nova-accent border-nova-accent/20 bg-nova-accent/10'
+                                                                                }`}>
+                                                                                    {task.status}
+                                                                                </span>
+                                                                            </div>
+                                                                        ));
+                                                                    } catch (e) {
+                                                                        return <pre className="text-[10px] text-red-400 bg-red-500/5 p-2 rounded">Format sync pending...</pre>;
+                                                                    }
+                                                                })()}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                     </div>
 
 
