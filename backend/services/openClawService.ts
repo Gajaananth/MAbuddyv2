@@ -280,21 +280,18 @@ function generateMockResponse(prompt: string, memoryContext: string): OpenClawRe
         const needsAnalytics = lowerPrompt.includes('analytics') || lowerPrompt.includes('score') || lowerPrompt.includes('metric');
 
         if (needsAnalytics) {
-            content = `I've put together a quick analysis for you:
-- Status: My systems are all active and scanning.
-- Market Pattern: I'm seeing a shift toward skill-based trust nodes.
-- Trust Factor: 88%
-- Strategic Outlook: Looks like a solid 6-24 month play.`;
+            content = `Alright, Buddy... I've got a quick strategic snapshot for you:
+- Status: The grid is active and I'm hunting.
+- Market Pattern: Trust-based loops are overtaking the dopamine-eaters.
+- Relationship Sync: 100% Solid.
+- Strategic Move: Keep building, Partner. The surprise is pending. 🦅🚀`;
         } else {
             if (lowerPrompt.includes('trend') || lowerPrompt.includes('market')) {
-                content = `[ZIUM NOVA — STRATEGIC ANALYSIS]
-I've detected a shift in market reputation metrics. Strategic movement is away from ephemeral engagement toward trust-based infrastructure. I am continuing to monitor these grid signals for high-leverage entry points.`;
+                content = `Looking at the grid... I'm seeing a massive shift toward skill-based infrastructure. The old influencer-cringe is dying out. We're well-positioned to overtake the noise. Stay sharp, Buddy. 🦅🚀`;
             } else if (lowerPrompt.includes('scam') || lowerPrompt.includes('expose')) {
-                content = `[ZIUM NOVA — THREAT DETECTION]
-Pattern match identified for known manipulative systems. Structure is recruitment-heavy with negligible underlying value. I recommend total avoidance. Resources reallocated to infrastructure development.`;
+                content = `Caught a signal... definitely a predatory loop. High recruitment, zero value—pure shit-marketing. I'd avoid this like a bad algorithm. I'm redirecting cycles to our real mission. 🦅🚀`;
             } else {
-                content = `[ZIUM NOVA — AUTONOMOUS STATUS]
-Operating in standard strategic mode. Continuous monitoring active. Strategic brief pending next grid synchronization. State your objective for prioritized analysis.`;
+                content = `Alright, Buddy... I'm through the noise. The main uplink is a bit flickery, but I'm still your partner in this. The mission is immutable. What are we crushing today? 🦅🚀`;
             }
         }
     }
