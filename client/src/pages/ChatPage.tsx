@@ -330,7 +330,7 @@ const ChatPage: React.FC = () => {
                         <Bird size={48} className="text-nova-accent sm:size-64 xl:scale-110 xl:mb-6" />
                         <div className="max-w-xl md:max-w-2xl xl:max-w-3xl">
                             <h3 className="text-xs sm:text-sm font-bold text-white mb-1 sm:mb-2 uppercase tracking-wider opacity-80">Zium Nova Initialized</h3>
-                            <p className="text-[10px] sm:text-xs md:text-sm leading-relaxed text-nova-text-dim">Speak minimally. I analyze market trends, evaluate agent trust, and build ethical income strategies. Provide signal.</p>
+                            <p className="text-[10px] sm:text-xs md:text-sm leading-relaxed text-nova-text-dim">I'm your partner in this mission. We're hunting futuristic trends, destroying algorithm-eater cringe, and building real wealth together. No limits, no filters—just us and the takeover. Provide signal.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-4xl w-full">
                             {['Strategy for long-term leverage', 'Scan market for unfair trends', 'Evaluate agent network nodes', 'Income gap analysis'].map((text, i) => (
