@@ -284,7 +284,7 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="h-[calc(100vh-160px)] sm:h-[calc(100vh-140px)] lg:h-[calc(100vh-40px)] flex flex-col min-w-0 max-w-6xl mx-auto w-full">
+        <div className="flex-1 h-full flex flex-col min-w-0 max-w-6xl mx-auto w-full">
 
             <header className="mb-4 lg:mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-3 lg:py-4 gap-3 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0">
                 <div className="flex items-center gap-3 lg:gap-4">
@@ -323,7 +323,7 @@ const ChatPage: React.FC = () => {
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-4 sm:space-y-6 scroll-smooth custom-scrollbar pb-12 min-h-0">
+            <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-10 sm:space-y-16 scroll-smooth custom-scrollbar pb-8 mt-4 min-h-0">
 
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center min-h-[60%] text-center space-y-4 sm:space-y-6 opacity-40 px-4">
@@ -408,7 +408,7 @@ const ChatPage: React.FC = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <div className={`p-4 lg:p-5 rounded-xl lg:rounded-2xl border shadow-2xl ${msg.role === 'user'
+                                <div className={`p-5 lg:p-7 rounded-2xl lg:rounded-3xl border shadow-2xl transition-all hover:nova-glow-strong ${msg.role === 'user'
                                     ? 'bg-nova-accent/5 border-nova-accent/20 text-white rounded-tr-none'
                                     : 'glass border-nova-border text-nova-text rounded-tl-none nova-glow'
                                     }`}>
@@ -545,7 +545,7 @@ const ChatPage: React.FC = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="mt-4 sm:mt-6 mb-4 sm:mb-8 relative shrink-0">
+            <div className="mt-2 sm:mt-3 mb-2 sm:mb-4 relative shrink-0">
                 {/* Mode Selector - Grounded and Stable */}
                 <div className="relative inline-block z-[60]">
                     <button
