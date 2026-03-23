@@ -98,6 +98,6 @@ export const notificationService = {
 };
 
 export const missionService = {
-    getTasks: () => api.get('/missions/tasks'),
-    updateTask: (id: string, updates: any) => api.patch(`/missions/tasks/${id}`, updates),
+    getTasks: () => api.get('/tasks'),
+    updateTask: (id: string, updates: any) => api.patch(`/tasks/${id}`, updates),
 };

@@ -748,19 +748,19 @@ export async function updateTaskStatus(userId: string, taskIdStr: string, status
 
     if (notes !== undefined) {
         if (isPg) {
-            queryStr = 'UPDATE tasks SET status = $1, notes = $2, updated_at = NOW() WHERE user_id = $3 AND task_id_str = $4 RETURNING *';
+            queryStr = 'UPDATE tasks SET status = $1, notes = $2, updated_at = NOW() WHERE user_id = $3 AND (task_id_str = $4 OR id::text = $4) RETURNING *';
             queryArgs = [status, notes, userId, normalizedIdStr];
         } else {
-            queryStr = 'UPDATE tasks SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND task_id_str = ?';
-            queryArgs = [status, notes, userId, normalizedIdStr];
+            queryStr = 'UPDATE tasks SET status = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND (task_id_str = ? OR id = ?)';
+            queryArgs = [status, notes, userId, normalizedIdStr, normalizedIdStr];
         }
     } else {
         if (isPg) {
-            queryStr = 'UPDATE tasks SET status = $1, updated_at = NOW() WHERE user_id = $2 AND task_id_str = $3 RETURNING *';
+            queryStr = 'UPDATE tasks SET status = $1, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *';
             queryArgs = [status, userId, normalizedIdStr];
         } else {
-            queryStr = 'UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND task_id_str = ?';
-            queryArgs = [status, userId, normalizedIdStr];
+            queryStr = 'UPDATE tasks SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND (task_id_str = ? OR id = ?)';
+            queryArgs = [status, userId, normalizedIdStr, normalizedIdStr];
         }
     }
 
@@ -775,9 +775,9 @@ export async function updateTaskStatus(userId: string, taskIdStr: string, status
 
 export async function deleteTask(taskIdStr: string, userId: string): Promise<void> {
     if (isPostgresActive) {
-        await pool.query('DELETE FROM tasks WHERE user_id = $1 AND task_id_str = $2', [userId, taskIdStr]);
+        await pool.query('DELETE FROM tasks WHERE user_id = $1 AND (task_id_str = $2 OR id::text = $2)', [userId, taskIdStr]);
     } else {
-        getSqlite().prepare('DELETE FROM tasks WHERE user_id = ? AND task_id_str = ?').run(userId, taskIdStr);
+        getSqlite().prepare('DELETE FROM tasks WHERE user_id = ? AND (task_id_str = ? OR id = ?)').run(userId, taskIdStr, taskIdStr);
     }
 }
 

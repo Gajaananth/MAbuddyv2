@@ -30,7 +30,53 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 /**
- * GET /api/tasks/progress
+ * PATCH /api/tasks/:id
+ * Update a specific task's status or details.
+ */
+router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { id } = req.params;
+        const { status, notes, priority } = req.body;
+
+        const updatedTask = await db.updateTaskStatus(userId, id, status);
+
+        res.json({
+            success: true,
+            data: updatedTask,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        console.error('[Tasks] Update Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to update task' });
+    }
+});
+
+/**
+ * DELETE /api/tasks/:id
+ * Remove a mission from the grid.
+ */
+router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { id } = req.params;
+        await db.deleteTask(id, userId);
+
+        res.json({
+            success: true,
+            data: { id },
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        console.error('[Tasks] Delete Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete task' });
+    }
+});
+
  * Real-time task progress statistics (total, completed, in-progress, stuck, by assignee).
  */
 router.get('/progress', authenticate, async (req: AuthRequest, res: Response) => {
