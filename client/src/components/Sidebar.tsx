@@ -7,7 +7,6 @@ import {
     TrendingUp,
     Users,
     Database,
-    Terminal,
     Bird,
     Shield,
     X
