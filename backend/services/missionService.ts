@@ -117,30 +117,49 @@ export class MissionService {
      * Parse tasks from a chat response (TASK_CENTER_UPDATE or TASK: blocks) and save them to the DB.
      */
     async parseAndSaveTasksFromChat(userId: string, content: string) {
-        // 1. Check for TASK_CENTER_UPDATE: { ... }
-        const updateMatch = content.match(/TASK_CENTER_UPDATE:\s*({[\s\S]*?})/i);
-        if (updateMatch) {
-            try {
-                const taskData = JSON.parse(updateMatch[1]);
-                if (taskData.tasks && Array.isArray(taskData.tasks)) {
-                    console.log(`[Mission] Parsing TASK_CENTER_UPDATE for ${userId}...`);
-                    for (const task of taskData.tasks) {
-                        const taskIdStr = task.id || `T-${uuidv4().slice(0, 8)}`;
-                        await db.createTask(userId, {
-                            task_name: task.name,
-                            assigned_to: task.assigned_to || 'BUDDY',
-                            priority: task.priority || 'MEDIUM',
-                            status: task.status || 'TODO',
-                            notes: task.notes || 'Added via chat synchronization.'
-                        }, taskIdStr);
+        // 1. Improved JSON extraction: Look for TASK_CENTER_UPDATE or any JSON code block that looks like a task list
+        const jsonBlocks = content.match(/({[\s\S]*?})|```json\s*({[\s\S]*?})\s*```/gi);
+        
+        if (jsonBlocks) {
+            for (const block of jsonBlocks) {
+                try {
+                    // Clean the block if it's wrapped in markdown
+                    const cleanJson = block.replace(/```json|```/gi, '').trim();
+                    const data = JSON.parse(cleanJson);
+                    
+                    // Support various keys: tasks, dashboard, task_list, etc.
+                    const taskArray = data.tasks || data.dashboard || data.task_list;
+                    
+                    if (taskArray && Array.isArray(taskArray)) {
+                        console.log(`[Mission] Flexible Parser: Detected ${taskArray.length} tasks for ${userId}...`);
+                        
+                        for (const item of taskArray) {
+                            // Extract properties with fallbacks for different AI naming conventions
+                            const name = item.name || item.description || item.task_name || item.topic || "Unnamed Strategic Task";
+                            const assignee = (item.assigned_to || item.assignee || item.assigned || "BUDDY").toString().toUpperCase().includes('OPERATOR') ? 'BUDDY' : 'ZIUM NOVA';
+                            const priority = (item.priority || item.risk || 'MEDIUM').toString().toUpperCase();
+                            const status = (item.status || 'TODO').toString().toUpperCase();
+                            const plan = item.action_plan || item.plan || item.tracking || item.description || "";
+                            
+                            const taskIdStr = item.id || `T-${uuidv4().slice(0, 8)}`;
+                            
+                            await db.createTask(userId, {
+                                task_name: name.slice(0, 100),
+                                assigned_to: assignee,
+                                priority: (priority === 'PENDING' ? 'MEDIUM' : priority) as any,
+                                status: (status === 'PENDING' ? 'TODO' : status) as any,
+                                action_plan: plan,
+                                notes: `Synchronized from AI Strategic Plan: ${data.project || 'General'}`
+                            }, taskIdStr);
+                        }
                     }
+                } catch (e) {
+                    // Silently ignore non-task JSON
                 }
-            } catch (e) {
-                console.error('[Mission] Failed to parse TASK_CENTER_UPDATE JSON:', e);
             }
         }
 
-        // 2. Check for TASK: [Name] | PRIORITY: [P] | ASSIGNED: [A] | PLAN: [Plan]
+        // 2. Fallback: Check for TASK: [Name] | PRIORITY: ...
         const taskMatches = content.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*ASSIGNED:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
         for (const match of taskMatches) {
             const [ , name, priority, assigned, plan ] = match;
