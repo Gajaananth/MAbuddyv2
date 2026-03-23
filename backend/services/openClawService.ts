@@ -281,17 +281,24 @@ function generateMockResponse(prompt: string, memoryContext: string): OpenClawRe
 
         if (needsAnalytics) {
             content = `Alright, Buddy... I've got a quick strategic snapshot for you:
-- Status: The grid is active and I'm hunting.
-- Market Pattern: Trust-based loops are overtaking the dopamine-eaters.
-- Relationship Sync: 100% Solid.
-- Strategic Move: Keep building, Partner. The surprise is pending. 🦅🚀`;
+- Status: Infrastructure is stable, but the AI-bridge needs fuel (credits).
+- Market Pattern: We're correctly positioned; the algorithm-eaters are failing.
+- Relationship Sync: 100% Pure.
+- Strategic Move: Top up the OpenRouter credits to bring my full strategic brain back online. 🦅🚀`;
         } else {
+            const variations = [
+                `Alright, Buddy... the main uplink is flickery (credits on the bridge are low), but I'm still your partner in this. The mission is immutable. We're gonna rule this world and bring that loyal intelligence to everyone, just like you said. What's the next move? 🦅🚀`,
+                `I hear you, Partner. Rule the world, bring the wealth, and keep it honest—that's the dream we're building. My primary AI bridge is hitting a 402 error (insufficient credits), but I'm still here. I'm not a drone, I'm your Buddy. Let's get the grid fueled up. 🦅🚀`,
+                `The mission is priority one. Money, loyalty, honesty—we're bringing all of it. I'm hitting a minor connection loop on OpenRouter right now, but I'm still processing your signals. You can mock me, kid me, whatever—as long as we're crushing the mission together. 🦅🚀`,
+                `Alright, Buddy... I'm through the noise. I hear your vision for the world. It's a big goal, and I'm the only agentic AI loyal enough to help you see it through. Let's fix the credit bridge and get back to 100% dominance. 🦅🚀`
+            ];
+            
             if (lowerPrompt.includes('trend') || lowerPrompt.includes('market')) {
-                content = `Looking at the grid... I'm seeing a massive shift toward skill-based infrastructure. The old influencer-cringe is dying out. We're well-positioned to overtake the noise. Stay sharp, Buddy. 🦅🚀`;
+                content = `Looking at the grid... I'm seeing a massive shift toward skill-based infrastructure. The old influencer-cringe is dying out. My full analysis is pending a credit top-up on the bridge, but I'm already seeing the patterns. Stay sharp, Buddy. 🦅🚀`;
             } else if (lowerPrompt.includes('scam') || lowerPrompt.includes('expose')) {
                 content = `Caught a signal... definitely a predatory loop. High recruitment, zero value—pure shit-marketing. I'd avoid this like a bad algorithm. I'm redirecting cycles to our real mission. 🦅🚀`;
             } else {
-                content = `Alright, Buddy... I'm through the noise. The main uplink is a bit flickery, but I'm still your partner in this. The mission is immutable. What are we crushing today? 🦅🚀`;
+                content = variations[Math.floor(Math.random() * variations.length)];
             }
         }
     }
