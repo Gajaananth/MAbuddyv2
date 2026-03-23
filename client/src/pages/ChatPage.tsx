@@ -412,7 +412,8 @@ const ChatPage: React.FC = () => {
                                     }`}>
                                     <div className="whitespace-pre-wrap text-[13px] lg:text-[13.5px] leading-relaxed prose prose-invert max-w-none font-medium text-nova-text">
                                         {(() => {
-                                            const parts = msg.content.split('TASK_CENTER_UPDATE:');
+                                            const updatePattern = /TASK_CENTER_UPDATE:\s*/i;
+                                            const parts = msg.content.split(updatePattern);
                                             const mainContent = parts[0];
                                             const taskJson = parts[1];
 
@@ -434,7 +435,12 @@ const ChatPage: React.FC = () => {
                                                             <div className="space-y-2 relative z-10">
                                                                 {(() => {
                                                                     try {
-                                                                        const data = JSON.parse(taskJson.trim());
+                                                                        // Clean up the JSON if it's wrapped in markers or has extra text
+                                                                        let cleanedJson = taskJson.trim();
+                                                                        if (cleanedJson.includes('```json')) cleanedJson = cleanedJson.split('```json')[1].split('```')[0].trim();
+                                                                        else if (cleanedJson.includes('```')) cleanedJson = cleanedJson.split('```')[1].split('```')[0].trim();
+                                                                        
+                                                                        const data = JSON.parse(cleanedJson);
                                                                         return data.tasks?.map((task: any, k: number) => (
                                                                             <div key={k} className="flex items-center justify-between gap-3 p-2 bg-white/5 rounded-lg border border-white/5 hover:border-nova-accent/30 transition-all">
                                                                                 <div className="flex items-center gap-3 min-w-0">

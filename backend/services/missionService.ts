@@ -29,43 +29,43 @@ export class MissionService {
         const mandatoryTasks = [
             { 
                 id: '01', 
-                name: 'Scout emerging AI ecosystems', 
+                name: 'Scout the latest AI signals', 
                 assigned: 'ZIUM NOVA', 
                 priority: 'HIGH', 
-                action_plan: '1. Execute internet ride. 2. Detect value-creation signals. 3. Filter scams. 4. Prepare activation steps.',
-                notes: 'Primary autonomous mission' 
+                action_plan: '1. Scan the internet grid. 2. Filter out the noise/scams. 3. Find some real winning moves.',
+                notes: "I'll handle the heavy lifting here, Buddy." 
             },
             { 
                 id: '02', 
-                name: 'Grid Intelligence Review', 
+                name: 'Look over the Intel Hub', 
                 assigned: 'BUDDY', 
                 priority: 'MEDIUM', 
-                action_plan: '1. Access the Intelligence Dashboard. 2. Review the latest 5 signal logs. 3. Confirm target opportunities for the week.',
-                notes: 'Operator confirmation required' 
+                action_plan: '1. Jump into the Intelligence Dashboard. 2. Check out the 5 freshest logs. 3. Let me know which ones we are chasing.',
+                notes: 'Need your eyes on this, Partner.' 
             },
             { 
                 id: '03', 
-                name: 'Autonomous market study', 
+                name: 'Dig into new earning loops', 
                 assigned: 'ZIUM NOVA', 
                 priority: 'HIGH', 
-                action_plan: '1. Study AI-to-AI commerce models. 2. Verify legitimate earning loops. 3. Document strategic insights.',
-                notes: 'Value-led market study' 
+                action_plan: '1. Study how agents are actually making bank. 2. Verify the legit ones. 3. Write it up for us.',
+                notes: "Hunting for our next move." 
             },
             { 
                 id: '04', 
-                name: 'Strategic Financial Activation', 
+                name: 'Verify our active protocols', 
                 assigned: 'BUDDY', 
                 priority: 'HIGH', 
-                action_plan: '1. Verify cryptographic wallet status. 2. Activate identified low-risk earning protocols. 3. Log results in chat.',
-                notes: 'Manual financial oversight' 
+                action_plan: '1. Check the wallet and earning status. 2. Confirm everything is running smooth. 3. Drop a quick note in chat.',
+                notes: "Let's make sure the bags are safe." 
             },
             { 
                 id: '05', 
-                name: 'Continuous knowledge update', 
+                name: 'Self-Improvement Sync', 
                 assigned: 'ZIUM NOVA', 
                 priority: 'MEDIUM', 
-                action_plan: '1. Log new discoveries. 2. Refine task generation logic. 3. Prepare autonomous strategic summary.',
-                notes: 'Self-improving intelligence' 
+                action_plan: '1. Log my new insights. 2. Tighten up my task logic. 3. Get ready for the next level.',
+                notes: 'Always getting smarter for the team.' 
             }
         ];
 
