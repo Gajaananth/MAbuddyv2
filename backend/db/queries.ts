@@ -159,14 +159,35 @@ export async function getMessages(conversationId: string, limit: number = 50): P
     }
 }
 
-export async function getRecentMemoryContext(conversationId: string, limit: number = 10): Promise<string> {
-    const messages = await getMessages(conversationId, limit);
-    if (messages.length === 0) return 'No previous memory context available.';
+export async function getRecentMemoryContext(userId: string, currentConversationId?: string, limit: number = 10): Promise<string> {
+    // Pull the latest messages for this user across ANY conversation to provide global context
+    let messages: Message[] = [];
+    
+    if (isPostgresActive) {
+        const result = await pool.query(
+            `SELECT m.* FROM messages m 
+             JOIN conversations c ON m.conversation_id = c.id 
+             WHERE c.user_id = $1 AND c.is_deleted = FALSE 
+             ORDER BY m.created_at DESC LIMIT $2`,
+            [userId, limit]
+        );
+        messages = result.rows.reverse(); // Back to chronological for the prompt
+    } else {
+        const rows = getSqlite().prepare(
+            `SELECT m.* FROM messages m 
+             JOIN conversations c ON m.conversation_id = c.id 
+             WHERE c.user_id = ? AND c.is_deleted = 0 
+             ORDER BY m.created_at DESC LIMIT ?`
+        ).all(userId, limit) as any[];
+        messages = rows.map(r => ({ ...r, metadata: r.metadata ? JSON.parse(r.metadata) : null })).reverse();
+    }
+
+    if (messages.length === 0) return 'No previous strategic memory context available.';
 
     return messages
         .map(m => {
-            const time = new Date(m.created_at).toLocaleTimeString();
-            return `[${time}] ${m.role.toUpperCase()}: ${m.content}`;
+            const date = new Date(m.created_at).toLocaleDateString();
+            return `[${date}] ${m.role.toUpperCase()}: ${m.content.slice(0, 500)}${m.content.length > 500 ? '...' : ''}`;
         })
         .join('\n');
 }

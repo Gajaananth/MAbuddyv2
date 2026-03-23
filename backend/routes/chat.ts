@@ -142,7 +142,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
         console.log('[Chat] Retrieving memory context...');
         // Retrieve memory context for RAG
-        memoryContext = await db.getRecentMemoryContext(convId, 10);
+        memoryContext = await db.getRecentMemoryContext(userId, convId, 15);
 
         console.log('[Chat] Thinking...');
         // Send to Zium Nova's brain (OpenClaw / OpenAI / Gemini)

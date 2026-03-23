@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import NotificationPanel from './NotificationPanel';
 import {
-    Bird, Shield, TrendingUp, X, Terminal, MessageSquare
+    Bird, Shield, TrendingUp, X, Terminal, Database, PlusCircle
 } from 'lucide-react';
 
 
@@ -14,7 +14,8 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const navItems = [
         { icon: <Shield size={18} />, label: 'Command Center', path: '/' },
-        { icon: <MessageSquare size={18} />, label: 'Strategic Chat', path: '/chat' },
+        { icon: <PlusCircle size={18} />, label: 'New Strategic Chat', path: '/chat' },
+        { icon: <Database size={18} />, label: 'Neural Memory', path: '/memory' },
         { icon: <Bird size={18} />, label: 'Intelligence', path: '/intelligence' },
         { icon: <TrendingUp size={18} />, label: 'Market Trends', path: '/trends' },
         { icon: <Shield size={18} />, label: 'Learning Outcomes', path: '/learning' },
