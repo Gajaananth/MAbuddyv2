@@ -72,8 +72,8 @@ function App() {
                   <div className="fixed top-0 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-nova-accent/10 blur-[100px] sm:blur-[180px] rounded-full -mr-48 sm:-mr-96 -mt-48 sm:-mt-96 pointer-events-none z-0"></div>
                   <div className="fixed bottom-0 left-0 w-[300px] lg:w-[400px] h-[300px] lg:h-[400px] bg-nova-accent-alt/10 blur-[80px] lg:blur-[120px] rounded-full -ml-16 lg:-ml-24 -mb-16 lg:-mb-24 pointer-events-none z-0"></div>
 
-                  {/* Atomic Content Container - Aggressively scaled for Desktop */}
-                  <div className="relative z-10 pt-16 lg:pt-2 px-2 sm:px-4 lg:px-6 h-screen flex flex-col items-stretch w-full max-w-[1600px] overflow-hidden pb-4 pb-safe">
+                  {/* Atomic Content Container - Relaxed height for global scrollability */}
+                  <div className="relative z-10 pt-16 lg:pt-2 px-2 sm:px-4 lg:px-6 min-h-screen flex flex-col items-stretch w-full max-w-[1600px] pb-4 pb-safe">
 
 
 
