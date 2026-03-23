@@ -2,17 +2,8 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import NotificationPanel from './NotificationPanel';
 import {
-    LayoutDashboard,
-    MessageSquare,
-    TrendingUp,
-    Users,
-    Database,
-    Bird,
-    Shield,
-    X,
-    Zap
+    Bird, Shield, TrendingUp, X, Terminal, MessageSquare
 } from 'lucide-react';
-
 
 
 interface SidebarProps {
@@ -22,16 +13,13 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const navItems = [
-        { name: 'Command Dashboard', icon: <LayoutDashboard size={26} />, path: '/' },
-        { name: 'Task Center', icon: <Zap size={26} />, path: '/command-center' },
-        { name: 'Internet Ride', icon: <Bird size={26} />, path: '/intelligence' },
-        { name: 'Learning Outcomes', icon: <TrendingUp size={26} />, path: '/learning' },
-        { name: 'Important Reports', icon: <Shield size={26} />, path: '/reports' },
-        
-        { name: 'Strategic Memory', icon: <Database size={26} />, path: '/memory' },
-        { name: 'Chat', icon: <MessageSquare size={26} />, path: '/chat' },
-        { name: 'Agents', icon: <Users size={26} />, path: '/agents' },
-        { name: 'Security & Risk Monitor', icon: <Shield size={26} />, path: '/security' },
+        { icon: <Shield size={18} />, label: 'Command Center', path: '/' },
+        { icon: <MessageSquare size={18} />, label: 'Strategic Chat', path: '/chat' },
+        { icon: <Bird size={18} />, label: 'Intelligence', path: '/intelligence' },
+        { icon: <TrendingUp size={18} />, label: 'Market Trends', path: '/trends' },
+        { icon: <Shield size={18} />, label: 'Learning Outcomes', path: '/learning' },
+        { icon: <Terminal size={18} />, label: 'Reports Archive', path: '/reports' },
+        { icon: <Shield size={18} />, label: 'Security Grid', path: '/security' },
     ];
 
 
@@ -96,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                     <span className="group-hover:scale-110 transition-transform duration-300 shrink-0">
                                         {React.cloneElement(item.icon as React.ReactElement<any>, { size: 18 })}
                                     </span>
-                                    <span className="font-black text-[11px] tracking-tight uppercase whitespace-nowrap">{item.name}</span>
+                                    <span className="font-black text-[11px] tracking-tight uppercase whitespace-nowrap">{item.label}</span>
                                 </NavLink>
                             ))}
                         </div>
@@ -120,7 +108,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                     <span className="group-hover:scale-110 transition-transform duration-300 shrink-0">
                                         {React.cloneElement(item.icon as React.ReactElement<any>, { size: 18 })}
                                     </span>
-                                    <span className="font-black text-[11px] tracking-tight uppercase whitespace-nowrap">{item.name}</span>
+                                    <span className="font-black text-[11px] tracking-tight uppercase whitespace-nowrap">{item.label}</span>
                                 </NavLink>
                             ))}
                         </div>

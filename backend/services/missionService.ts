@@ -179,6 +179,53 @@ export class MissionService {
         }
     }
 
+    /**
+     * Process direct intent for tasks from a message.
+     */
+    async processTaskIntent(userId: string, message: string) {
+        const lower = message.toLowerCase();
+        
+        // 1. Deletion Intent
+        if (lower.includes('delete task') || lower.includes('remove task')) {
+            const match = message.match(/(?:delete|remove) task\s+([a-zA-Z0-9-_\s]+)/i);
+            if (match) {
+                const identifier = match[1].trim();
+                // Try deleting by task_id_str first, then by name
+                const tasks = await db.getTasks(userId);
+                const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+                if (target) {
+                    await db.deleteTask(target.task_id_str, userId);
+                    console.log(`[Mission] Intent: Deleted task ${target.task_id_str}`);
+                }
+            }
+        }
+
+        // 2. Clear Intent
+        if (lower.includes('clear all tasks') || lower.includes('delete all tasks') || lower.includes('reset mission board')) {
+            await db.deleteAllTasks(userId);
+            console.log(`[Mission] Intent: Cleared all tasks for ${userId}`);
+        }
+
+        // 3. Simple Addition Intent (Natural Language)
+        if (lower.includes('add task') || lower.includes('assign task')) {
+            const match = message.match(/(?:add|assign) task\s+"?(.+?)"?(?:\s+to\s+([a-zA-Z\s_]+))?$/i);
+            if (match) {
+                const name = match[1].trim();
+                const assigneeRaw = (match[2] || 'BUDDY').trim().toUpperCase();
+                const assigned_to = assigneeRaw.includes('NOVA') ? 'ZIUM NOVA' : 'BUDDY';
+                
+                await db.createTask(userId, {
+                    task_name: name,
+                    assigned_to,
+                    priority: 'MEDIUM',
+                    status: 'TODO',
+                    action_plan: 'Created via direct Operator intent.'
+                }, `T-${uuidv4().slice(0, 8)}`);
+                console.log(`[Mission] Intent: Added task "${name}" for ${assigned_to}`);
+            }
+        }
+    }
+
     private getWeekNumber(d: Date): number {
         d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
         d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));

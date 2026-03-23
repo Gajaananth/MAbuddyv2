@@ -9,7 +9,6 @@ import IntelligenceDashboard from './pages/IntelligenceDashboard';
 import NotificationPanel from './components/NotificationPanel';
 import LearningPage from './pages/LearningPage';
 import ReportsPage from './pages/ReportsPage';
-import CommandDashboard from './pages/CommandDashboard';
 import CommandCenterPage from './pages/CommandCenterPage';
 import { Menu, Bird } from 'lucide-react';
 
@@ -79,13 +78,12 @@ function App() {
 
 
                     <Routes>
-                      <Route path="/" element={<CommandDashboard />} />
+                      <Route path="/" element={<CommandCenterPage />} />
                       <Route path="/chat" element={<ChatPage />} />
                       <Route path="/trends" element={<TrendsPage />} />
                       <Route path="/agents" element={<AgentsPage />} />
                       <Route path="/memory" element={<MemoryPage />} />
                       <Route path="/intelligence" element={<IntelligenceDashboard />} />
-                      <Route path="/command-center" element={<CommandCenterPage />} />
                       <Route path="/learning" element={<LearningPage />} />
                       <Route path="/reports" element={<ReportsPage />} />
                       <Route path="/security" element={<SecuritySettings />} />

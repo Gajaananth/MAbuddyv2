@@ -101,6 +101,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         // Store user message
         await db.addMessage(convId, 'user', message);
 
+        // --- Task Intent Processing (NEW: Autonomous Dashboard Update) ---
+        missionService.processTaskIntent(userId, message).catch(e => console.error('[Chat] Task intent failed:', e));
+
         // Weekly Ride / Internet Raid Command Recognition (CHECK BEFORE THINKING)
         const lowerMessage = message.toLowerCase();
         const raidTriggers = [

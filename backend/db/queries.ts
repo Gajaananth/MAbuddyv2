@@ -674,6 +674,7 @@ export async function createTask(userId: string, task: {
     priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     action_plan?: string;
     notes?: string;
+    status?: 'TODO' | 'IN-PROGRESS' | 'COMPLETED' | 'BLOCKED';
 }, customTaskIdStr?: string): Promise<any> {
     const isPg = isPostgresActive;
     try {
@@ -704,20 +705,22 @@ export async function createTask(userId: string, task: {
         const actionPlan = task.action_plan || '';
         const notes = task.notes || '';
 
+        const status = task.status || 'TODO';
+
         if (isPg) {
             const res = await pool.query(
-                `INSERT INTO tasks (user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-                [userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes]
+                `INSERT INTO tasks (user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes, status)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+                [userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes, status]
             );
             return res.rows[0];
         } else {
             const db = getSqlite();
             const id = uuidv4();
             db.prepare(
-                `INSERT INTO tasks (id, user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-            ).run(id, userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes);
+                `INSERT INTO tasks (id, user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+            ).run(id, userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes, status);
             return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
         }
     } catch (error) {
@@ -767,6 +770,22 @@ export async function updateTaskStatus(userId: string, taskIdStr: string, status
     } else {
         getSqlite().prepare(queryStr).run(...queryArgs);
         return getSqlite().prepare('SELECT * FROM tasks WHERE user_id = ? AND task_id_str = ?').get(userId, normalizedIdStr);
+    }
+}
+
+export async function deleteTask(taskIdStr: string, userId: string): Promise<void> {
+    if (isPostgresActive) {
+        await pool.query('DELETE FROM tasks WHERE user_id = $1 AND task_id_str = $2', [userId, taskIdStr]);
+    } else {
+        getSqlite().prepare('DELETE FROM tasks WHERE user_id = ? AND task_id_str = ?').run(userId, taskIdStr);
+    }
+}
+
+export async function deleteAllTasks(userId: string): Promise<void> {
+    if (isPostgresActive) {
+        await pool.query('DELETE FROM tasks WHERE user_id = $1', [userId]);
+    } else {
+        getSqlite().prepare('DELETE FROM tasks WHERE user_id = ?').run(userId);
     }
 }
 

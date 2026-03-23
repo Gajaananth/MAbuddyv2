@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Bird, User, Search, Circle, CheckCircle2, AlertCircle, 
-    Terminal, Activity 
+    Terminal, Activity, Shield, TrendingUp, Loader2
 } from 'lucide-react';
-import { missionService } from '../services/api';
+import { missionService, trendService } from '../services/api';
 import { formatTimestamp } from '../utils/formatUtils';
 
 const STATUS_COLORS = {
@@ -62,20 +62,35 @@ const CommandCenterPage: React.FC = () => {
     const [tasks, setTasks] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [recentTrends, setRecentTrends] = useState<any[]>([]);
+    const [isLoadingTrends, setIsLoadingTrends] = useState(true);
 
     useEffect(() => {
-        const fetchTasks = async () => {
+        const loadAllData = async () => {
             try {
-                const res = await missionService.getTasks();
-                setTasks(res.data.data.tasks || []);
+                const [tasksRes, trendsRes] = await Promise.all([
+                    missionService.getTasks(),
+                    trendService.getTrends()
+                ]);
+                setTasks(tasksRes.data.data || []);
+                setRecentTrends(trendsRes.data?.data?.slice(0, 3) || []);
             } catch (e) {
-                console.error('Task fetch error', e);
+                console.error('Data fetch error', e);
             } finally {
                 setLoading(false);
+                setIsLoadingTrends(false);
             }
         };
-        fetchTasks();
+        loadAllData();
     }, []);
+
+    const stats = {
+        total: tasks.length,
+        completed: tasks.filter(t => t.status === 'COMPLETED').length,
+        active: tasks.filter(t => t.status === 'TODO' || t.status === 'IN-PROGRESS').length,
+        pending: tasks.filter(t => t.status === 'TODO').length,
+    };
+    const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
     const filteredTasks = tasks.filter(t => 
         t.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -121,6 +136,63 @@ const CommandCenterPage: React.FC = () => {
                 </div>
             ) : (
                 <div className="space-y-16 pb-20">
+                    {/* STRATEGIC OVERVIEW (Merged from Dashboard) */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-4">
+                        {/* Progress Tracker */}
+                        <div className="lg:col-span-8 glass p-8 rounded-3xl border-2 border-nova-border flex flex-col justify-between">
+                            <div className="flex justify-between items-start mb-8">
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                    <Shield size={18} className="text-nova-accent" />
+                                    Mission Completion
+                                </h3>
+                                <span className="text-2xl font-mono font-black text-nova-accent">{progress}%</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                                <div>
+                                    <p className="text-[10px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Total Signals</p>
+                                    <p className="text-xl font-black text-white">{stats.total}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-green-400 font-black uppercase tracking-wider mb-1">Resolved</p>
+                                    <p className="text-xl font-black text-green-400">{stats.completed}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-blue-400 font-black uppercase tracking-wider mb-1">Tactical</p>
+                                    <p className="text-xl font-black text-blue-400">{stats.active}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] text-nova-accent font-black uppercase tracking-wider mb-1">Pending</p>
+                                    <p className="text-xl font-black text-nova-accent">{stats.pending}</p>
+                                </div>
+                            </div>
+
+                            <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-nova-border relative">
+                                <div 
+                                    className="h-full bg-nova-accent shadow-[0_0_20px_rgba(0,242,255,0.4)] transition-all duration-1000 ease-out"
+                                    style={{ width: `${progress}%` }}
+                                ></div>
+                            </div>
+                        </div>
+
+                        {/* Recent Trends Quick-View */}
+                        <div className="lg:col-span-4 glass p-8 rounded-3xl border-2 border-nova-border">
+                            <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
+                                <TrendingUp size={18} className="text-nova-accent" />
+                                Market Pulse
+                            </h3>
+                            <div className="space-y-4">
+                                {isLoadingTrends ? (
+                                    <div className="py-4 flex justify-center"><Loader2 className="animate-spin text-nova-accent/20" /></div>
+                                ) : recentTrends.map((trend, i) => (
+                                    <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                                        <span className="text-[10px] font-bold text-white uppercase truncate pr-4">{trend.topic}</span>
+                                        <span className={`text-[10px] font-black ${trend.score > 70 ? 'text-green-400' : 'text-nova-accent'}`}>{trend.score}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
                     {/* Operator Section */}
                     <div className="animate-in slide-in-from-left duration-700">
                         <div className="flex items-center justify-between mb-6">
