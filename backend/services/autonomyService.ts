@@ -480,11 +480,12 @@ If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', {}, userId);
                 : (await db.createConversation(userId, 'Strategic Intelligence Alerts')).id;
 
             // Humanize the alert
-            const humanized = await think(`[DE-ROBOTIZER v3.1.0]
+            const humanized = await think(`[DE-ROBOTIZER v3.2.0]
 Identity: Operator's Trusted Partner
 Rewrite this critical alert as a natural, witty, and emotionally connected "Buddy" message.
 BANNED: robotic headers, "Category:", "Signal Detected:", "🚨", "⚠️".
-TONE: Supportive, funny/playful where appropriate, but urgent. Speak like a real partner.
+TONE: Supportive, funny/playful where appropriate, but urgent. 
+CONSISTENCY: Reflect Relationship Core v3.2 values automatically.
 
 ALERT: "${combinedAlert}"`, '', {}, userId);
 
