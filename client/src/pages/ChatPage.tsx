@@ -293,7 +293,7 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="flex-1 h-[calc(100vh-100px)] lg:h-[calc(100vh-40px)] flex flex-col min-w-0 max-w-6xl mx-auto w-full overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 max-w-6xl mx-auto w-full">
 
             <header className="mb-2 lg:mb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-1.5 lg:py-2 gap-2 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0 text-nova-text-dim">
                 <div className="flex items-center gap-3 lg:gap-4">
@@ -335,7 +335,7 @@ const ChatPage: React.FC = () => {
             <div 
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-12 sm:space-y-24 scroll-smooth custom-scrollbar pb-6 mt-2 min-h-0"
+                className="h-[calc(100vh-220px)] overflow-y-auto pr-1 sm:pr-4 space-y-12 sm:space-y-24 scroll-smooth custom-scrollbar pb-6 mt-2 min-h-0"
             >
 
                 {messages.length === 0 && (

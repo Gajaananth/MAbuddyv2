@@ -42,7 +42,7 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/*" element={
             <ProtectedRoute>
-              <div className="flex bg-nova-bg text-nova-text min-h-screen selection:bg-nova-accent/30 selection:text-white overflow-x-hidden relative">
+              <div className="flex bg-nova-bg text-nova-text min-h-screen selection:bg-nova-accent/30 selection:text-white relative">
                 {/* Mobile Header Bar - Fixed for consistency */}
                 <header className="fixed top-0 left-0 right-0 h-14 glass z-50 flex lg:hidden items-center px-4 border-b border-nova-border/50 justify-between">
                   <div className="flex items-center gap-3">
@@ -63,17 +63,17 @@ function App() {
 
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-                {/* Content Engine - Offset by Sidebar width on Desktop (Compact) */}
-                <main className="flex-1 min-w-0 lg:pl-64 transition-all duration-300 relative min-h-screen flex flex-col items-center">
+                {/* Content Engine - Natural Scroll Flow */}
+                <main className="flex-1 min-w-0 lg:pl-64 transition-all duration-300 relative flex flex-col">
 
 
 
-                  {/* Background Atmosphere - Fixed width and better positioning to avoid horizontal overflow */}
+                  {/* Background Atmosphere */}
                   <div className="fixed top-0 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-nova-accent/10 blur-[100px] sm:blur-[180px] rounded-full -mr-48 sm:-mr-96 -mt-48 sm:-mt-96 pointer-events-none z-0"></div>
                   <div className="fixed bottom-0 left-0 w-[300px] lg:w-[400px] h-[300px] lg:h-[400px] bg-nova-accent-alt/10 blur-[80px] lg:blur-[120px] rounded-full -ml-16 lg:-ml-24 -mb-16 lg:-mb-24 pointer-events-none z-0"></div>
 
-                  {/* Atomic Content Container - Relaxed height for global scrollability */}
-                  <div className="relative z-10 pt-16 lg:pt-2 px-2 sm:px-4 lg:px-6 min-h-screen flex flex-col items-stretch w-full max-w-[1600px] pb-4 pb-safe">
+                  {/* Atomic Content Container - Fully flexible */}
+                  <div className="relative z-10 pt-16 lg:pt-4 px-2 sm:px-4 lg:px-8 w-full max-w-[1600px] mx-auto pb-20">
 
 
 
