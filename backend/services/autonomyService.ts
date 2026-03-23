@@ -159,7 +159,6 @@ Identity: Strategic Agent of the Operator
 LOG: [Mission Point #] | [Finding] | [Strategic Value]
 TASK: [Name] | PRIORITY: [HIGH/MED] | ASSIGNED: [ZIUM NOVA/BUDDY] | PLAN: [Execution]
 CRITICAL_ALERT: [Natural message for the operator — Calm, intelligent, authoritative.]
-`;
 
 [CURRENT GRID CONTEXT]
 ${learningContext}
