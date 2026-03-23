@@ -286,7 +286,7 @@ const ChatPage: React.FC = () => {
     return (
         <div className="flex-1 h-full flex flex-col min-w-0 max-w-6xl mx-auto w-full">
 
-            <header className="mb-4 lg:mb-6 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-3 lg:py-4 gap-3 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0">
+            <header className="mb-2 lg:mb-4 flex flex-col lg:flex-row justify-between items-start lg:items-center bg-nova-bg/90 backdrop-blur-xl sticky top-0 z-20 py-1.5 lg:py-2 gap-2 border-b border-nova-border/50 w-full shrink-0 px-2 sm:px-0 text-nova-text-dim">
                 <div className="flex items-center gap-3 lg:gap-4">
                     <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-lg lg:rounded-xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent relative shadow-2xl shadow-nova-accent/5 shrink-0">
                         <Bird size={18} className="sm:hidden" />
@@ -323,7 +323,7 @@ const ChatPage: React.FC = () => {
                 </div>
             </header>
 
-            <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-10 sm:space-y-16 scroll-smooth custom-scrollbar pb-8 mt-4 min-h-0">
+            <div className="flex-1 overflow-y-auto pr-1 sm:pr-4 space-y-12 sm:space-y-24 scroll-smooth custom-scrollbar pb-6 mt-2 min-h-0">
 
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center min-h-[60%] text-center space-y-4 sm:space-y-6 opacity-40 px-4">
@@ -545,7 +545,7 @@ const ChatPage: React.FC = () => {
                 <div ref={messagesEndRef} />
             </div>
 
-            <div className="mt-2 sm:mt-3 mb-2 sm:mb-4 relative shrink-0">
+            <div className="mt-1 sm:mt-2 mb-1 sm:mb-2 relative shrink-0">
                 {/* Mode Selector - Grounded and Stable */}
                 <div className="relative inline-block z-[60]">
                     <button

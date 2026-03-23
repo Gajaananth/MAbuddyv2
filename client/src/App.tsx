@@ -72,7 +72,7 @@ function App() {
                   <div className="fixed bottom-0 left-0 w-[300px] lg:w-[400px] h-[300px] lg:h-[400px] bg-nova-accent-alt/10 blur-[80px] lg:blur-[120px] rounded-full -ml-16 lg:-ml-24 -mb-16 lg:-mb-24 pointer-events-none z-0"></div>
 
                   {/* Atomic Content Container - Aggressively scaled for Desktop */}
-                  <div className="relative z-10 pt-20 lg:pt-4 px-4 sm:px-8 lg:px-12 min-h-screen flex flex-col items-stretch w-full max-w-[1440px] overflow-x-hidden pb-12 lg:pb-8 pb-safe">
+                  <div className="relative z-10 pt-16 lg:pt-2 px-2 sm:px-4 lg:px-6 h-screen flex flex-col items-stretch w-full max-w-[1600px] overflow-hidden pb-4 pb-safe">
 
 
 
