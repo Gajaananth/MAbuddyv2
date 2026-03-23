@@ -184,7 +184,7 @@ const CommandDashboard: React.FC = () => {
                     <div>
                         <div className="flex items-center gap-2 mb-0.5">
                             <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tighter text-white uppercase leading-none">COMMAND <span className="text-nova-accent text-shadow-glow">DASHBOARD</span></h1>
-                            <div className="px-1 py-0.5 rounded bg-nova-accent/10 border border-nova-accent/30 text-nova-accent text-[8px] font-black uppercase tracking-widest">v3.2.0</div>
+                            <div className="px-1 py-0.5 rounded bg-nova-accent/10 border border-nova-accent/30 text-nova-accent text-[8px] font-black uppercase tracking-widest">v4.1.5</div>
                         </div>
                         <p className="text-nova-text-dim text-[9px] sm:text-[10px] font-black tracking-[0.2em] uppercase opacity-60 flex items-center gap-2">
                             <span className="w-1 h-1 rounded-full bg-green-400 animate-pulse"></span>
