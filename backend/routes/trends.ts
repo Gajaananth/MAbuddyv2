@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { think } from '../services/openClawService.js';
 import { applyFilter } from '../filters/silentBeastFilter.js';
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { ApiResponse, TrendData } from '../types/index.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 

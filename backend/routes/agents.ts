@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { ApiResponse } from '../types/index.js';
 
 const router = Router();

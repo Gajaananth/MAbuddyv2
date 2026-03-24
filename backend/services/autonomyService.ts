@@ -1,6 +1,6 @@
 import { think } from './openClawService.js';
 import { createNotification, findRecentDuplicateNotification } from '../db/queries.js';
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { getAllUsers } from '../db/authQueries.js';
 import { missionService } from './missionService.js';
 

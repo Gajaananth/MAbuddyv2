@@ -26,6 +26,15 @@ export async function getDeviceCount(): Promise<number> {
     }
 }
 
+export async function getUserById(id: string): Promise<any | null> {
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM users WHERE id = $1', [id]);
+        return result.rows[0] || null;
+    } else {
+        return getSqlite().prepare('SELECT * FROM users WHERE id = ?').get(id) || null;
+    }
+}
+
 export async function createUser(u: {
     dob_hash: string;
     pin_hash: string;
@@ -110,7 +119,7 @@ export async function updateFailedAttempts(userId: string, count: number, lockUn
     }
 }
 
-export async function resetFailedAttempts(userId: string): Promise<void> {
+async function resetFailedAttempts(userId: string): Promise<void> {
     if (db.isPostgresActive) {
         await db.pool.query('UPDATE users SET failed_attempts = 0, lock_until = NULL WHERE id = $1', [userId]);
     } else {
@@ -118,7 +127,7 @@ export async function resetFailedAttempts(userId: string): Promise<void> {
     }
 }
 
-export async function updatePin(userId: string, pinHash: string): Promise<void> {
+async function updatePin(userId: string, pinHash: string): Promise<void> {
     if (db.isPostgresActive) {
         await db.pool.query('UPDATE users SET pin_hash = $1 WHERE id = $2', [pinHash, userId]);
     } else {
@@ -234,4 +243,26 @@ export async function removeDevice(deviceId: string, userId: string): Promise<vo
         getSqlite().prepare('DELETE FROM devices WHERE id = ? AND user_id = ?').run(deviceId, userId);
     }
 }
+
+const authQueries = {
+    getAllUsers,
+    getUserCount,
+    getUserById,
+    findUserByIdentifiers,
+    getUserByPin,
+    createUser,
+    registerDevice,
+    findDevice,
+    getDevicesByUserId,
+    getDeviceCountByUserId,
+    getDeviceByIdentifierAndFingerprint,
+    getDeviceCount,
+    removeDevice,
+    updateWebAuthn,
+    updatePin,
+    updateFailedAttempts,
+    resetFailedAttempts
+};
+
+export default authQueries;
 

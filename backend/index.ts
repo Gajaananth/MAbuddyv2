@@ -137,7 +137,7 @@ async function start() {
 
     if (!process.env.VERCEL) {
         app.listen(PORT, () => {
-            console.log('\n  ZIUM NOVA — ONLINE (PORT: ' + PORT + ')\n');
+            console.log('[Zium Nova] Mission Grid v5.0.3 | GRID RECLAMATION PROTOCOL ACTIVE');
         });
     }
 }

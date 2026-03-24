@@ -5,7 +5,7 @@ import { applyFilter } from '../filters/silentBeastFilter.js';
 import { calculateProductionScores } from '../services/scoringService.js';
 import { postToMoltbook } from '../services/moltbookService.js';
 import { missionService } from '../services/missionService.js';
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { ApiResponse } from '../types/index.js';
 import { AuthRequest } from '../middleware/auth.js';
 

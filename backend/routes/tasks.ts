@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { ApiResponse } from '../types/index.js';
 
@@ -77,6 +77,8 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     }
 });
 
+/**
+ * GET /api/tasks/progress
  * Real-time task progress statistics (total, completed, in-progress, stuck, by assignee).
  */
 router.get('/progress', authenticate, async (req: AuthRequest, res: Response) => {

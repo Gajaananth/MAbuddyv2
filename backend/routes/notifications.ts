@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { ApiResponse } from '../types/index.js';
 

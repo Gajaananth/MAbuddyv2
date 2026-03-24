@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { performInternetRaid, runManualWeeklyRide, activeRaids } from '../services/raidingService.js';
 import { generateIntelligencePDF } from '../services/pdfService.js';
 import { generateIntelligenceDocx } from '../services/docxService.js';

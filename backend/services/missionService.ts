@@ -1,4 +1,4 @@
-import * as db from '../db/queries.js';
+import db from '../db/queries.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

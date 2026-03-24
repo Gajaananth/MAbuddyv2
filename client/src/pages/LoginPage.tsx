@@ -239,9 +239,9 @@ const LoginPage: React.FC = () => {
                     </div>
                 </div>
 
-                <p className="mt-12 text-center text-nova-text-dim text-[10px] font-bold uppercase tracking-widest opacity-50">
-                    Sovereign Intelligence Protected • v5.0.2
-                </p>
+                <div style={{ marginTop: '20px', fontSize: '12px', color: '#666', opacity: '0.5' }}>
+            Zium Nova Mission Grid v5.0.3 | 🦅🚀 GRID RECLAMATION
+          </div>
             </div>
         </div>
     );
