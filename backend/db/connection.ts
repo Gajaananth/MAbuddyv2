@@ -10,13 +10,13 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 // better-sqlite3 is a native C++ addon — it will be loaded dynamically if needed
 // and NEVER on Vercel to avoid runtime crashes.
 let sqliteDb: any = null;
-export let isPostgresActive = false;
+let isPostgresActive = false;
 let isInitializing = false;
 
 // Ensure DATABASE_URL is present before initializing the pool to prevent startup crashes.
 let pool: any = null;
 
-export function getPool() {
+function getPool() {
   if (pool) return pool;
   
   const connectionString = (process.env.DATABASE_URL || '').trim();
@@ -57,7 +57,7 @@ let initPromise: Promise<void> | null = null;
 /**
  * Initialize Database with Resilience.
  */
-export async function initDatabase(): Promise<void> {
+async function initDatabase(): Promise<void> {
   if (isPostgresActive) return;
 
   if (initPromise) {
@@ -417,4 +417,13 @@ async function runMigrations(client: any) {
     console.log('[DB] Grid: Schema Synchronized.');
 }
 
-export { pool, sqliteDb };
+const db = {
+    pool,
+    sqliteDb,
+    isPostgresActive,
+    initDatabase,
+    getPool
+};
+
+export default db;
+export { pool, sqliteDb, isPostgresActive, initDatabase, getPool };

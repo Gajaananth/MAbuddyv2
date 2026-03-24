@@ -240,7 +240,7 @@ const LoginPage: React.FC = () => {
                 </div>
 
                 <p className="mt-12 text-center text-nova-text-dim text-[10px] font-bold uppercase tracking-widest opacity-50">
-                    Sovereign Intelligence Protected • v5.0.1
+                    Sovereign Intelligence Protected • v5.0.2
                 </p>
             </div>
         </div>

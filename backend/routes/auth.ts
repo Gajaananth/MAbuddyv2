@@ -3,7 +3,7 @@ import * as authService from '../services/authService.js';
 import * as webAuthn from '../services/webAuthnService.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import * as authQueries from '../db/authQueries.js';
-import * as db from '../db/connection.js';
+import db from '../db/connection.js';
 
 const router = Router();
 

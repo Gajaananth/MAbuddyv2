@@ -72,7 +72,7 @@ app.get('/api/health', (_req, res) => {
         status: 'online',
         agent: 'ZIUM NOVA',
         identity: 'SILENT BEAST DOMINANCE',
-        version: 'v5.0.1',
+        version: 'v5.0.2',
         protocol: 'silent_beast_dominance_v2_resilient',
         mode: process.env.OPENROUTER_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),

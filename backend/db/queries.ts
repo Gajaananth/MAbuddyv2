@@ -1,4 +1,4 @@
-import * as db from './connection.js';
+import db from './connection.js';
 import { Conversation, Message, TrendAnalysis, TrendData, Agent } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
