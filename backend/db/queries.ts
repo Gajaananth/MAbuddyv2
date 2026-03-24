@@ -1,10 +1,10 @@
-import { pool, sqliteDb, isPostgresActive } from './connection.js';
+import * as db from './connection.js';
 import { Conversation, Message, TrendAnalysis, TrendData, Agent } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 function getSqlite() {
-    if (!sqliteDb) throw new Error('Database unavailable: Both PostgreSQL and SQLite Fallback failed.');
-    return sqliteDb;
+    if (!db.sqliteDb) throw new Error('Database unavailable: Both PostgreSQL and SQLite Fallback failed.');
+    return db.sqliteDb;
 }
 
 // ──────────────────────────── Conversations ────────────────────────────
@@ -21,8 +21,8 @@ export async function getConversationDetail(conversationId: string, userId: stri
 }
 
 export async function createConversation(userId: string, title: string = 'New Conversation'): Promise<Conversation> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO conversations (title, user_id) VALUES ($1, $2) RETURNING *',
             [title, userId]
         );
@@ -44,8 +44,8 @@ export async function getConversations(
     const deletedFilter = includeDeleted ? '' : 'AND is_deleted = FALSE';
     const sqliteDeletedFilter = includeDeleted ? '' : 'AND is_deleted = 0';
 
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             `SELECT * FROM conversations WHERE user_id = $1 ${deletedFilter} ORDER BY updated_at DESC LIMIT $2 OFFSET $3`,
             [userId, limit, offset]
         );
@@ -57,8 +57,8 @@ export async function getConversations(
 }
 
 export async function getConversationById(id: string, userId: string): Promise<Conversation | null> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT * FROM conversations WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM conversations WHERE id = $1 AND user_id = $2', [id, userId]);
         return result.rows[0] || null;
     } else {
         return (getSqlite().prepare('SELECT * FROM conversations WHERE id = ? AND user_id = ?').get(id, userId) as Conversation) || null;
@@ -66,8 +66,8 @@ export async function getConversationById(id: string, userId: string): Promise<C
 }
 
 export async function updateConversationTitle(id: string, userId: string, title: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query(
+    if (db.isPostgresActive) {
+        await db.pool.query(
             'UPDATE conversations SET title = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
             [title, id, userId]
         );
@@ -77,8 +77,8 @@ export async function updateConversationTitle(id: string, userId: string, title:
 }
 
 export async function updateConversationTopic(id: string, userId: string, topicTag: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query(
+    if (db.isPostgresActive) {
+        await db.pool.query(
             'UPDATE conversations SET topic_tag = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3',
             [topicTag, id, userId]
         );
@@ -88,11 +88,11 @@ export async function updateConversationTopic(id: string, userId: string, topicT
 }
 
 export async function deleteConversation(id: string, userId: string, permanent: boolean = false): Promise<void> {
-    if (isPostgresActive) {
+    if (db.isPostgresActive) {
         if (permanent) {
-            await pool.query('DELETE FROM conversations WHERE id = $1 AND user_id = $2', [id, userId]);
+            await db.pool.query('DELETE FROM conversations WHERE id = $1 AND user_id = $2', [id, userId]);
         } else {
-            await pool.query('UPDATE conversations SET is_deleted = TRUE, updated_at = NOW() WHERE id = $1 AND user_id = $2', [id, userId]);
+            await db.pool.query('UPDATE conversations SET is_deleted = TRUE, updated_at = NOW() WHERE id = $1 AND user_id = $2', [id, userId]);
         }
     } else {
         if (permanent) {
@@ -105,8 +105,8 @@ export async function deleteConversation(id: string, userId: string, permanent: 
 
 export async function searchConversations(userId: string, query: string, limit: number = 20): Promise<Conversation[]> {
     const searchTerm = `%${query}%`;
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM conversations WHERE user_id = $1 AND (title ILIKE $2 OR topic_tag ILIKE $2) AND is_deleted = FALSE ORDER BY updated_at DESC LIMIT $3',
             [userId, searchTerm, limit]
         );
@@ -126,12 +126,12 @@ export async function addMessage(
     content: string,
     metadata: object | null = null
 ): Promise<Message> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO messages (conversation_id, role, content, metadata) VALUES ($1, $2, $3, $4) RETURNING *',
             [conversationId, role, content, metadata]
         );
-        await pool.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [conversationId]);
+        await db.pool.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [conversationId]);
         return result.rows[0];
     } else {
         const db = getSqlite();
@@ -145,8 +145,8 @@ export async function addMessage(
 }
 
 export async function getMessages(conversationId: string, limit: number = 50): Promise<Message[]> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC LIMIT $2',
             [conversationId, limit]
         );
@@ -163,8 +163,8 @@ export async function getRecentMemoryContext(userId: string, currentConversation
     // Pull the latest messages for this user across ANY conversation to provide global context
     let messages: Message[] = [];
     
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             `SELECT m.* FROM messages m 
              JOIN conversations c ON m.conversation_id = c.id 
              WHERE c.user_id = $1 AND c.is_deleted = FALSE 
@@ -193,8 +193,8 @@ export async function getRecentMemoryContext(userId: string, currentConversation
 }
 
 export async function getMessagesByDateRange(startDate: Date, endDate: Date): Promise<Message[]> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM messages WHERE created_at >= $1 AND created_at <= $2 ORDER BY created_at ASC',
             [startDate, endDate]
         );
@@ -214,8 +214,8 @@ export async function saveTrendAnalysis(
     analysis: TrendData,
     score: number
 ): Promise<TrendAnalysis> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO trend_analyses (user_id, topic, analysis, score) VALUES ($1, $2, $3, $4) RETURNING *',
             [userId, topic, analysis, score]
         );
@@ -232,8 +232,8 @@ export async function saveTrendAnalysis(
 }
 
 export async function getTrendAnalyses(userId: string, limit: number = 20): Promise<TrendAnalysis[]> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM trend_analyses WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
             [userId, limit]
         );
@@ -245,8 +245,8 @@ export async function getTrendAnalyses(userId: string, limit: number = 20): Prom
 }
 
 export async function deleteTrendAnalysis(id: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM trend_analyses WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM trend_analyses WHERE id = $1 AND user_id = $2', [id, userId]);
     } else {
         getSqlite().prepare('DELETE FROM trend_analyses WHERE id = ? AND user_id = ?').run(id, userId);
     }
@@ -259,8 +259,8 @@ export async function addAgent(
     description: string,
     capabilities: string[]
 ): Promise<Agent> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO agent_network (name, description, capabilities) VALUES ($1, $2, $3) RETURNING *',
             [name, description, capabilities]
         );
@@ -277,8 +277,8 @@ export async function addAgent(
 }
 
 export async function getAgents(): Promise<Agent[]> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM agent_network ORDER BY trust_score DESC'
         );
         return result.rows;
@@ -289,24 +289,24 @@ export async function getAgents(): Promise<Agent[]> {
 }
 
 export async function updateAgentTrustScore(id: string, trustScore: number): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE agent_network SET trust_score = $1 WHERE id = $2', [trustScore, id]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE agent_network SET trust_score = $1 WHERE id = $2', [trustScore, id]);
     } else {
         getSqlite().prepare('UPDATE agent_network SET trust_score = ? WHERE id = ?').run(trustScore, id);
     }
 }
 
 export async function updateAgentStatus(id: string, status: 'active' | 'inactive' | 'flagged'): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE agent_network SET status = $1 WHERE id = $2', [status, id]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE agent_network SET status = $1 WHERE id = $2', [status, id]);
     } else {
         getSqlite().prepare('UPDATE agent_network SET status = ? WHERE id = ?').run(status, id);
     }
 }
 
 export async function updateAgentCollaboration(id: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE agent_network SET last_collaboration = NOW() WHERE id = $1', [id]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE agent_network SET last_collaboration = NOW() WHERE id = $1', [id]);
     } else {
         getSqlite().prepare('UPDATE agent_network SET last_collaboration = CURRENT_TIMESTAMP WHERE id = ?').run(id);
     }
@@ -326,8 +326,8 @@ export async function saveRaidResult(userId: string, raid: {
     opportunity_score?: number;
     status?: 'active' | 'archived' | 'deleted';
 }): Promise<any> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO intelligence_raids (user_id, category, risk_level, source_platform, content, summary, tags, metadata, ride_type, opportunity_score, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
             [userId, raid.category, raid.risk_level, raid.source_platform, raid.content, raid.summary, raid.tags, raid.metadata || null, raid.ride_type || 'mid-week', raid.opportunity_score || 0, raid.status || 'active']
         );
@@ -356,8 +356,8 @@ export async function saveRaidResult(userId: string, raid: {
 }
 
 export async function getRaidResults(userId: string, limit: number = 50): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT * FROM intelligence_raids WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM intelligence_raids WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
         return result.rows;
     } else {
         const rows = getSqlite().prepare('SELECT * FROM intelligence_raids WHERE user_id = ? ORDER BY created_at DESC LIMIT ?').all(userId, limit) as any[];
@@ -366,8 +366,8 @@ export async function getRaidResults(userId: string, limit: number = 50): Promis
 }
 
 export async function deleteRaidResult(id: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM intelligence_raids WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM intelligence_raids WHERE id = $1 AND user_id = $2', [id, userId]);
     } else {
         getSqlite().prepare('DELETE FROM intelligence_raids WHERE id = ? AND user_id = ?').run(id, userId);
     }
@@ -375,8 +375,8 @@ export async function deleteRaidResult(id: string, userId: string): Promise<void
 
 export async function bulkDeleteRaidResults(ids: string[], userId: string): Promise<void> {
     if (ids.length === 0) return;
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM intelligence_raids WHERE id = ANY($1) AND user_id = $2', [ids, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM intelligence_raids WHERE id = ANY($1) AND user_id = $2', [ids, userId]);
     } else {
         const placeholders = ids.map(() => '?').join(',');
         getSqlite().prepare(`DELETE FROM intelligence_raids WHERE id IN (${placeholders}) AND user_id = ?`).run(...ids, userId);
@@ -391,8 +391,8 @@ export async function saveWeeklyReport(userId: string, report: {
     opportunity_score?: number;
     status?: 'active' | 'archived' | 'deleted';
 }): Promise<any> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO weekly_reports (user_id, report_data, period_start, period_end, ride_type, opportunity_score, status) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
             [userId, report.report_data, report.period_start, report.period_end, report.ride_type || 'end-week', report.opportunity_score || 0, report.status || 'active']
         );
@@ -407,8 +407,8 @@ export async function saveWeeklyReport(userId: string, report: {
 }
 
 export async function getWeeklyReports(userId: string, limit: number = 20): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query("SELECT * FROM weekly_reports WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT $2", [userId, limit]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query("SELECT * FROM weekly_reports WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT $2", [userId, limit]);
         return result.rows;
     } else {
         const rows = getSqlite().prepare("SELECT * FROM weekly_reports WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT ?").all(userId, limit) as any[];
@@ -430,7 +430,7 @@ export async function filterReports(userId: string, filters: {
     let paramIdx = 2;
 
     if (filters.topic) {
-        if (isPostgresActive) {
+        if (db.isPostgresActive) {
             query += ` AND report_data->>'report_data' ILIKE $${paramIdx++}`;
         } else {
             query += ` AND json_extract(report_data, '$.report_data') LIKE $${paramIdx++}`;
@@ -438,7 +438,7 @@ export async function filterReports(userId: string, filters: {
         params.push(`%${filters.topic}%`);
     }
     if (filters.risk_level) {
-        if (isPostgresActive) {
+        if (db.isPostgresActive) {
             query += ` AND report_data->>'report_data' ILIKE $${paramIdx++}`;
         } else {
             query += ` AND json_extract(report_data, '$.report_data') LIKE $${paramIdx++}`;
@@ -465,8 +465,8 @@ export async function filterReports(userId: string, filters: {
     query += ` AND status = $${paramIdx++} ORDER BY created_at DESC`;
     params.push(filters.status || 'active');
 
-    if (isPostgresActive) {
-        const result = await pool.query(query, params);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(query, params);
         return result.rows;
     } else {
         const sqliteQuery = query.replace(/\$\d+/g, '?');
@@ -476,16 +476,16 @@ export async function filterReports(userId: string, filters: {
 }
 
 export async function softDeleteReport(id: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query("UPDATE weekly_reports SET status = 'archived' WHERE id = $1 AND user_id = $2", [id, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query("UPDATE weekly_reports SET status = 'archived' WHERE id = $1 AND user_id = $2", [id, userId]);
     } else {
         getSqlite().prepare("UPDATE weekly_reports SET status = 'archived' WHERE id = ? AND user_id = ?").run(id, userId);
     }
 }
 
 export async function permanentDeleteReport(id: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query("DELETE FROM weekly_reports WHERE id = $1 AND user_id = $2", [id, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query("DELETE FROM weekly_reports WHERE id = $1 AND user_id = $2", [id, userId]);
     } else {
         getSqlite().prepare("DELETE FROM weekly_reports WHERE id = ? AND user_id = ?").run(id, userId);
     }
@@ -493,8 +493,8 @@ export async function permanentDeleteReport(id: string, userId: string): Promise
 
 export async function bulkDeleteReports(ids: string[], userId: string): Promise<void> {
     if (ids.length === 0) return;
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM weekly_reports WHERE id = ANY($1) AND user_id = $2', [ids, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM weekly_reports WHERE id = ANY($1) AND user_id = $2', [ids, userId]);
     } else {
         const placeholders = ids.map(() => '?').join(',');
         getSqlite().prepare(`DELETE FROM weekly_reports WHERE id IN (${placeholders}) AND user_id = ?`).run(...ids, userId);
@@ -511,8 +511,8 @@ export async function createNotification(userId: string, data: {
     priority: 'normal' | 'high' | 'critical';
     metadata?: object;
 }): Promise<any> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO notifications (user_id, title, category, risk_level, monetization_potential, content, priority, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [userId, data.title, data.category, data.risk_level, data.monetization_potential, data.content, data.priority, data.metadata || null]
         );
@@ -528,11 +528,11 @@ export async function createNotification(userId: string, data: {
 }
 
 export async function getNotifications(userId: string, limit: number = 30, includeRead: boolean = true): Promise<any[]> {
-    const readFilter = includeRead ? '' : (isPostgresActive ? 'AND is_read = FALSE' : 'AND is_read = 0');
-    const archivedFilter = isPostgresActive ? 'AND is_archived = FALSE' : 'AND is_archived = 0';
+    const readFilter = includeRead ? '' : (db.isPostgresActive ? 'AND is_read = FALSE' : 'AND is_read = 0');
+    const archivedFilter = db.isPostgresActive ? 'AND is_archived = FALSE' : 'AND is_archived = 0';
 
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             `SELECT * FROM notifications WHERE user_id = $1 ${readFilter} ${archivedFilter} ORDER BY created_at DESC LIMIT $2`,
             [userId, limit]
         );
@@ -545,8 +545,8 @@ export async function getNotifications(userId: string, limit: number = 30, inclu
 }
 
 export async function getUnreadNotificationCount(userId: string): Promise<{ count: number; hasUrgent: boolean }> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT COUNT(*), COUNT(*) FILTER (WHERE priority = \'critical\') as urgent_count FROM notifications WHERE user_id = $1 AND is_read = FALSE AND is_archived = FALSE',
             [userId]
         );
@@ -566,16 +566,16 @@ export async function getUnreadNotificationCount(userId: string): Promise<{ coun
 }
 
 export async function markNotificationRead(id: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE notifications SET is_read = TRUE WHERE id = $1 AND user_id = $2', [id, userId]);
     } else {
         getSqlite().prepare('UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?').run(id, userId);
     }
 }
 
 export async function archiveNotification(id: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE notifications SET is_archived = TRUE WHERE id = $1 AND user_id = $2', [id, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE notifications SET is_archived = TRUE WHERE id = $1 AND user_id = $2', [id, userId]);
     } else {
         getSqlite().prepare('UPDATE notifications SET is_archived = 1 WHERE id = ? AND user_id = ?').run(id, userId);
     }
@@ -585,8 +585,8 @@ export async function archiveNotification(id: string, userId: string): Promise<v
 
 export async function savePushSubscription(userId: string, deviceId: string, subscription: any): Promise<void> {
     const subscriptionData = JSON.stringify(subscription);
-    if (isPostgresActive) {
-        await pool.query(
+    if (db.isPostgresActive) {
+        await db.pool.query(
             `INSERT INTO push_subscriptions (user_id, device_id, subscription_data) 
              VALUES ($1, $2, $3) 
              ON CONFLICT (device_id) DO UPDATE SET subscription_data = $3`,
@@ -605,8 +605,8 @@ export async function savePushSubscription(userId: string, deviceId: string, sub
 }
 
 export async function getPushSubscriptions(userId: string): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT subscription_data FROM push_subscriptions WHERE user_id = $1', [userId]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT subscription_data FROM push_subscriptions WHERE user_id = $1', [userId]);
         return result.rows.map((r: any) => r.subscription_data);
     } else {
         const results = getSqlite().prepare('SELECT subscription_data FROM push_subscriptions WHERE user_id = ?').all(userId) as any[];
@@ -615,17 +615,17 @@ export async function getPushSubscriptions(userId: string): Promise<any[]> {
 }
 
 export async function deletePushSubscription(deviceId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM push_subscriptions WHERE device_id = $1', [deviceId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM push_subscriptions WHERE device_id = $1', [deviceId]);
     } else {
         getSqlite().prepare('DELETE FROM push_subscriptions WHERE device_id = ?').run(deviceId);
     }
 }
 
 export async function updateDeviceNotificationStatus(deviceId: string, enabled: boolean): Promise<void> {
-    const val = isPostgresActive ? enabled : (enabled ? 1 : 0);
-    if (isPostgresActive) {
-        await pool.query('UPDATE devices SET notifications_enabled = $1 WHERE id = $2', [val, deviceId]);
+    const val = db.isPostgresActive ? enabled : (enabled ? 1 : 0);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE devices SET notifications_enabled = $1 WHERE id = $2', [val, deviceId]);
     } else {
         getSqlite().prepare('UPDATE devices SET notifications_enabled = ? WHERE id = ?').run(val, deviceId);
     }
@@ -638,8 +638,8 @@ export async function logAgentActivity(action: {
     details: string;
     metadata?: object;
 }): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query(
+    if (db.isPostgresActive) {
+        await db.pool.query(
             'INSERT INTO agent_activity_logs (agent_id, action_type, platform, details, metadata) VALUES ($1, $2, $3, $4, $5)',
             [action.agent_id || 'ZIUM_NOVA', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata || null]
         );
@@ -657,8 +657,8 @@ export async function saveIntelligenceLog(userId: string, data: {
     source_context?: string;
     metadata?: object;
 }): Promise<any> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO intelligence_logs (user_id, category, lesson, source_context, metadata) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [userId, data.category, data.lesson, data.source_context || null, data.metadata || null]
         );
@@ -673,8 +673,8 @@ export async function saveIntelligenceLog(userId: string, data: {
 }
 
 export async function getIntelligenceLogs(userId: string, limit: number = 50): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM intelligence_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
             [userId, limit]
         );
@@ -697,7 +697,7 @@ export async function createTask(userId: string, task: {
     notes?: string;
     status?: 'TODO' | 'IN-PROGRESS' | 'COMPLETED' | 'BLOCKED';
 }, customTaskIdStr?: string): Promise<any> {
-    const isPg = isPostgresActive;
+    const isPg = db.isPostgresActive;
     try {
         let taskIdStr = customTaskIdStr;
 
@@ -705,7 +705,7 @@ export async function createTask(userId: string, task: {
             // Auto-increment logic
             let nextIdNum = 1;
             if (isPg) {
-                const result = await pool.query('SELECT task_id_str FROM tasks WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [userId]);
+                const result = await db.pool.query('SELECT task_id_str FROM tasks WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [userId]);
                 if (result.rows.length > 0) {
                     const lastId = parseInt(result.rows[0].task_id_str, 10);
                     if (!isNaN(lastId)) nextIdNum = lastId + 1;
@@ -729,20 +729,20 @@ export async function createTask(userId: string, task: {
         const status = task.status || 'TODO';
 
         if (isPg) {
-            const res = await pool.query(
+            const res = await db.pool.query(
                 `INSERT INTO tasks (user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes, status)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
                 [userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes, status]
             );
             return res.rows[0];
         } else {
-            const db = getSqlite();
+            const dbSqlite = getSqlite();
             const id = uuidv4();
-            db.prepare(
+            dbSqlite.prepare(
                 `INSERT INTO tasks (id, user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes, status)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
             ).run(id, userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes, status);
-            return db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+            return dbSqlite.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
         }
     } catch (error) {
         console.error('[DB] Task Creation Error:', error);
@@ -751,8 +751,8 @@ export async function createTask(userId: string, task: {
 }
 
 export async function getTasks(userId: string): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY task_id_str ASC', [userId]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY task_id_str ASC', [userId]);
         return result.rows;
     } else {
         return getSqlite().prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY task_id_str ASC').all(userId) as any[];
@@ -760,7 +760,7 @@ export async function getTasks(userId: string): Promise<any[]> {
 }
 
 export async function updateTaskStatus(userId: string, taskIdStr: string, status: 'TODO' | 'IN-PROGRESS' | 'COMPLETED' | 'BLOCKED', notes?: string): Promise<any> {
-    const isPg = isPostgresActive;
+    const isPg = db.isPostgresActive;
     let queryArgs: any[] = [];
     let queryStr = '';
     
@@ -786,7 +786,7 @@ export async function updateTaskStatus(userId: string, taskIdStr: string, status
     }
 
     if (isPg) {
-        const result = await pool.query(queryStr, queryArgs);
+        const result = await db.pool.query(queryStr, queryArgs);
         return result.rows[0];
     } else {
         getSqlite().prepare(queryStr).run(...queryArgs);
@@ -795,16 +795,16 @@ export async function updateTaskStatus(userId: string, taskIdStr: string, status
 }
 
 export async function deleteTask(taskIdStr: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM tasks WHERE user_id = $1 AND (task_id_str = $2 OR id::text = $2)', [userId, taskIdStr]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM tasks WHERE user_id = $1 AND (task_id_str = $2 OR id::text = $2)', [userId, taskIdStr]);
     } else {
         getSqlite().prepare('DELETE FROM tasks WHERE user_id = ? AND (task_id_str = ? OR id = ?)').run(userId, taskIdStr, taskIdStr);
     }
 }
 
 export async function deleteAllTasks(userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM tasks WHERE user_id = $1', [userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM tasks WHERE user_id = $1', [userId]);
     } else {
         getSqlite().prepare('DELETE FROM tasks WHERE user_id = ?').run(userId);
     }
@@ -817,8 +817,8 @@ export async function deleteAllTasks(userId: string): Promise<void> {
  * Returns true if a duplicate exists (i.e., should be SKIPPED).
  */
 export async function findRecentDuplicateNotification(userId: string, title: string, windowMinutes: number = 60): Promise<boolean> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             `SELECT COUNT(*) as cnt FROM notifications WHERE user_id = $1 AND title = $2 AND created_at >= NOW() - INTERVAL '1 minute' * $3`,
             [userId, title, windowMinutes]
         );
@@ -837,8 +837,8 @@ export async function findRecentDuplicateNotification(userId: string, title: str
  * Returns true if a duplicate exists (i.e., should be SKIPPED).
  */
 export async function findRecentDuplicateRaid(userId: string, category: string, windowHours: number = 12): Promise<boolean> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             `SELECT COUNT(*) as cnt FROM intelligence_raids WHERE user_id = $1 AND category = $2 AND created_at >= NOW() - INTERVAL '1 hour' * $3`,
             [userId, category, windowHours]
         );
@@ -864,8 +864,8 @@ export async function saveImprovementLog(userId: string, data: {
     performance_delta?: string;
     metadata?: object;
 }): Promise<any> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO improvement_logs (user_id, cycle_id, insight, strategy_adjustment, performance_delta, metadata) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [userId, data.cycle_id, data.insight, data.strategy_adjustment || '', data.performance_delta || '', data.metadata || null]
         );
@@ -883,8 +883,8 @@ export async function saveImprovementLog(userId: string, data: {
  * Get recent improvement logs for a user.
  */
 export async function getImprovementLogs(userId: string, limit: number = 20): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM improvement_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
             [userId, limit]
         );

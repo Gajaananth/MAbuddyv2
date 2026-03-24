@@ -37,7 +37,7 @@ app.set('trust proxy', 1);
 // Limit each IP to 100 requests per 15 minutes
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 1000,
     message: { success: false, error: 'Too many requests, please try again later.' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -49,6 +49,8 @@ app.use(cors({
     origin: (origin, callback) => {
         const allowedOrigins = [
             'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5175',
             'http://localhost:3000',
             'https://ma-buddy.vercel.app',
             process.env.FRONTEND_URL,
@@ -70,8 +72,8 @@ app.get('/api/health', (_req, res) => {
         status: 'online',
         agent: 'ZIUM NOVA',
         identity: 'SILENT BEAST DOMINANCE',
-        version: 'v4.2.0',
-        protocol: 'silent_beast_dominance_v2',
+        version: 'v5.0.1',
+        protocol: 'silent_beast_dominance_v2_resilient',
         mode: process.env.OPENROUTER_API_KEY ? 'live' : 'demo',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
@@ -88,7 +90,8 @@ app.use(async (req, res, next) => {
         await initDatabase();
         next();
     } catch (err: any) {
-        console.error('[Resilience] Critical Grid Failure:', err.message);
+        console.error('[Resilience] Critical Grid Failure at path:', req.path);
+        console.error('[Resilience] Error:', err.message);
         res.status(503).json({
             success: false,
             error: 'Grid Offline (Database Timeout)',
@@ -108,6 +111,17 @@ app.use('/api/memory', authenticate, memoryRoutes);
 app.use('/api/intelligence', authenticate, intelligenceRoutes);
 app.use('/api/notifications', authenticate, notificationRoutes);
 app.use('/api/tasks', authenticate, tasksRoutes);
+
+// ─── Global Error Handler ──────────────────────────────────────
+app.use((err: any, req: any, res: any, next: any) => {
+    console.error('[Global Error HANDLER]', err);
+    res.status(500).json({
+        success: false,
+        error: 'GRID_FATAL_ERROR',
+        message: err.message,
+        stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
+});
 
 // ─── Export for Serverless ────────────────────────────────────
 export default app;

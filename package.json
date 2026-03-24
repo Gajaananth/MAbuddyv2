@@ -15,6 +15,7 @@
         "@simplewebauthn/server": "^13.2.3",
         "axios": "^1.7.9",
         "bcryptjs": "^3.0.3",
+        "better-sqlite3": "^11.5.0",
         "cors": "^2.8.5",
         "docx": "^9.6.0",
         "dotenv": "^16.4.7",
@@ -42,7 +43,8 @@
         "@types/pg": "^8.11.11",
         "@types/uuid": "^10.0.0",
         "@types/web-push": "^3.6.4",
-        "typescript": "^5.7.3"
+        "typescript": "^5.7.3",
+        "tsx": "^4.19.2"
     },
     "overrides": {
         "events": "node:events"

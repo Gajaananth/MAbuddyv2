@@ -41,7 +41,9 @@ const LoginPage: React.FC = () => {
             setAuth(data.token, data.user);
             navigate('/');
         } catch (err: any) {
-            const msg = err.response?.data?.error || 'Authentication denied.';
+            const rawMsg = err.response?.data?.error || err.response?.data || err.message || 'Authentication denied.';
+            const msg = typeof rawMsg === 'string' ? rawMsg : JSON.stringify(rawMsg);
+            
             if (msg.includes('DEVICE_UNRECOGNIZED')) {
                 setError('NEW DEVICE DETECTED: Identify yourself to establish binding.');
                 setIsEnrollMode(true);
@@ -238,7 +240,7 @@ const LoginPage: React.FC = () => {
                 </div>
 
                 <p className="mt-12 text-center text-nova-text-dim text-[10px] font-bold uppercase tracking-widest opacity-50">
-                    Sovereign Intelligence Protected
+                    Sovereign Intelligence Protected • v5.0.1
                 </p>
             </div>
         </div>

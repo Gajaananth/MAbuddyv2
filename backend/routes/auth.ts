@@ -3,7 +3,7 @@ import * as authService from '../services/authService.js';
 import * as webAuthn from '../services/webAuthnService.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import * as authQueries from '../db/authQueries.js';
-import { initDatabase, isPostgresActive } from '../db/connection.js';
+import * as db from '../db/connection.js';
 
 const router = Router();
 
@@ -18,13 +18,12 @@ router.get('/diag', async (_req: Request, res: Response) => {
 
 
     try {
-        await initDatabase();
-        dbStatus = isPostgresActive ? 'online' : 'fallback_active';
+        await db.initDatabase();
+        dbStatus = db.isPostgresActive ? 'online' : 'fallback_active';
         
-        if (isPostgresActive) {
-            const { pool } = await import('../db/connection.js');
+        if (db.isPostgresActive) {
             // More direct check for the column
-            const colCheck = await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'devices' AND column_name = 'current_challenge'");
+            const colCheck = await db.pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'devices' AND column_name = 'current_challenge'");
             columnCheck = colCheck.rows.length > 0 ? 'exists' : 'missing';
         }
     } catch (err: any) {
@@ -234,7 +233,6 @@ router.get('/status', async (_req: Request, res: Response) => {
     try {
         const userCount = await authQueries.getUserCount();
         const deviceCount = await authQueries.getDeviceCount();
-        const { isPostgresActive } = await import('../db/connection.js');
         res.json({
             success: true,
             users: userCount,
@@ -243,7 +241,7 @@ router.get('/status', async (_req: Request, res: Response) => {
             maxDevicesTotal: 17,
             adminDeviceLimit: 5,
             operatorDeviceLimit: 3,
-            database: isPostgresActive ? 'PostgreSQL' : 'SQLite'
+            database: db.isPostgresActive ? 'PostgreSQL' : 'SQLite'
         });
 
     } catch (error: any) {
@@ -257,10 +255,10 @@ router.post('/reset-protocol-data-purge', async (req: Request, res: Response) =>
         const { secret } = req.body;
         if (secret !== 'nova-purge-2026') return res.status(403).json({ error: 'Unauthorized' });
 
-        const { pool, sqliteDb, isPostgresActive } = await import('../db/connection.js');
-        if (isPostgresActive) {
+        const { pool, sqliteDb, isPostgresActive } = db;
+        if (db.isPostgresActive) {
             // Postgres cascade wipe — order matters
-            await pool.query(`
+            await db.pool.query(`
                 TRUNCATE TABLE push_subscriptions, devices, notifications,
                 messages, conversations, intelligence_raids, weekly_reports,
                 trend_analyses, users, agent_network, agent_activity_logs CASCADE

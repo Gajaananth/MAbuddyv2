@@ -1,14 +1,14 @@
-import { pool, sqliteDb, isPostgresActive } from './connection.js';
+import * as db from './connection.js';
 import { v4 as uuidv4 } from 'uuid';
 
 function getSqlite() {
-    if (!sqliteDb) throw new Error('Database unavailable.');
-    return sqliteDb;
+    if (!db.sqliteDb) throw new Error('Database unavailable.');
+    return db.sqliteDb;
 }
 
 export async function getUserCount(): Promise<number> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT COUNT(*) FROM users');
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT COUNT(*) FROM users');
         return parseInt(result.rows[0].count, 10);
     } else {
         const result = getSqlite().prepare('SELECT COUNT(*) as count FROM users').get() as any;
@@ -17,8 +17,8 @@ export async function getUserCount(): Promise<number> {
 }
 
 export async function getDeviceCount(): Promise<number> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT COUNT(*) FROM devices');
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT COUNT(*) FROM devices');
         return parseInt(result.rows[0].count, 10);
     } else {
         const result = getSqlite().prepare('SELECT COUNT(*) as count FROM devices').get() as any;
@@ -33,8 +33,8 @@ export async function createUser(u: {
     q2_hash: string;
     q3_hash: string;
 }): Promise<any> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'INSERT INTO users (dob_hash, pin_hash, q1_hash, q2_hash, q3_hash) VALUES ($1, $2, $3, $4, $5) RETURNING *',
             [u.dob_hash, u.pin_hash, u.q1_hash, u.q2_hash, u.q3_hash]
         );
@@ -52,8 +52,8 @@ export async function getUserByPin(pinHash: string): Promise<any | null> {
     // This is used to find a user by their PIN hash.
     // However, since we don't have usernames, the current login flow fetches all users
     // and checks the PIN hash manually.
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT * FROM users');
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM users');
         return result.rows;
     } else {
         return getSqlite().prepare('SELECT * FROM users').all();
@@ -61,8 +61,8 @@ export async function getUserByPin(pinHash: string): Promise<any | null> {
 }
 
 export async function getAllUsers(): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT * FROM users');
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM users');
         return result.rows;
     } else {
         return getSqlite().prepare('SELECT * FROM users').all() as any[];
@@ -75,8 +75,8 @@ export async function findUserByIdentifiers(u: {
     q2_hash: string;
     q3_hash: string;
 }): Promise<any | null> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM users WHERE dob_hash = $1 AND q1_hash = $2 AND q2_hash = $3 AND q3_hash = $4',
             [u.dob_hash, u.q1_hash, u.q2_hash, u.q3_hash]
         );
@@ -89,8 +89,8 @@ export async function findUserByIdentifiers(u: {
 }
 
 export async function findUserByDobHash(dobHash: string): Promise<any | null> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT * FROM users WHERE dob_hash = $1', [dobHash]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM users WHERE dob_hash = $1', [dobHash]);
         return result.rows[0] || null;
     } else {
         return getSqlite().prepare('SELECT * FROM users WHERE dob_hash = ?').get(dobHash) || null;
@@ -98,8 +98,8 @@ export async function findUserByDobHash(dobHash: string): Promise<any | null> {
 }
 
 export async function updateFailedAttempts(userId: string, count: number, lockUntil: Date | null): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query(
+    if (db.isPostgresActive) {
+        await db.pool.query(
             'UPDATE users SET failed_attempts = $1, lock_until = $2 WHERE id = $3',
             [count, lockUntil, userId]
         );
@@ -111,16 +111,16 @@ export async function updateFailedAttempts(userId: string, count: number, lockUn
 }
 
 export async function resetFailedAttempts(userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE users SET failed_attempts = 0, lock_until = NULL WHERE id = $1', [userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE users SET failed_attempts = 0, lock_until = NULL WHERE id = $1', [userId]);
     } else {
         getSqlite().prepare('UPDATE users SET failed_attempts = 0, lock_until = NULL WHERE id = ?').run(userId);
     }
 }
 
 export async function updatePin(userId: string, pinHash: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE users SET pin_hash = $1 WHERE id = $2', [pinHash, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE users SET pin_hash = $1 WHERE id = $2', [pinHash, userId]);
     } else {
         getSqlite().prepare('UPDATE users SET pin_hash = ? WHERE id = ?').run(pinHash, userId);
     }
@@ -134,8 +134,8 @@ export async function registerDevice(d: {
     fingerprint: string;
     os_type: string;
 }): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query(
+    if (db.isPostgresActive) {
+        await db.pool.query(
             'INSERT INTO devices (user_id, device_identifier, fingerprint, os_type) VALUES ($1, $2, $3, $4)',
             [d.user_id, d.device_identifier, d.fingerprint, d.os_type]
         );
@@ -148,8 +148,8 @@ export async function registerDevice(d: {
 }
 
 export async function getDevicesByUserId(userId: string): Promise<any[]> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT * FROM devices WHERE user_id = $1', [userId]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT * FROM devices WHERE user_id = $1', [userId]);
         return result.rows;
     } else {
         return getSqlite().prepare('SELECT * FROM devices WHERE user_id = ?').all(userId) as any[];
@@ -157,8 +157,8 @@ export async function getDevicesByUserId(userId: string): Promise<any[]> {
 }
 
 export async function getDeviceCountByUserId(userId: string): Promise<number> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT COUNT(*) FROM devices WHERE user_id = $1', [userId]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT COUNT(*) FROM devices WHERE user_id = $1', [userId]);
         return parseInt(result.rows[0].count, 10);
     } else {
         const result = getSqlite().prepare('SELECT COUNT(*) as count FROM devices WHERE user_id = ?').get(userId) as any;
@@ -167,8 +167,8 @@ export async function getDeviceCountByUserId(userId: string): Promise<number> {
 }
 
 export async function findDevice(userId: string, fingerprint: string): Promise<any | null> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM devices WHERE user_id = $1 AND fingerprint = $2',
             [userId, fingerprint]
         );
@@ -181,8 +181,8 @@ export async function findDevice(userId: string, fingerprint: string): Promise<a
 }
 
 export async function getDeviceByIdentifierAndFingerprint(identifier: string, fingerprint: string): Promise<any | null> {
-    if (isPostgresActive) {
-        const result = await pool.query(
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
             'SELECT * FROM devices WHERE device_identifier = $1 AND fingerprint = $2',
             [identifier, fingerprint]
         );
@@ -196,8 +196,8 @@ export async function getDeviceByIdentifierAndFingerprint(identifier: string, fi
 
 
 export async function updateWebAuthn(deviceId: string, publicKey: string, credentialId: string, counter: number): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query(
+    if (db.isPostgresActive) {
+        await db.pool.query(
             'UPDATE devices SET public_key = $1, credential_id = $2, counter = $3 WHERE id = $4',
             [publicKey, credentialId, counter, deviceId]
         );
@@ -210,16 +210,16 @@ export async function updateWebAuthn(deviceId: string, publicKey: string, creden
 
 
 export async function updateChallenge(deviceId: string, challenge: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('UPDATE devices SET current_challenge = $1 WHERE id = $2', [challenge, deviceId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE devices SET current_challenge = $1 WHERE id = $2', [challenge, deviceId]);
     } else {
         getSqlite().prepare('UPDATE devices SET current_challenge = ? WHERE id = ?').run(challenge, deviceId);
     }
 }
 
 export async function getChallenge(deviceId: string): Promise<string | null> {
-    if (isPostgresActive) {
-        const result = await pool.query('SELECT current_challenge FROM devices WHERE id = $1', [deviceId]);
+    if (db.isPostgresActive) {
+        const result = await db.pool.query('SELECT current_challenge FROM devices WHERE id = $1', [deviceId]);
         return result.rows[0]?.current_challenge || null;
     } else {
         const result = getSqlite().prepare('SELECT current_challenge FROM devices WHERE id = ?').get(deviceId) as any;
@@ -228,8 +228,8 @@ export async function getChallenge(deviceId: string): Promise<string | null> {
 }
 
 export async function removeDevice(deviceId: string, userId: string): Promise<void> {
-    if (isPostgresActive) {
-        await pool.query('DELETE FROM devices WHERE id = $1 AND user_id = $2', [deviceId, userId]);
+    if (db.isPostgresActive) {
+        await db.pool.query('DELETE FROM devices WHERE id = $1 AND user_id = $2', [deviceId, userId]);
     } else {
         getSqlite().prepare('DELETE FROM devices WHERE id = ? AND user_id = ?').run(deviceId, userId);
     }
