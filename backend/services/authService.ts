@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import * as authQueries from '../db/authQueries.js';
+import authQueries from '../db/authQueries.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
 const MAX_USERS = 5;

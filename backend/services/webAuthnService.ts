@@ -5,6 +5,7 @@ import {
     verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import { isoUint8Array, isoBase64URL } from '@simplewebauthn/server/helpers';
+import authQueries from '../db/authQueries.js';
 
 const RP_NAME = 'Zium Nova Protocol';
 
@@ -32,8 +33,7 @@ export async function createRegistrationOptions(
         },
     });
 
-    const { updateChallenge } = await import('../db/authQueries.js');
-    await updateChallenge(deviceId, options.challenge);
+    await authQueries.updateChallenge(deviceId, options.challenge);
     return options;
 }
 
@@ -44,8 +44,7 @@ export async function verifyRegistration(
     expectedOrigin: string,
     expectedRPID: string
 ) {
-    const { getChallenge } = await import('../db/authQueries.js');
-    const expectedChallenge = await getChallenge(deviceId);
+    const expectedChallenge = await authQueries.getChallenge(deviceId);
     
     if (!expectedChallenge) {
         throw new Error('CHALLENGE_EXPIRED: Registration window closed.');

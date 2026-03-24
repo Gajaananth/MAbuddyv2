@@ -261,7 +261,9 @@ const authQueries = {
     updateWebAuthn,
     updatePin,
     updateFailedAttempts,
-    resetFailedAttempts
+    resetFailedAttempts,
+    updateChallenge,
+    getChallenge
 };
 
 export default authQueries;
