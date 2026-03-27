@@ -41,19 +41,19 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/*" element={
             <ProtectedRoute>
-              <div className="flex bg-nova-bg text-nova-text min-h-screen selection:bg-nova-accent/30 selection:text-white relative">
+              <div className="flex bg-nova-bg text-nova-text min-h-screen selection:bg-nova-accent/30 selection:text-white relative overflow-x-hidden">
                 {/* Mobile Header Bar - Fixed for consistency */}
-                <header className="fixed top-0 left-0 right-0 h-14 glass z-50 flex lg:hidden items-center px-4 border-b border-nova-border/50 justify-between">
+                <header className="fixed top-0 left-0 right-0 h-16 glass z-50 flex lg:hidden items-center px-4 sm:px-6 border-b border-nova-border/50 justify-between">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setSidebarOpen(true)}
-                      className="p-2 -ml-2 text-nova-accent hover:bg-white/10 rounded-xl transition-all"
+                      className="p-2 -ml-2 text-nova-accent hover:bg-white/10 rounded-xl transition-all active:scale-90"
                     >
-                      <Menu size={20} />
+                      <Menu size={22} />
                     </button>
-                    <h1 className="text-lg font-black tracking-tighter text-white uppercase truncate flex items-center gap-2">
-                      <Bird size={16} className="text-nova-accent" />
-                      <span>ZIUM NOVA</span>
+                    <h1 className="text-xl font-black tracking-tighter text-white uppercase truncate flex items-center gap-2">
+                      <Bird size={18} className="text-nova-accent" />
+                      <span>NOVA</span>
                     </h1>
                   </div>
                   <NotificationPanel />
@@ -63,16 +63,14 @@ function App() {
                 <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
                 {/* Content Engine - Natural Scroll Flow */}
-                <main className="flex-1 min-w-0 lg:pl-64 transition-all duration-300 relative flex flex-col">
+                <main className="flex-1 min-w-0 lg:pl-64 transition-all duration-500 relative flex flex-col items-center">
 
+                  {/* Background Atmosphere - Optimized for Performance */}
+                  <div className="fixed top-0 right-0 w-[300px] sm:w-[600px] lg:w-[900px] h-[300px] sm:h-[600px] lg:h-[900px] bg-nova-accent/10 blur-[80px] sm:blur-[120px] lg:blur-[200px] rounded-full -mr-32 sm:-mr-64 lg:-mr-128 -mt-32 sm:-mt-64 lg:-mt-128 pointer-events-none z-0 opacity-60"></div>
+                  <div className="fixed bottom-0 left-0 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-nova-accent-alt/10 blur-[60px] sm:blur-[100px] rounded-full -ml-16 sm:-ml-32 -mb-16 sm:-mb-32 pointer-events-none z-0 opacity-40"></div>
 
-
-                  {/* Background Atmosphere */}
-                  <div className="fixed top-0 right-0 w-[400px] sm:w-[800px] h-[400px] sm:h-[800px] bg-nova-accent/10 blur-[100px] sm:blur-[180px] rounded-full -mr-48 sm:-mr-96 -mt-48 sm:-mt-96 pointer-events-none z-0"></div>
-                  <div className="fixed bottom-0 left-0 w-[300px] lg:w-[400px] h-[300px] lg:h-[400px] bg-nova-accent-alt/10 blur-[80px] lg:blur-[120px] rounded-full -ml-16 lg:-ml-24 -mb-16 lg:-mb-24 pointer-events-none z-0"></div>
-
-                  {/* Atomic Content Container - Fully flexible */}
-                  <div className="relative z-10 pt-16 lg:pt-4 px-2 sm:px-4 lg:px-8 w-full max-w-[1600px] mx-auto pb-20">
+                  {/* Atomic Content Container - Universal Padding */}
+                  <div className="relative z-10 pt-20 lg:pt-8 px-4 sm:px-6 lg:px-10 w-full max-w-[1500px] pb-24">
 
 
 

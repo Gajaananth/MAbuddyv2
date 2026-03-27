@@ -265,6 +265,12 @@ export async function evaluateAndNotify(
     }
 
     try {
+        const metadataWithDefaults = {
+            ...metadata,
+            is_blinking: metadata?.is_blinking || priority === 'critical',
+            path: metadata?.path || (metadata?.finding_id ? '/intelligence' : (priority === 'critical' ? '/chat' : '/intelligence'))
+        };
+
         await createNotification(userId, {
             title: notifTitle,
             category,
@@ -272,10 +278,7 @@ export async function evaluateAndNotify(
             monetization_potential: monetization,
             content: truncated,
             priority: priority as 'normal' | 'high' | 'critical',
-            metadata: {
-                ...metadata,
-                is_blinking: metadata?.is_blinking || priority === 'critical'
-            },
+            metadata: metadataWithDefaults,
         });
 
         // Push notifications — CRITICAL ONLY to minimize operator noise
@@ -284,7 +287,7 @@ export async function evaluateAndNotify(
                 title: notifTitle,
                 body: truncated.slice(0, 200),
                 tag: `zn-${category.toLowerCase().replace(/\s+/g, '-')}`,
-                data: { category, risk, priority, url: '/' },
+                data: { category, risk, priority, url: metadataWithDefaults.path },
             });
             console.log(`[Notification] CRITICAL signal stored + pushed for user ${userId}: ${title}`);
         } else {

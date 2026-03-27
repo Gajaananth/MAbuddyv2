@@ -126,10 +126,11 @@ export async function addMessage(
     content: string,
     metadata: object | null = null
 ): Promise<Message> {
+    const isRead = role === 'user'; // User messages are read by default
     if (db.isPostgresActive) {
         const result = await db.pool.query(
-            'INSERT INTO messages (conversation_id, role, content, metadata) VALUES ($1, $2, $3, $4) RETURNING *',
-            [conversationId, role, content, metadata]
+            'INSERT INTO messages (conversation_id, role, content, metadata, is_read) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [conversationId, role, content, metadata, isRead]
         );
         await db.pool.query('UPDATE conversations SET updated_at = NOW() WHERE id = $1', [conversationId]);
         return result.rows[0];
@@ -137,10 +138,33 @@ export async function addMessage(
         const db = getSqlite();
         const id = uuidv4();
         db.prepare(
-            'INSERT INTO messages (id, conversation_id, role, content, metadata) VALUES (?, ?, ?, ?, ?)'
-        ).run(id, conversationId, role, content, metadata ? JSON.stringify(metadata) : null);
+            'INSERT INTO messages (id, conversation_id, role, content, metadata, is_read) VALUES (?, ?, ?, ?, ?, ?)'
+        ).run(id, conversationId, role, content, metadata ? JSON.stringify(metadata) : null, isRead ? 1 : 0);
         db.prepare('UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(conversationId);
         return db.prepare('SELECT * FROM messages WHERE id = ?').get(id) as Message;
+    }
+}
+
+export async function getUnreadMessageCount(userId: string): Promise<number> {
+    if (db.isPostgresActive) {
+        const result = await db.pool.query(
+            'SELECT COUNT(*) FROM messages m JOIN conversations c ON m.conversation_id = c.id WHERE c.user_id = $1 AND m.role = \'nova\' AND m.is_read = FALSE',
+            [userId]
+        );
+        return parseInt(result.rows[0].count, 10);
+    } else {
+        const result = getSqlite().prepare(
+            'SELECT COUNT(*) as count FROM messages m JOIN conversations c ON m.conversation_id = c.id WHERE c.user_id = ? AND m.role = \'nova\' AND m.is_read = 0'
+        ).get(userId) as any;
+        return result.count;
+    }
+}
+
+export async function markMessagesRead(conversationId: string): Promise<void> {
+    if (db.isPostgresActive) {
+        await db.pool.query('UPDATE messages SET is_read = TRUE WHERE conversation_id = $1 AND role = \'nova\'', [conversationId]);
+    } else {
+        getSqlite().prepare('UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND role = \'nova\'').run(conversationId);
     }
 }
 
@@ -538,9 +562,10 @@ export async function getNotifications(userId: string, limit: number = 30, inclu
         );
         return result.rows;
     } else {
-        return getSqlite().prepare(
+        const rows = getSqlite().prepare(
             `SELECT * FROM notifications WHERE user_id = ? ${readFilter} ${archivedFilter} ORDER BY created_at DESC LIMIT ?`
         ).all(userId, limit) as any[];
+        return rows.map(r => ({ ...r, metadata: r.metadata ? JSON.parse(r.metadata) : null }));
     }
 }
 
@@ -971,6 +996,8 @@ const queries = {
     getUnreadNotificationCount,
     markNotificationRead,
     archiveNotification,
+    getUnreadMessageCount,
+    markMessagesRead,
     savePushSubscription,
     getPushSubscriptions,
     deletePushSubscription,

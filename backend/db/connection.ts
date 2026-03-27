@@ -27,10 +27,12 @@ function getPool() {
 
   console.log('[DB] Initializing PostgreSQL Pool (Supabase Focused)...');
   
+  const isVercel = !!process.env.VERCEL;
+  
   const dbConfig: any = {
     connectionString,
-    max: 20,
-    idleTimeoutMillis: 30000,
+    max: isVercel ? 2 : 20, // Low pool size for serverless to prevent exhaustion
+    idleTimeoutMillis: isVercel ? 1000 : 30000, // Drop connections quickly on Vercel
     connectionTimeoutMillis: 10000,
   };
 
@@ -109,6 +111,7 @@ async function initDatabase(): Promise<void> {
       // Initialize SQLite Fallback
       if (!sqliteDb && !process.env.VERCEL) {
         try {
+          // @ts-ignore - dynamic import for local dev only
           const Database = (await import('better-sqlite3')).default;
           sqliteDb = new Database(DB_PATH);
           console.log(`[DB] Local Shadow Grid: ONLINE | Path: ${DB_PATH}`);
@@ -172,6 +175,81 @@ async function initDatabase(): Promise<void> {
               role TEXT NOT NULL,
               content TEXT NOT NULL,
               metadata TEXT DEFAULT NULL,
+              is_read INTEGER DEFAULT 0,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS notifications (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              title TEXT NOT NULL,
+              category TEXT NOT NULL,
+              risk_level TEXT DEFAULT 'Medium',
+              monetization_potential TEXT DEFAULT 'Medium',
+              content TEXT NOT NULL,
+              is_read INTEGER DEFAULT 0,
+              is_archived INTEGER DEFAULT 0,
+              priority TEXT DEFAULT 'normal',
+              metadata TEXT DEFAULT NULL,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              device_id TEXT NOT NULL UNIQUE,
+              subscription_data TEXT NOT NULL,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS intelligence_logs (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              category TEXT NOT NULL,
+              lesson TEXT NOT NULL,
+              source_context TEXT,
+              metadata TEXT DEFAULT NULL,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS improvement_logs (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              cycle_id TEXT NOT NULL,
+              insight TEXT NOT NULL,
+              strategy_adjustment TEXT DEFAULT '',
+              performance_delta TEXT DEFAULT '',
+              metadata TEXT DEFAULT NULL,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS agent_network (
+              id TEXT PRIMARY KEY,
+              name TEXT NOT NULL,
+              description TEXT,
+              capabilities TEXT DEFAULT '[]',
+              trust_score INTEGER DEFAULT 0,
+              status TEXT DEFAULT 'active',
+              last_collaboration TEXT,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS agent_activity_logs (
+              id TEXT PRIMARY KEY,
+              agent_id TEXT DEFAULT 'ZIUM_NOVA',
+              action_type TEXT NOT NULL,
+              platform TEXT,
+              details TEXT,
+              metadata TEXT DEFAULT NULL,
+              created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS trend_analyses (
+              id TEXT PRIMARY KEY,
+              user_id TEXT NOT NULL,
+              topic TEXT NOT NULL,
+              analysis TEXT NOT NULL,
+              score INTEGER DEFAULT 0,
               created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
 
@@ -203,6 +281,12 @@ async function initDatabase(): Promise<void> {
               created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
           `);
+          // Migrate existing SQLite tables to add missing columns
+          try {
+            sqliteDb.exec(`ALTER TABLE messages ADD COLUMN is_read INTEGER DEFAULT 0`);
+            console.log('[DB] SQLite: messages.is_read column added.');
+          } catch (_) { /* column already exists — ok */ }
+
           console.log('[DB] Local Shadow Grid: Schema Synchronized.');
         } catch (sqliteErr: any) {
           console.error('[DB] Local Shadow Grid: INITIALIZATION FAILED.', sqliteErr.message);
@@ -274,8 +358,16 @@ async function runMigrations(client: any) {
         role VARCHAR(10) NOT NULL CHECK (role IN ('user', 'nova')),
         content TEXT NOT NULL,
         metadata JSONB DEFAULT NULL,
+        is_read BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
+
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'messages' AND column_name = 'is_read') THEN
+          ALTER TABLE messages ADD COLUMN is_read BOOLEAN DEFAULT FALSE;
+        END IF;
+      END $$;
 
       CREATE TABLE IF NOT EXISTS notifications (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -409,7 +501,28 @@ async function runMigrations(client: any) {
       CREATE INDEX IF NOT EXISTS idx_devices_user ON devices(user_id);
       CREATE INDEX IF NOT EXISTS idx_weekly_reports_user ON weekly_reports(user_id);
       
-      -- Seeding
+      -- Emergency Data Recovery Protocol (v4.0.2)
+      -- Definitive User ID: a1a2ccc0-c3fb-48fc-a440-12192a80d87d
+      
+      UPDATE conversations 
+      SET user_id = 'a1a2ccc0-c3fb-48fc-a440-12192a80d87d' 
+      WHERE user_id = 'default_user' 
+         OR user_id = 'a1a2ccc0-c3fb-48fc-a440-121922a80d87' 
+         OR user_id IS NULL;
+
+      UPDATE intelligence_raids
+      SET user_id = 'a1a2ccc0-c3fb-48fc-a440-12192a80d87d'
+      WHERE user_id = 'default_user' 
+         OR user_id = 'a1a2ccc0-c3fb-48fc-a440-121922a80d87'
+         OR user_id IS NULL;
+
+      UPDATE weekly_reports
+      SET user_id = 'a1a2ccc0-c3fb-48fc-a440-12192a80d87d'
+      WHERE user_id = 'default_user'
+         OR user_id = 'a1a2ccc0-c3fb-48fc-a440-121922a80d87'
+         OR user_id IS NULL;
+
+      -- Ensure Root persists
       INSERT INTO users (id, dob_hash, pin_hash, q1_hash, q2_hash, q3_hash)
       VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT')
       ON CONFLICT (id) DO NOTHING;
@@ -418,9 +531,9 @@ async function runMigrations(client: any) {
 }
 
 const db = {
-    pool,
-    sqliteDb,
-    isPostgresActive,
+    get pool() { return pool; },
+    get sqliteDb() { return sqliteDb; },
+    get isPostgresActive() { return isPostgresActive; },
     initDatabase,
     getPool
 };

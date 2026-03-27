@@ -207,17 +207,23 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                     onClick={() => {
                         if (!isRead(n)) handleMarkRead(n.id);
                         setIsOpen(false);
-                        const metadata = n.metadata as any;
-                        let targetPath = metadata?.path || '/intelligence';
+                        
+                        const metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+                        
+                        // User Rule: Reports/Intelligence always go to /reports for study
+                        let targetPath = '/reports';
                         
                         if (metadata?.report_id) {
-                            targetPath = `/intelligence?reportId=${metadata.report_id}`;
-                        } else if (metadata?.finding_id) {
-                            targetPath = `/intelligence?findingId=${metadata.finding_id}`;
-                        } else if (metadata?.task_id) {
+                            targetPath = `/reports?id=${metadata.report_id}`;
+                        } else if (metadata?.raid_id) {
+                            targetPath = `/reports?raidId=${metadata.raid_id}`;
+                        }
+                        
+                        if (n.category === 'Mission Update' && metadata?.task_id) {
                             targetPath = `/?taskId=${metadata.task_id}`;
                         }
                         
+                        console.log(`[Notification] Routing for Operator Focus: ${targetPath}`);
                         navigate(targetPath);
                     }}
                     className={`
@@ -285,6 +291,43 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                         Desktop: hidden until group hover
                         Mobile:  always visible via .notification-actions CSS class + @media (hover:none) */}
                     <div className="notification-actions flex flex-col gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Direct Export Actions for Reports/Raids */}
+                        {(() => {
+                            const metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+                            const reportId = metadata?.report_id;
+                            const raidId = metadata?.raid_id;
+                            
+                            if (reportId || raidId) {
+                                return (
+                                    <>
+                                        <button
+                                            onClick={async (e) => { 
+                                                e.stopPropagation(); 
+                                                const { intelligenceService } = await import('../services/api');
+                                                await intelligenceService.downloadReport(reportId || raidId, 'pdf', reportId ? 'reports' : 'raids');
+                                            }}
+                                            className="p-2 sm:p-1.5 bg-nova-accent/10 hover:bg-nova-accent/20 border border-nova-accent/30 rounded-lg transition-all flex items-center justify-center text-[10px] font-black text-nova-accent tracking-tighter"
+                                            title="Export PDF"
+                                        >
+                                            PDF
+                                        </button>
+                                        <button
+                                            onClick={async (e) => { 
+                                                e.stopPropagation(); 
+                                                const { intelligenceService } = await import('../services/api');
+                                                await intelligenceService.downloadReport(reportId || raidId, 'word', reportId ? 'reports' : 'raids');
+                                            }}
+                                            className="p-2 sm:p-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition-all flex items-center justify-center text-[10px] font-black text-white/70 tracking-tighter"
+                                            title="Export Word"
+                                        >
+                                            DOCX
+                                        </button>
+                                    </>
+                                );
+                            }
+                            return null;
+                        })()}
+
                         {!isRead(n) && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); handleMarkRead(n.id); }}

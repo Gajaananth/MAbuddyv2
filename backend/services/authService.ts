@@ -36,11 +36,25 @@ export function deterministicHash(val: string): string {
 }
 
 export async function compareValue(val: string, hash: string): Promise<boolean> {
-    // Check if it's a SHA-256 hash (64 chars hex) or BCrypt
+    // 1. Plain text (emergency/legacy)
+    if (val === hash) return true;
+
+    // 2. MD5 (Legacy 32-char hex)
+    if (hash.length === 32 && /^[0-9a-f]+$/.test(hash)) {
+        return crypto.createHash('md5').update(val).digest('hex') === hash;
+    }
+
+    // 3. SHA-256 (64-char hex)
     if (hash.length === 64 && /^[0-9a-f]+$/.test(hash)) {
         return deterministicHash(val) === hash;
     }
-    return bcrypt.compare(val, hash);
+
+    // 4. BCrypt
+    try {
+        return await bcrypt.compare(val, hash);
+    } catch (e) {
+        return false;
+    }
 }
 
 export function normalizeInput(val: string): string {
@@ -176,6 +190,7 @@ export async function login(c: {
     }
 
     if (!matchedUser) {
+        console.error(`[Auth] Login Failed: No user found for provided PIN.`);
         throw new Error('STATUS: DEVICE_UNRECOGNIZED. Initiate Identity Verification.');
     }
 

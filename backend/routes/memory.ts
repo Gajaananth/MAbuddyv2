@@ -42,6 +42,41 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res: Respons
 });
 
 /**
+ * GET /api/memory/unread-count
+ * Get count of unread messages from Zium Nova.
+ */
+router.get('/unread-count', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const count = await db.getUnreadMessageCount(userId);
+        res.json({ success: true, count });
+    } catch (error) {
+        console.error('[Memory] Unread Count Error:', error);
+        res.status(500).json({ success: false, error: 'Failed' });
+    }
+});
+
+/**
+ * POST /api/memory/conversations/:id/read
+ * Mark all messages in a conversation as read.
+ */
+router.post('/conversations/:id/read', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const id = req.params.id as string;
+        await db.markMessagesRead(id);
+        res.json({ success: true, message: 'Messages marked read' });
+    } catch (error) {
+        console.error('[Memory] Mark Read Error:', error);
+        res.status(500).json({ success: false, error: 'Failed' });
+    }
+});
+
+/**
  * GET /api/memory/conversations/:id
  * Get a full conversation with messages, restricted to owner.
  */

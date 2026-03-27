@@ -38,10 +38,10 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const { id } = req.params;
+        const id = String(req.params.id);
         const { status, notes, priority } = req.body;
 
-        const updatedTask = await db.updateTaskStatus(userId, id, status);
+        const updatedTask = await db.updateTaskStatus(userId, id, req.body.status as any);
 
         res.json({
             success: true,
@@ -63,7 +63,7 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const { id } = req.params;
+        const id = String(req.params.id);
         await db.deleteTask(id, userId);
 
         res.json({

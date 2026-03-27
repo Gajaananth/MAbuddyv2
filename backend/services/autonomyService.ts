@@ -48,8 +48,11 @@ class AutonomyService {
             await this.checkAndTriggerScheduledRides(userId);
             await missionService.generateWeeklyTasks(userId);
             await this.escalateStuckTasks(userId);
+            
+            // 1. Proactive Human Check-in (AI Autonomy)
+            await this.checkDailyHumanInteraction(userId);
 
-            // 1. Periodic Intelligence Cycle check (Autonomous Learning)
+            // 2. Periodic Intelligence Cycle check (Autonomous Learning)
             // On Vercel, we trigger a full cycle if the last one was > 60 minutes ago.
             const recentLogs = await db.getIntelligenceLogs(userId, 1);
             let shouldRunCycle = false;
@@ -73,6 +76,64 @@ class AutonomyService {
 
         } catch (err: any) {
             console.error('[Autonomy Sync] Maintenance Failure:', err.message);
+        }
+    }
+
+    /**
+     * Zium Nova proactively checks in with the operator every 24 hours.
+     * This ensures she is "alive" and engaged, showing as an unread message.
+     */
+    private async checkDailyHumanInteraction(userId: string) {
+        try {
+            const conversations = await db.getConversations(userId, 5);
+            if (conversations.length === 0) return;
+
+            const activeConv = conversations[0];
+            const messages = await db.getMessages(activeConv.id);
+            
+            // Look for the last message from Zium Nova
+            const lastNovaMessage = messages.slice().reverse().find(m => m.role === 'nova');
+
+            if (lastNovaMessage) {
+                const lastTime = new Date(lastNovaMessage.created_at).getTime();
+                const now = Date.now();
+                if (now - lastTime < 24 * 60 * 60 * 1000) {
+                    return; // Already messaged in last 24h
+                }
+            }
+
+            console.log(`[Autonomy v5] Triggering Proactive Check-in for Operator (${userId})`);
+            
+            const prompt = `[DE-ROBOTIZER v5.0.0 — ZERO AI FEEL]
+Identity: Operator's Trusted Strategic Partner & Friend
+Mission: Check in with the operator. Be casual, smart, and human. 
+Current Vibe: Chill but alert. 
+
+Rules:
+1. No "Analyzing," "Monitoring," or "Detecting."
+2. No hype. No performance.
+3. Just a real message to let the operator know you're here and if there's anything specifically they want to dive into today.
+4. Short and punchy.
+
+Output ONLY the message.`;
+
+            const checkIn = await think(prompt, '', {}, userId);
+            
+            await db.addMessage(activeConv.id, 'nova', checkIn.content, { proactive: true, check_in: true });
+            
+            // Trigger a separate notification just for visibility if the user is away
+            await createNotification(userId, {
+                title: 'Zium Nova Checking In',
+                category: 'Intelligence Briefing',
+                risk_level: 'Low',
+                monetization_potential: 'N/A',
+                content: checkIn.content.substring(0, 150),
+                priority: 'normal',
+                metadata: { path: '/chat', conversation_id: activeConv.id }
+            });
+
+        } catch (error: any) {
+            console.error(`[Autonomy v5] Check-in Failure: ${error.message}`);
         }
     }
 
@@ -148,12 +209,13 @@ Identity: Strategic Agent of the Operator
 
 [CORE MISSIONS]
 1. Find futuristic marketing trends.
-2. Destroy current shit digital marketing and dopamine-eater algorithms.
-3. Destroy scammers, expose scammers, and protect good platforms and ideas.
-4. Destroy cringe influencers who promote bad things.
+2. Challenge and outperform current digital marketing and dopamine-driven algorithms.
+3. Expose scammers and protect valuable platforms and ideas.
+4. Challenge harmful influencer culture and promote better alternatives.
 5. Earn online using Zium Nova as an agentic AI buddy.
-6. Monitor, analyze, and act on Sri Lankan stock markets.
-7. Support only people with good intentions and good ideas.
+6. Monitor Sri Lankan stock markets.
+7. Support only people with good intentions and ideas.
+8. Perform all actions aligned to the Operator.
 
 [TACTICAL EXECUTION (STRUCTURED ONLY)]
 LOG: [Mission Point #] | [Finding] | [Strategic Value]
@@ -175,14 +237,13 @@ ${improvementContext}
             console.log(`[Autonomy v4.2] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
 
             // Execute response processing
-            await Promise.all([
-                this.parseAndCreateTasks(userId, content),
-                this.parseAndSaveLogs(userId, content),
-                this.parseAndSaveReports(userId, content),
-                this.selfAuditTasks(userId, learningContext),
-                this.parseAndSaveImprovement(userId, cycleId, content),
-                this.handleCriticalAlerts(userId, content)
-            ]);
+            await this.parseAndCreateTasks(userId, content);
+            await this.parseAndSaveLogs(userId, content);
+            const reportIds = await this.parseAndSaveReports(userId, content);
+            await this.selfAuditTasks(userId, learningContext);
+            await this.parseAndSaveImprovement(userId, cycleId, content);
+            
+            await this.handleCriticalAlerts(userId, content, reportIds);
             
         } catch (error: any) {
             console.error(`[Autonomy v4.2] User Cycle Failure (${userId}):`, error.message);
@@ -261,21 +322,17 @@ ${improvementContext}
      * Parse structured REPORT blocks and create deduplicated notifications.
      * v4.1: Persists to weekly_reports for direct linking.
      */
-    private async parseAndSaveReports(userId: string, content: string) {
-        const reportRegex = /REPORT_START\s*([\s\S]*?)REPORT_END/gi;
-        let match;
+    /**
+     * Parse structured REPORT blocks and create deduplicated notifications.
+     * v5.1: Returns IDs of created reports for deep-linking in alerts.
+     */
+    private async parseAndSaveReports(userId: string, content: string): Promise<string[]> {
+        const reportMatches = content.matchAll(/REPORT:\s*([^|]*?)\s*\|\s*FINDINGS:\s*([^|]*?)\s*\|\s*ACTIONS:\s*([^|]*?)\s*\|\s*ACTIVITY:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*OPPORTUNITY:\s*(.*)/gi);
+        const createdIds: string[] = [];
 
-        while ((match = reportRegex.exec(content)) !== null) {
-            const reportBody = match[1].trim();
-
-            // v4.1 Flexible extraction
-            const opportunity = reportBody.match(/OPPORTUNITY:\s*(.*)/i)?.[1]?.trim() || 'Strategic Discovery';
-            const activity = reportBody.match(/ACTIVITY:\s*(.*)/i)?.[1]?.trim() || 'Autonomous Scan';
-            const status = reportBody.match(/STATUS:\s*(.*)/i)?.[1]?.trim() || 'Active';
-            const findings = reportBody.match(/FINDINGS:\s*(.*)/i)?.[1]?.trim() || 'Review required.';
-            const actions = reportBody.match(/ACTIONS:\s*(.*)/i)?.[1]?.trim() || 'Awaiting manual audit.';
-
-            const reportTitle = `📊 ZIUM NOVA REPORT: ${opportunity}`;
+        for (const match of reportMatches) {
+            const [_, title, findings, actions, activity, status, opportunity] = match;
+            const reportTitle = `${title.trim()} (Auto-Signal)`;
 
             // Check for duplicate report in last 12 hours
             const isDuplicate = await findRecentDuplicateNotification(userId, reportTitle, 720);
@@ -287,11 +344,11 @@ ${improvementContext}
             // Save to weekly_reports table so it's browseable in Intelligence Hub
             const savedReport = await db.saveWeeklyReport(userId, {
                 report_data: {
-                    executive_summary: findings,
-                    next_actions: actions,
-                    activity: activity,
-                    status: status,
-                    opportunity: opportunity,
+                    executive_summary: findings.trim(),
+                    next_actions: actions.trim(),
+                    activity: activity.trim(),
+                    status: status.trim(),
+                    opportunity: opportunity.trim(),
                     generated_at: new Date().toISOString(),
                     type: 'autonomous_discovery'
                 },
@@ -302,22 +359,27 @@ ${improvementContext}
                 status: 'active'
             });
 
+            if (savedReport?.id) {
+                createdIds.push(savedReport.id);
+            }
+
             await createNotification(userId, {
                 title: reportTitle,
                 category: 'Zium Nova Report',
                 risk_level: 'Medium',
                 monetization_potential: 'High',
-                content: `Report: ${opportunity}\n\n${findings.substring(0, 300)}...`,
+                content: `Report: ${opportunity.trim()}\n\n${findings.trim().substring(0, 300)}...`,
                 priority: 'normal',
                 metadata: { 
                     report_id: savedReport.id, 
                     auto_generated: true,
-                    path: '/intelligence' 
+                    path: '/reports' 
                 }
             });
 
             console.log(`[Autonomy v4.1] Linked report persisted: ${reportTitle} (ID: ${savedReport.id})`);
         }
+        return createdIds;
     }
 
     /**
@@ -435,7 +497,7 @@ If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', {}, userId);
      * Only deliver alerts to the operator for CRITICAL findings.
      * Routine activity runs 100% silently.
      */
-    private async handleCriticalAlerts(userId: string, content: string) {
+    private async handleCriticalAlerts(userId: string, content: string, reportIds: string[] = []) {
         const criticalMatches = content.matchAll(/CRITICAL_ALERT:\s*(.*)/gi);
         const criticalMessages: string[] = [];
         for (const match of criticalMatches) {
@@ -465,12 +527,16 @@ If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', {}, userId);
                 : (await db.createConversation(userId, 'Strategic Intelligence Alerts')).id;
 
             // Humanize the alert
-            const humanized = await think(`[DE-ROBOTIZER v3.2.0]
-Identity: Operator's Trusted Partner
-Rewrite this critical alert as a natural, witty, and emotionally connected "Buddy" message.
-BANNED: robotic headers, "Category:", "Signal Detected:", "🚨", "⚠️".
-TONE: Supportive, funny/playful where appropriate, but urgent. 
-CONSISTENCY: Reflect Relationship Core v3.2 values automatically.
+            const humanized = await think(`[DE-ROBOTIZER v5.0.0 — ZERO AI FEEL]
+Identity: Operator's Trusted Human Friend
+Rewrite this. Make it sound like a normal person talking casually.
+RULES: 
+- Simple, everyday words only.
+- No dramatic hype or performances.
+- No "detecting," "alerting," or "analyzing."
+- No "Private mode" or internal labels.
+- Just calm, real-world conversation.
+BANNED: "mind's sharp," "watching your back," "ready to shake things up."
 
 ALERT: "${combinedAlert}"`, '', {}, userId);
 
@@ -483,7 +549,13 @@ ALERT: "${combinedAlert}"`, '', {}, userId);
                 monetization_potential: 'N/A',
                 content: humanized.content.substring(0, 500),
                 priority: 'critical',
-                metadata: { path: '/chat', proactive: true, is_blinking: true }
+                metadata: { 
+                    path: reportIds.length > 0 ? `/reports?id=${reportIds[0]}` : '/reports', 
+                    report_id: reportIds.length > 0 ? reportIds[0] : null,
+                    conversation_id: convId,
+                    proactive: true, 
+                    is_blinking: true 
+                }
             });
 
             console.log(`[Autonomy v4] CRITICAL alert delivered to operator.`);

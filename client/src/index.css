@@ -39,7 +39,6 @@
   }
 }
 
-/* Safe Area Utilities */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
@@ -53,16 +52,24 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  font-size: 1rem;
-  /* Scales with root */
+  font-size: 0.95rem; /* Executive reading scale */
   line-height: 1.6;
   text-align: left;
+  letter-spacing: -0.01em;
 }
 
-/* Custom Scrollbar - Slimmer for Desktop */
+/* Typography Overhaul */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-sans);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px; /* Slightly wider for ease of use */
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -70,8 +77,9 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1a1a1a;
-  border-radius: 10px;
+  background: #2a2a2a;
+  border-radius: 2px;
+  border: 2px solid var(--color-nova-bg);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -79,80 +87,80 @@ body {
 }
 
 
-/* Glassmorphism */
+/* Glassmorphism Evolution */
 .glass {
-  background: rgba(10, 10, 10, 0.6);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(25px) saturate(180%);
+  -webkit-backdrop-filter: blur(25px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+}
+
+.panel-premium {
+  background: linear-gradient(135deg, rgba(15, 15, 15, 0.9), rgba(5, 5, 5, 0.95));
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .nova-gradient-text {
-  background: linear-gradient(135deg, var(--color-nova-accent), var(--color-nova-accent-alt));
+  background: linear-gradient(135deg, var(--color-nova-accent), #ffffff);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
-.nova-glow {
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.15);
+/* Interaction Effects */
+.btn-premium {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
-.nova-accent-glow {
-  box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
+.btn-premium:active {
+  transform: scale(0.96);
 }
 
-/* Notification panel slide-up animation (mobile bottom sheet) */
+.card-intelligence {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-intelligence:hover {
+  border-color: rgba(0, 242, 255, 0.3) !important;
+  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(-2px);
+}
+
 @keyframes slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .animate-slide-up {
-  animation: slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: slide-up 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.6)); transform: scale(1); }
-  50% { opacity: 0.4; filter: none; transform: scale(0.95); }
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.6)); }
+  50% { opacity: 0.4; filter: none; }
 }
 
 .animate-blink {
   animation: blink 0.8s ease-in-out infinite;
 }
 
-@keyframes urgent-blink {
+@keyframes red-pulse {
   0%, 100% { 
-    opacity: 1; 
-    filter: drop-shadow(0 0 12px rgba(255, 0, 0, 0.8)); 
-    transform: scale(1);
-    color: #ff4444;
-    background-color: rgba(255, 0, 0, 0.2);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); 
+    background-color: rgba(239, 68, 68, 1);
   }
   50% { 
-    opacity: 0.6; 
-    filter: drop-shadow(0 0 4px rgba(255, 0, 0, 0.4)); 
-    transform: scale(0.9);
-    color: #ffffff;
-    background-color: transparent;
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); 
+    background-color: rgba(239, 68, 68, 0.8);
   }
 }
 
-.nova-urgent-blink {
-  animation: urgent-blink 0.5s ease-in-out infinite;
-  border-color: #ff4444 !important;
-}
-
-/* On touch devices (no hover), always show notification action buttons */
-@media (hover: none) {
-  .notification-actions {
-    opacity: 1 !important;
-  }
+.unread-indicator {
+  animation: red-pulse 1.5s infinite;
 }

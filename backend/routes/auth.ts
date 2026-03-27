@@ -2,8 +2,10 @@ import { Router, Request, Response } from 'express';
 import * as authService from '../services/authService.js';
 import * as webAuthn from '../services/webAuthnService.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import * as authQueries from '../db/authQueries.js';
+import authQueries from '../db/authQueries.js';
 import db from '../db/connection.js';
+import { postToMoltbook } from '../services/moltbookService.js';
+import { getBrainStatus } from '../services/openClawService.js';
 
 const router = Router();
 
@@ -228,6 +230,29 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 // Diagnostic: Check system status without auth
+
+router.get('/brain-diag', async (_req: Request, res: Response) => {
+    try {
+        const key = process.env.OPENROUTER_API_KEY || '';
+        const hasKey = key.startsWith('sk-or-');
+        const { getBrainStatus, BUILD_ID } = await import('../services/openClawService.js');
+        const status = await getBrainStatus();
+
+        return res.json({
+            success: true,
+            tier1: {
+                configured: !!process.env.OPENROUTER_API_KEY,
+                prefix: process.env.OPENROUTER_API_KEY?.substring(0, 7),
+                status,
+                build: BUILD_ID
+            },
+            vercel: !!process.env.VERCEL,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 router.get('/status', async (_req: Request, res: Response) => {
     try {

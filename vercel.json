@@ -4,6 +4,10 @@
     "outputDirectory": "client/dist",
     "rewrites": [
         {
+            "source": "/api/cron",
+            "destination": "/api/cron.ts"
+        },
+        {
             "source": "/api/(.*)",
             "destination": "/api/v2_gateway.ts"
         },
@@ -12,4 +16,4 @@
             "destination": "/index.html"
         }
     ]
-}
+}

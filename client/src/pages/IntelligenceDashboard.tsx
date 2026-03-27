@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Bird, Search, Download, AlertTriangle, Clock, Radio, ChevronDown, Zap, Trash2, FileText, Check } from 'lucide-react';
+import { Bird, Search, AlertTriangle, Clock, Radio, ChevronDown, Zap, Trash2, FileText, Check } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { intelligenceService } from '../services/api';
 import { useLiveTime } from '../hooks/useLiveTime';
 import { formatTimestamp } from '../utils/formatUtils';
+
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface RideResult {
     id: string;
@@ -293,355 +296,353 @@ const IntelligenceDashboard: React.FC = () => {
     );
 
     return (
-        <div className="w-full max-w-7xl mx-auto pb-20 px-0 sm:px-0 flex flex-col">
-            {/* Header */}
-            <header className="mb-8 sm:mb-10 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-                <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-nova-accent flex items-center justify-center nova-accent-glow shrink-0">
-                        <Bird className="text-nova-bg w-6 h-6 sm:w-8 sm:h-8" />
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-red-500 rounded-full border-2 border-nova-bg animate-pulse"></div>
+        <div className="flex-1 flex flex-col min-w-0 max-w-7xl mx-auto w-full animate-in fade-in duration-700">
+            {/* Executive Header */}
+            <header className="mb-8 lg:mb-12 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-nova-border/30 pb-8 px-1">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-nova-accent">
+                        <Bird size={12} className="animate-pulse" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Intelligence Hub v4.5.0</span>
                     </div>
-                    <div className="min-w-0">
-                        <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase truncate">Intelligence Hub</h2>
-                        <p className="text-[9px] sm:text-[10px] text-nova-text-dim font-bold flex items-center gap-1.5 truncate">
-                            <Radio size={10} className="text-red-400 animate-pulse shrink-0" />
-                            <span className="truncate">{liveTime.full} — v4.1.2</span>
-                        </p>
-                    </div>
+                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none">
+                        Tactical <span className="text-nova-accent">Intelligence</span>
+                    </h1>
+                    <p className="text-nova-text-dim text-[11px] lg:text-xs font-medium max-w-xl leading-relaxed opacity-60">
+                        Synthesizing global signals into actionable strategic directives. {liveTime.full}
+                    </p>
                 </div>
 
-                <div className="flex items-center gap-3 w-full lg:w-auto mt-4 sm:mt-0">
+                <div className="flex items-center gap-3 w-full lg:w-auto">
                     <button
                         onClick={handleTriggerRide}
                         disabled={triggerLoading}
-                        className="flex-1 lg:flex-none px-4 lg:px-5 py-2.5 lg:py-2 rounded-xl lg:rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 font-black text-[10px] lg:text-xs uppercase tracking-widest hover:bg-red-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-1 lg:flex-none px-6 py-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-red-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-lg shadow-red-500/5 active:scale-95"
                     >
-                        <Zap size={14} className="shrink-0" />
-                        <span className="truncate">{triggerLoading ? 'Riding...' : 'Trigger Internet Ride'}</span>
+                        <Zap size={16} className={`${triggerLoading ? 'animate-spin' : ''}`} />
+                        {triggerLoading ? 'ENGAGING MESH...' : 'TRIGGER INTEL RIDE'}
                     </button>
                 </div>
             </header>
 
-            {/* Raid Progress Bar */}
+            {/* Raid Progress Bar - Responsive Refinement */}
             {rideStatus && rideStatus.status !== 'completed' && rideStatus.status !== 'failed' && (
-                <div className="mb-8 sm:mb-10 p-4 sm:p-6 glass rounded-xl sm:rounded-2xl border-2 border-nova-accent/30 bg-nova-accent/5 animate-in fade-in slide-in-from-top-4 duration-500">
-                    <div className="flex justify-between items-end mb-3">
-                        <div className="space-y-0.5">
-                            <h3 className="text-sm lg:text-[13px] font-black text-white uppercase tracking-tight flex items-center gap-1.5">
-                                <Zap size={15} className="text-nova-accent animate-pulse shrink-0" />
-                                Strategic Internet Ride
+                <div className="mb-10 p-6 lg:p-8 glass rounded-[2.5rem] border-2 border-nova-accent/30 bg-nova-accent/[0.03] shadow-2xl animate-in zoom-in-95 duration-500 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-nova-accent/20 to-transparent"></div>
+                    
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 mb-5">
+                        <div className="space-y-1">
+                            <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <Radio size={14} className="text-red-500 animate-pulse" />
+                                Active Strategem Scan
                             </h3>
-                            <p className="text-[9px] lg:text-[9px] text-nova-text-dim font-bold uppercase tracking-widest">
-                                Phase: <span className="text-nova-accent">{rideStatus.currentCluster}</span>
-                                ({rideStatus.clustersCompleted + 1}/{rideStatus.totalClusters})
+                            <p className="text-[10px] text-nova-text-dim font-bold uppercase tracking-[0.2em]">
+                                TARGET: <span className="text-nova-accent">{rideStatus?.currentCluster}</span>
+                                <span className="mx-2 opacity-20">|</span>
+                                PHASE {(rideStatus?.clustersCompleted || 0) + 1}/{rideStatus?.totalClusters}
                             </p>
                         </div>
-                        <div className="text-right">
-                            <span className="text-xl lg:text-lg font-mono font-black text-nova-accent">
-                                {Math.round((rideStatus.clustersCompleted / rideStatus.totalClusters) * 100)}%
+                        <div className="text-right self-end sm:self-auto">
+                            <span className="text-3xl font-black text-nova-accent tabular-nums tracking-tighter">
+                                {Math.round(((rideStatus?.clustersCompleted || 0) / (rideStatus?.totalClusters || 1)) * 100)}%
                             </span>
                         </div>
-
                     </div>
-                    <div className="w-full h-2 sm:h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-0.5">
+                    
+                    <div className="relative h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-0.5">
                         <div
-                            className="h-full bg-nova-accent rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(var(--accent-rgb),0.5)]"
-                            style={{ width: `${(rideStatus.clustersCompleted / rideStatus.totalClusters) * 100}%` }}
-                        ></div>
-                    </div>
-                    <div className="mt-3 sm:mt-4 flex items-center gap-2 sm:gap-3 text-[8px] sm:text-[10px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-60">
-                        <div className="flex gap-1">
-                            <div className="w-1 h-1 bg-nova-accent rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                            <div className="w-1 h-1 bg-nova-accent rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                            <div className="w-1 h-1 bg-nova-accent rounded-full animate-bounce"></div>
+                            className="h-full bg-nova-accent rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(0,242,255,0.6)] relative"
+                            style={{ width: `${((rideStatus?.clustersCompleted || 0) / (rideStatus?.totalClusters || 1)) * 100}%` }}
+                        >
+                            <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
                         </div>
-                        Engaging protocols...
                     </div>
                 </div>
             )}
 
-            {/* Security Notice / Disclaimer */}
-            <div className="mb-6 sm:mb-8 p-4 bg-yellow-500/5 border border-yellow-500/20 rounded-2xl flex items-center gap-4">
-                <AlertTriangle size={20} className="text-yellow-500 shrink-0" />
-                <p className="text-[10px] sm:text-xs text-yellow-500/80 font-medium leading-relaxed">
-                    <span className="font-bold uppercase tracking-widest mr-2">Financial Disclaimer:</span>
-                    This system provides tactical analytical insights based on strategic intelligence protocols. Information is for educational and strategic planning purposes only and does NOT constitute financial, investment, or legal advice.
+            {/* Disclaimer */}
+            <div className="mb-8 p-5 bg-yellow-500/[0.03] border border-yellow-500/20 rounded-[2rem] flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left shadow-lg shadow-yellow-500/5">
+                <AlertTriangle size={20} className="text-yellow-500 shrink-0 mt-1" />
+                <p className="text-[10px] lg:text-[11px] text-yellow-500/60 font-medium leading-relaxed">
+                    <span className="font-black uppercase tracking-widest text-yellow-500 mr-2">Operational Boundary:</span>
+                    Strategic intelligence reports are for high-level tactical planning. They do not constitute financial or legal advice.
                 </p>
             </div>
 
-            {/* Tabs & Bulk Actions */}
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 sm:mb-8">
-                <div className="flex gap-2 w-full sm:w-auto">
+            {/* Nav & Global Actions */}
+            <div className="flex flex-col xl:flex-row justify-between items-stretch lg:items-center gap-4 mb-10">
+                <div className="flex bg-white/[0.03] p-1.5 rounded-[1.5rem] border border-white/10 shadow-inner">
                     <button
                         onClick={() => setActiveTab('rides')}
-                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-sm uppercase tracking-widest transition-all ${activeTab === 'rides'
-                            ? 'bg-nova-accent/10 text-nova-accent border border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
-                            : 'bg-white/5 text-nova-text-dim border border-transparent hover:border-white/10'
+                        className={`flex-1 sm:flex-none px-6 sm:px-10 py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${activeTab === 'rides'
+                            ? 'bg-nova-bg text-nova-accent border border-nova-accent/20 shadow-lg shadow-nova-accent/5'
+                            : 'text-nova-text-dim hover:text-white'
                             }`}
                     >
-                        Internet Ride Findings ({rides.length})
+                        Intel Files ({rides.length})
                     </button>
-
                     <button
                         onClick={() => setActiveTab('reports')}
-                        className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-sm uppercase tracking-widest transition-all ${activeTab === 'reports'
-                            ? 'bg-nova-accent/10 text-nova-accent border border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
-                            : 'bg-white/5 text-nova-text-dim border border-transparent hover:border-white/10'
+                        className={`flex-1 sm:flex-none px-6 sm:px-10 py-3 rounded-2xl font-black text-[10px] sm:text-xs uppercase tracking-widest transition-all ${activeTab === 'reports'
+                            ? 'bg-nova-bg text-nova-accent border border-nova-accent/20 shadow-lg shadow-nova-accent/5'
+                            : 'text-nova-text-dim hover:text-white'
                             }`}
                     >
-                        Reports ({reports.length})
+                        Strategic Summaries ({reports.length})
                     </button>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                <div className="flex items-center gap-3">
                     {selectedIds.length > 0 && (
                         <button
                             onClick={handleBulkDelete}
-                            className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 font-black text-[10px] sm:text-xs uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center justify-center gap-2"
+                            className="flex-1 sm:flex-none px-6 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-black text-[10px] uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center justify-center gap-3 shadow-xl shadow-red-500/5 active:scale-95"
                         >
                             <Trash2 size={14} />
-                            Delete ({selectedIds.length})
+                            Purge ({selectedIds.length})
                         </button>
                     )}
                     <button
                         onClick={toggleSelectAll}
-                        className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-nova-text-dim text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                        className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-nova-text-dim text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
                     >
                         {selectedIds.length === (activeTab === 'rides' ? rides.length : reports.length) && (activeTab === 'rides' ? rides.length : reports.length) > 0
-                            ? 'Deselect All' : 'Select All'}
+                            ? 'Release All' : 'Select All'}
                     </button>
                 </div>
             </div>
 
-            {/* Search Bar */}
-            {activeTab === 'rides' && (
-                <div className="mb-6 sm:mb-8 relative group">
-                    <Search className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 text-nova-text-dim group-focus-within:text-nova-accent transition-colors" size={20} />
-                    <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search intelligence archive..."
-                        className="w-full bg-nova-card border-2 border-nova-border hover:border-nova-accent/30 focus:border-nova-accent p-4 sm:p-5 pl-12 sm:pl-16 rounded-2xl sm:rounded-3xl outline-none transition-all placeholder:text-nova-text-dim/30 text-sm sm:text-base font-bold text-white shadow-xl"
-                    />
-                    {searchQuery && (
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 p-2 hover:bg-white/10 rounded-full transition-colors"
-                        >
-                            <Zap size={14} />
-                        </button>
-                    )}
-                </div>
-            )}
-
-            {/* Content */}
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-20 gap-4">
-                    <div className="flex gap-2">
-                        <div className="w-2 h-2 bg-nova-accent rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="w-2 h-2 bg-nova-accent rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="w-2 h-2 bg-nova-accent rounded-full animate-bounce"></div>
+            {/* Unified Data View */}
+            <div className="flex-1 min-h-0 min-w-0">
+                {activeTab === 'rides' && (
+                    <div className="mb-10 relative group">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-nova-text-dim/40 group-focus-within:text-nova-accent transition-colors" size={18} />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Filter intelligence mesh..."
+                            className="w-full bg-white/[0.02] border-2 border-nova-border/50 hover:border-nova-accent/30 focus:border-nova-accent/50 p-5 pl-14 rounded-[2rem] outline-none transition-all placeholder:text-nova-text-dim/20 text-xs font-black text-white shadow-2xl"
+                        />
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black text-nova-accent uppercase tracking-[0.2em]">Synchronizing Intelligence...</span>
-                </div>
-            ) : activeTab === 'rides' ? (
-                <div className="space-y-4 sm:space-y-6">
-                    {filteredRides.length === 0 ? (
-                        <div className="text-center py-20 opacity-30 glass rounded-3xl border-2 border-dashed border-nova-border">
-                            <Bird size={64} className="mx-auto mb-4 text-nova-accent" />
-                            <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-widest">No Intelligence Data</h3>
+                )}
+
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-32 gap-6 opacity-40">
+                        <div className="relative w-16 h-16">
+                            <div className="absolute inset-0 border-4 border-nova-accent/20 rounded-full"></div>
+                            <div className="absolute inset-0 border-4 border-t-nova-accent rounded-full animate-spin"></div>
                         </div>
-                    ) : (
-                        filteredRides.map((ride: RideResult) => (
-                            <div
-                                key={ride.id}
-                                id={`finding-${ride.id}`}
-                                className={`glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all group relative overflow-hidden ${selectedIds.includes(ride.id) ? 'border-nova-accent bg-nova-accent/5' : highlightedId === ride.id ? 'border-nova-accent bg-nova-accent/10 shadow-[0_0_30px_rgba(0,242,255,0.2)] scale-[1.02] z-20' : 'border-nova-border hover:border-nova-accent/30'}`}
-                            >
-                                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
-                                    {/* Selection Checkbox - Moved inside flow */}
-                                    <div className="flex items-center gap-4 sm:flex-col sm:justify-start">
-                                        <div className="relative cursor-pointer shrink-0">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.includes(ride.id)}
-                                                onChange={() => toggleSelection(ride.id)}
-                                                className="w-6 h-6 rounded-lg opacity-0 absolute inset-0 cursor-pointer z-10"
-                                            />
-                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${selectedIds.includes(ride.id) ? 'bg-nova-accent border-nova-accent text-nova-bg' : 'border-nova-border bg-white/5'}`}>
-                                                <Check size={14} className={selectedIds.includes(ride.id) ? 'opacity-100' : 'opacity-0'} />
+                        <span className="text-[10px] font-black text-nova-accent uppercase tracking-[0.4em]">Synchronizing Mesh...</span>
+                    </div>
+                ) : activeTab === 'rides' ? (
+                    <div className="grid grid-cols-1 gap-4 lg:gap-6">
+                        {filteredRides.length === 0 ? (
+                            <div className="py-32 text-center glass border-2 border-dashed border-nova-border/30 rounded-[3rem] opacity-30">
+                                <Bird size={64} className="mx-auto mb-6 text-nova-accent opacity-20" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-[0.2em]">Zero Intel Signals</h3>
+                            </div>
+                        ) : (
+                            filteredRides.map((ride: RideResult) => (
+                                <div
+                                    key={ride.id}
+                                    id={`finding-${ride.id}`}
+                                    className={`glass p-6 lg:p-10 rounded-[2.5rem] border transition-all group relative overflow-hidden ${selectedIds.includes(ride.id) ? 'border-nova-accent bg-nova-accent/5' : highlightedId === ride.id ? 'border-nova-accent bg-nova-accent/10 shadow-[0_0_50px_rgba(0,242,255,0.2)] scale-[1.01] z-10' : 'border-nova-border/50 hover:border-nova-accent/30 shadow-xl'}`}
+                                >
+                                    <div className="flex flex-col md:flex-row gap-6 lg:gap-10">
+                                        <div className="flex md:flex-col items-start gap-4 shrink-0">
+                                            <div className="relative cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(ride.id)}
+                                                    onChange={() => toggleSelection(ride.id)}
+                                                    className="w-8 h-8 rounded-xl opacity-0 absolute inset-0 cursor-pointer z-10"
+                                                />
+                                                <div className={`w-8 h-8 border-2 rounded-xl flex items-center justify-center transition-all ${selectedIds.includes(ride.id) ? 'bg-nova-accent border-nova-accent text-nova-bg shadow-lg shadow-nova-accent/20' : 'border-nova-border/50 bg-white/5 group-hover:border-nova-accent/30'}`}>
+                                                    <Check size={18} className={selectedIds.includes(ride.id) ? 'opacity-100 scale-100' : 'opacity-0 scale-50'} />
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-row md:flex-col items-center gap-2">
+                                                <button
+                                                    onClick={() => handleRideExport(ride.id, 'pdf')}
+                                                    className="p-3 rounded-xl bg-nova-accent/10 border border-nova-accent/20 text-nova-accent hover:bg-nova-accent/20 transition-all"
+                                                    title="Export PDF"
+                                                >
+                                                    <FileText size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteRide(ride.id)}
+                                                    className="p-3 text-nova-text-dim/20 hover:text-red-500 transition-colors"
+                                                    title="Purge Signal"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
                                             </div>
                                         </div>
-                                        <div className="flex sm:flex-col items-center gap-3 sm:gap-2">
-                                            <button
-                                                onClick={() => handleRideExport(ride.id, 'pdf')}
-                                                className="p-2 rounded-lg bg-nova-accent/10 border border-nova-accent/30 text-nova-accent hover:bg-nova-accent/20 transition-all shadow-lg shadow-nova-accent/5"
-                                                title="Export PDF"
-                                            >
-                                                <FileText size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteRide(ride.id)}
-                                                className="p-2 text-nova-text-dim hover:text-red-400 transition-colors"
-                                                title="Delete Intelligence"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
 
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
-                                            <span className={`px-2 py-0.5 rounded text-[8px] sm:text-[10px] font-black uppercase tracking-widest border ${riskColors[ride.risk_level]}`}>
-                                                {ride.risk_level} Risk
-                                            </span>
-                                            <span className="text-[9px] sm:text-xs font-mono text-nova-text-dim opacity-50">/{ride.category}</span>
-                                        </div>
-
-                                        <p className="text-sm sm:text-base text-nova-text font-medium leading-relaxed mb-4">{ride.content}</p>
-
-                                        <details className="group/details mb-4">
-                                            <summary className="cursor-pointer text-[10px] sm:text-xs font-black text-nova-accent uppercase tracking-widest flex items-center gap-2 hover:opacity-80 list-none">
-                                                <ChevronDown size={14} className="group-open/details:rotate-180 transition-transform" />
-                                                Agent Analysis Summary
-                                            </summary>
-                                            <div className="mt-3 p-4 bg-nova-accent/[0.03] border border-nova-accent/10 rounded-xl text-xs sm:text-sm text-nova-text-dim leading-relaxed whitespace-pre-wrap italic">
-                                                "{cleanse(ride.summary)}"
-                                            </div>
-                                        </details>
-
-                                        <div className="flex flex-wrap gap-2 pt-2 border-t border-white/5">
-                                            <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-white/5 text-[8px] sm:text-[9px] font-black text-nova-text-dim uppercase border border-white/10 uppercase tracking-tighter">
-                                                <Radio size={8} className="text-nova-accent" /> {ride.source_platform}
-                                            </span>
-                                            {ride.tags.map((tag, i) => (
-                                                <span key={i} className="px-2 py-1 rounded bg-nova-accent/5 text-[8px] sm:text-[9px] font-black text-nova-accent uppercase border border-nova-accent/10">
-                                                    #{tag}
+                                        <div className="flex-1 min-w-0">
+                                            <header className="flex flex-wrap items-center gap-3 mb-4">
+                                                <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border shadow-sm ${riskColors[ride.risk_level]}`}>
+                                                    {ride.risk_level} Strategic Risk
                                                 </span>
-                                            ))}
-                                            <span className="ml-auto text-[8px] sm:text-[9px] font-mono text-nova-text-dim/40 self-center uppercase">
-                                                {formatTimestamp(ride.created_at)}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            ) : (
-                <div className="space-y-4 sm:space-y-6">
-                    {reports.length === 0 ? (
-                        <div className="text-center py-20 opacity-30 glass rounded-3xl border-2 border-dashed border-nova-border">
-                            <Clock size={64} className="mx-auto mb-4 text-nova-accent" />
-                            <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-widest">No Reports Generated</h3>
-                        </div>
-                    ) : (
-                        reports.map((report: WeeklyReport) => (
-                            <div
-                                key={report.id}
-                                id={`report-${report.id}`}
-                                className={`glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all group relative overflow-hidden ${selectedIds.includes(report.id) ? 'border-nova-accent bg-nova-accent/5' : highlightedId === report.id ? 'border-nova-accent bg-nova-accent/10 shadow-[0_0_30px_rgba(0,242,255,0.2)] scale-[1.01] z-20' : 'border-nova-border hover:border-nova-accent/30'}`}
-                            >
-                                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-6 mb-6">
-                                    <div className="flex items-center gap-4">
-                                        <div className="relative">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedIds.includes(report.id)}
-                                                onChange={() => toggleSelection(report.id)}
-                                                className="w-6 h-6 rounded-lg opacity-0 absolute inset-0 cursor-pointer z-10"
-                                            />
-                                            <div className={`w-6 h-6 border-2 rounded-lg flex items-center justify-center transition-all ${selectedIds.includes(report.id) ? 'bg-nova-accent border-nova-accent text-nova-bg' : 'border-nova-border bg-white/5'}`}>
-                                                <Check size={14} className={selectedIds.includes(report.id) ? 'opacity-100' : 'opacity-0'} />
+                                                <span className="text-[10px] font-mono font-bold text-nova-accent/40 uppercase tracking-tighter">/CATEGORY_{ride.category}</span>
+                                                <span className="ml-auto text-[10px] font-mono text-nova-text-dim/30 font-black italic">
+                                                    DECRYPTED: {formatTimestamp(ride.created_at)}
+                                                </span>
+                                            </header>
+
+                                            <p className="text-sm lg:text-base text-white/90 font-medium leading-relaxed mb-6 border-l-2 border-white/5 pl-6 italic">
+                                                {ride.content}
+                                            </p>
+
+                                            <details className="group/details mb-6">
+                                                <summary className="cursor-pointer text-[10px] font-black text-nova-accent uppercase tracking-[0.3em] flex items-center gap-3 hover:opacity-80 list-none mb-2">
+                                                    <ChevronDown size={14} className="group-open/details:rotate-180 transition-transform" />
+                                                    Agent Strategic Insight
+                                                </summary>
+                                                <div className="p-6 bg-white/[0.02] border border-nova-border/30 rounded-2xl text-[11px] lg:text-xs text-nova-text-dim font-medium leading-[1.8] italic shadow-inner">
+                                                    "{cleanse(ride.summary)}"
+                                                </div>
+                                            </details>
+
+                                            <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-nova-border/20">
+                                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[9px] font-black text-nova-text-dim uppercase tracking-widest">
+                                                    <Radio size={10} className="text-nova-accent" /> {ride.source_platform}
+                                                </div>
+                                                {ride.tags.map((tag, i) => (
+                                                    <div key={i} className="px-3 py-1.5 rounded-full bg-nova-accent/5 border border-nova-accent/10 text-[9px] font-black text-nova-accent/60 uppercase tracking-widest">
+                                                        #{tag}
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-sm sm:text-lg font-black text-white uppercase tracking-tight">Intelligence Report</h3>
-                                            <p className="text-[10px] sm:text-xs text-nova-text-dim font-bold uppercase tracking-widest opacity-60">
-                                                {formatTimestamp(report.period_start)} — {formatTimestamp(report.period_end)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-                                        <button
-                                            onClick={() => handleExport(report.id, 'json')}
-                                            className="px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/10 text-nova-text-dim hover:text-white transition-all text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
-                                        >
-                                            <Download size={12} /> JSON
-                                        </button>
-                                        <button
-                                            onClick={() => handleExport(report.id, 'word')}
-                                            className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
-                                        >
-                                            <FileText size={12} /> DOCX
-                                        </button>
-                                        <button
-                                            onClick={() => handleExport(report.id, 'pdf')}
-                                            className="px-2.5 py-1.5 rounded-lg bg-nova-accent/10 border border-nova-accent/20 text-nova-accent hover:bg-nova-accent/20 transition-all text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
-                                        >
-                                            <FileText size={12} /> PDF
-                                        </button>
-                                        <button
-                                            onClick={() => handleDeleteReport(report.id)}
-                                            className="p-2 text-nova-text-dim hover:text-red-400 transition-colors ml-2"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
                                     </div>
                                 </div>
-
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                                    <div className="p-3 sm:p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                                        <div className="text-[7px] sm:text-[8px] font-black text-nova-text-dim uppercase tracking-[0.2em] mb-1">Risk Dist.</div>
-                                        <div className="text-xs sm:text-sm font-black text-white">
-                                            {report.report_data.risk_distribution?.high || 0}H / {report.report_data.risk_distribution?.medium || 0}M
-                                        </div>
-                                    </div>
-                                    <div className="p-3 sm:p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                                        <div className="text-[7px] sm:text-[8px] font-black text-nova-text-dim uppercase tracking-[0.2em] mb-1">Trust Avg.</div>
-                                        <div className="text-xs sm:text-sm font-black text-nova-accent">{report.report_data.average_trust_score || 0}%</div>
-                                    </div>
-                                    <div className="p-3 sm:p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                                        <div className="text-[7px] sm:text-[8px] font-black text-nova-text-dim uppercase tracking-[0.2em] mb-1">Opportunities</div>
-                                        <div className="text-xs sm:text-sm font-black text-green-400">{report.report_data.top_opportunities?.length || 0}</div>
-                                    </div>
-                                    <div className="p-3 sm:p-4 bg-white/[0.02] border border-white/5 rounded-xl">
-                                        <div className="text-[7px] sm:text-[8px] font-black text-nova-text-dim uppercase tracking-[0.2em] mb-1">Status</div>
-                                        <div className="text-xs sm:text-sm font-black text-blue-400">ARCHIVED</div>
-                                    </div>
-                                </div>
-
-                                <div className={`prose prose-invert max-w-none transition-all duration-500 overflow-hidden ${expandedReports.includes(report.id) ? 'max-h-[5000px] opacity-100 mb-6' : 'max-h-0 opacity-0'}`}>
-                                    {report.report_data.executive_summary ? (
-                                        <div className="space-y-4">
-                                            {cleanse(report.report_data.executive_summary)
-                                                .split('\n\n')
-                                                .map((para, i) => (
-                                                    <p key={i} className="text-xs sm:text-sm text-nova-text-dim leading-relaxed italic">"{para}"</p>
-                                                ))
-                                            }
-                                        </div>
-                                    ) : (
-                                        <p className="text-[10px] text-nova-text-dim italic text-center py-4">Detailed analysis not expanded.</p>
-                                    )}
-                                </div>
-
-                                <div className="flex justify-center border-t border-white/5 pt-4">
-                                    <button
-                                        onClick={() => toggleReportExpansion(report.id)}
-                                        className="text-[9px] sm:text-[10px] font-black text-nova-accent uppercase tracking-widest hover:opacity-80 transition-all flex items-center gap-2"
-                                    >
-                                        {expandedReports.includes(report.id) ? 'Collapse Analysis' : 'Expand Full Analysis'}
-                                        <ChevronDown size={14} className={`transition-transform duration-300 ${expandedReports.includes(report.id) ? 'rotate-180' : ''}`} />
-                                    </button>
-                                </div>
+                            ))
+                        )}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-6 pb-20">
+                        {reports.length === 0 ? (
+                            <div className="py-32 text-center glass border-2 border-dashed border-nova-border/30 rounded-[3rem] opacity-30">
+                                <Clock size={64} className="mx-auto mb-6 text-nova-accent opacity-20" />
+                                <h3 className="text-xl font-black text-white uppercase tracking-[0.2em]">Zero Reports Compiled</h3>
                             </div>
-                        ))
-                    )}
-                </div>
-            )}
+                        ) : (
+                            reports.map((report: WeeklyReport) => (
+                                <div
+                                    key={report.id}
+                                    id={`report-${report.id}`}
+                                    className={`glass p-6 lg:p-10 rounded-[3rem] border transition-all bg-white/[0.01] ${selectedIds.includes(report.id) ? 'border-nova-accent shadow-2xl' : highlightedId === report.id ? 'border-nova-accent bg-nova-accent/5 shadow-[0_0_60px_rgba(0,242,255,0.15)] scale-[1.01] z-10' : 'border-nova-border/50 hover:border-nova-accent/20'}`}
+                                >
+                                    <header className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-10">
+                                        <div className="flex items-center gap-5">
+                                            <div className="relative">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedIds.includes(report.id)}
+                                                    onChange={() => toggleSelection(report.id)}
+                                                    className="w-8 h-8 rounded-xl opacity-0 absolute inset-0 cursor-pointer z-10"
+                                                />
+                                                <div className={`w-8 h-8 border-2 rounded-xl flex items-center justify-center transition-all ${selectedIds.includes(report.id) ? 'bg-nova-accent border-nova-accent text-nova-bg' : 'border-nova-border/50 group-hover:border-nova-accent/30'}`}>
+                                                    <Check size={18} className={selectedIds.includes(report.id) ? 'scale-100 opacity-100' : 'scale-50 opacity-0'} />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-black text-white uppercase tracking-tighter leading-none mb-2">Strategic Intelligence Summary</h3>
+                                                <div className="flex items-center gap-3 text-[10px] font-black text-nova-text-dim uppercase tracking-[0.2em] opacity-40">
+                                                    <Clock size={12} className="text-nova-accent/50" />
+                                                    {formatTimestamp(report.period_start)} — {formatTimestamp(report.period_end)}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+                                            <button onClick={() => handleExport(report.id, 'json')} className="flex-1 lg:flex-none px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-nova-text-dim hover:text-white transition-all text-[9px] font-black uppercase tracking-widest">JSON</button>
+                                            <button onClick={() => handleExport(report.id, 'word')} className="flex-1 lg:flex-none px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:text-white hover:bg-blue-500 transition-all text-[9px] font-black uppercase tracking-widest">DOCX</button>
+                                            <button onClick={() => handleExport(report.id, 'pdf')} className="flex-1 lg:flex-none px-4 py-2 rounded-xl bg-nova-accent/10 border border-nova-accent/20 text-nova-accent hover:text-nova-bg hover:bg-nova-accent transition-all text-[9px] font-black uppercase tracking-widest shadow-lg shadow-nova-accent/5">EXPORT PDF</button>
+                                            <button onClick={() => handleDeleteReport(report.id)} className="p-2 text-nova-text-dim/20 hover:text-red-500 transition-all ml-2"><Trash2 size={18} /></button>
+                                        </div>
+                                    </header>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-6 mb-10">
+                                        {[
+                                            { label: 'Risk Balance', value: `${report.report_data.risk_distribution?.high || 0}H / ${report.report_data.risk_distribution?.medium || 0}M`, color: 'text-white' },
+                                            { label: 'Network Trust', value: `${report.report_data.average_trust_score || 0}%`, color: 'text-nova-accent' },
+                                            { label: 'Yield Points', value: report.report_data.top_opportunities?.length || 0, color: 'text-green-400' },
+                                            { label: 'Archival Class', value: 'STRATEGIC_A', color: 'text-blue-400' }
+                                        ].map((stat, i) => (
+                                            <div key={i} className="p-4 bg-white/[0.02] border border-white/10 rounded-2xl shadow-inner group-hover:border-nova-accent/20 transition-all">
+                                                <div className="text-[8px] font-black text-nova-text-dim uppercase tracking-[0.2em] mb-2">{stat.label}</div>
+                                                <div className={`text-sm lg:text-base font-black ${stat.color} tracking-tight`}>{stat.value}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Expanded Content with Refined Markdown */}
+                                    <div className={`transition-all duration-1000 overflow-hidden ${expandedReports.includes(report.id) ? 'max-h-[10000px] opacity-100 mb-10' : 'max-h-0 opacity-0 pointer-events-none'}`}>
+                                        {report.report_data.executive_summary ? (
+                                            <div className="p-6 lg:p-14 rounded-[3rem] bg-white/[0.02] border border-white/5 relative shadow-inner">
+                                                <div className="absolute top-10 left-10 w-16 h-1 border-t-2 border-l-2 border-nova-accent/20"></div>
+                                                <div className="absolute bottom-10 right-10 w-16 h-1 border-b-2 border-r-2 border-nova-accent/20"></div>
+                                                
+                                                <div className="flex items-center gap-4 mb-12 pb-6 border-b border-white/5">
+                                                    <div className="w-3 h-3 rounded-full bg-nova-accent animate-pulse shadow-[0_0_10px_rgba(0,242,255,1)]" />
+                                                    <h4 className="text-[11px] font-black uppercase tracking-[0.5em] text-nova-accent drop-shadow-sm">Operational Directive</h4>
+                                                </div>
+                                                
+                                                <div className="prose prose-invert prose-sm sm:prose-base max-w-none 
+                                                    prose-headings:font-black prose-headings:uppercase prose-headings:tracking-widest prose-headings:text-white prose-headings:mb-6 prose-headings:mt-10
+                                                    prose-p:text-nova-text prose-p:leading-[1.8] prose-p:font-medium prose-p:opacity-80
+                                                    prose-strong:text-nova-accent prose-strong:font-black
+                                                    prose-li:text-nova-text prose-li:opacity-80
+                                                    prose-blockquote:border-nova-accent prose-blockquote:bg-nova-accent/5 prose-blockquote:p-6 prose-blockquote:rounded-2xl
+                                                ">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                        {report.report_data.executive_summary}
+                                                    </ReactMarkdown>
+                                                </div>
+
+                                                {report.report_data.next_actions && (
+                                                    <div className="mt-16 p-8 lg:p-12 rounded-[2.5rem] bg-yellow-400/[0.03] border-2 border-yellow-400/10 relative overflow-hidden">
+                                                        <div className="absolute top-0 left-0 w-1 h-full bg-yellow-500/20"></div>
+                                                        <h5 className="text-[11px] font-black uppercase tracking-[0.3em] text-yellow-500 mb-8 flex items-center gap-3">
+                                                            <Zap size={16} fill="currentColor" /> Strategic Next Actions
+                                                        </h5>
+                                                        <div className="text-sm lg:text-base text-white/90 font-medium leading-[1.8]">
+                                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                {report.report_data.next_actions}
+                                                            </ReactMarkdown>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="py-20 text-center glass border-2 border-dashed border-nova-border/20 rounded-[3rem]">
+                                                <div className="flex items-center justify-center gap-3 mb-4">
+                                                    <div className="w-1.5 h-1.5 bg-nova-accent rounded-full animate-ping"></div>
+                                                    <div className="w-1.5 h-1.5 bg-nova-accent rounded-full animate-ping [animation-delay:0.2s]"></div>
+                                                    <div className="w-1.5 h-1.5 bg-nova-accent rounded-full animate-ping [animation-delay:0.4s]"></div>
+                                                </div>
+                                                <p className="text-[10px] font-black text-nova-text-dim uppercase tracking-[0.5em]">Decrypting Core Intelligence...</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="flex justify-center border-t border-white/5 pt-8">
+                                        <button
+                                            onClick={() => toggleReportExpansion(report.id)}
+                                            className={`px-10 py-4 text-[10px] font-black uppercase tracking-[0.4em] rounded-full transition-all flex items-center gap-4 ${expandedReports.includes(report.id) ? 'bg-white/5 text-nova-text-dim border border-white/10' : 'bg-nova-accent/10 text-nova-accent border border-nova-accent/20 hover:bg-nova-accent/20 shadow-xl shadow-nova-accent/5'}`}
+                                        >
+                                            <span>{expandedReports.includes(report.id) ? 'SECURE ARCHIVE' : 'DECRYPT INTELLIGENCE'}</span>
+                                            <ChevronDown size={14} className={`transition-transform duration-700 ${expandedReports.includes(report.id) ? 'rotate-180' : ''}`} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

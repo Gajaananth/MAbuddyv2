@@ -45,7 +45,7 @@ export class Agent extends EventEmitter<AgentEvents> {
         this.config = {
             apiKey: config.apiKey,
             model: config.model ?? 'google/gemini-2.0-flash-lite-preview-02-05:free',
-            instructions: config.instructions ?? 'You are Zium Nova, a strategic AI agent.',
+            instructions: config.instructions ?? 'You are Zium Nova, a strategic AI partner and agentic buddy aligned with the Operator\'s core mission.',
             tools: config.tools ?? [],
             maxSteps: config.maxSteps ?? 5,
         };

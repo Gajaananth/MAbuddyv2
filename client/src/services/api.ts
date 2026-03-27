@@ -61,6 +61,10 @@ export const memoryService = {
         api.delete(`/memory/conversations/${id}?permanent=${permanent}`),
     updateTitle: (id: string, title: string) =>
         api.patch(`/memory/conversations/${id}`, { title }),
+    getUnreadCount: () =>
+        api.get('/memory/unread-count'),
+    markRead: (id: string) =>
+        api.post(`/memory/conversations/${id}/read`),
 };
 
 export const intelligenceService = {
@@ -73,9 +77,38 @@ export const intelligenceService = {
     getRideStatus: () =>
         api.get('/intelligence/raid/status'),
     exportReport: (reportId: string, format: 'json' | 'pdf' | 'word' = 'json') =>
-        api.get(`/intelligence/reports/${reportId}/export?format=${format}`, { responseType: format === 'json' ? 'json' : 'blob' }),
+        api.get(`/intelligence/reports/${reportId}/export?format=${format}`, { 
+            responseType: format === 'json' ? 'json' : 'blob' 
+        }),
     exportRide: (id: string, format: string = 'pdf') =>
-        api.get(`/intelligence/raids/${id}/export?format=${format}`, { responseType: 'blob' }),
+        api.get(`/intelligence/raids/${id}/export?format=${format}`, { 
+            responseType: 'blob' 
+        }),
+    // Helper for browser downloads to avoid hardcoded URLs in components
+    downloadReport: async (id: string, format: 'pdf' | 'word' | 'json', type: 'reports' | 'raids' = 'reports') => {
+        try {
+            const res = type === 'reports' 
+                ? await intelligenceService.exportReport(id, format as any)
+                : await intelligenceService.exportRide(id, format);
+            
+            const blobType = format === 'pdf' ? 'application/pdf' : 
+                            format === 'word' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 
+                            'application/json';
+            
+            const blob = new Blob([res.data], { type: blobType });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `${type}_${id}.${format === 'word' ? 'docx' : format}`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode?.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('[API] Download failed:', error);
+            throw error;
+        }
+    },
     deleteRide: (id: string) =>
         api.delete(`/intelligence/raids/${id}`),
     deleteReport: (id: string) =>
