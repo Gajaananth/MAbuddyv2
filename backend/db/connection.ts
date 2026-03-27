@@ -83,7 +83,7 @@ async function initDatabase(): Promise<void> {
         console.log(`[DB] PostgreSQL Grid: ONLINE | Host: ${dbHost}`);
         
         // Run migrations in background/separately to avoid Vercel Function Timeout (10s limit)
-        runMigrations(client).catch(err => {
+        runMigrations(pool).catch(err => {
             console.error('[DB] Background Migration Error:', err.message);
         });
       } finally {
@@ -105,9 +105,11 @@ async function initDatabase(): Promise<void> {
 /**
  * Optimized Migration Protocol
  */
-async function runMigrations(client: any) {
+async function runMigrations(pool: any) {
     console.log('[DB] Grid: Synchronizing Protocol Tables...');
-    await client.query(`
+    const client = await pool.connect();
+    try {
+      await client.query(`
       CREATE EXTENSION IF NOT EXISTS "pgcrypto";
       
       -- Multi-Agent Task Support (v3.2.0)
@@ -331,6 +333,9 @@ async function runMigrations(client: any) {
       ON CONFLICT (id) DO NOTHING;
     `);
     console.log('[DB] Grid: Schema Synchronized.');
+    } finally {
+      client.release();
+    }
 }
 
 const db = {
