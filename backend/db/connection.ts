@@ -115,8 +115,7 @@ async function initDatabase(): Promise<void> {
           const Database = (await import('better-sqlite3')).default;
           sqliteDb = new Database(DB_PATH);
           console.log(`[DB] Local Shadow Grid: ONLINE | Path: ${DB_PATH}`);
-          
-          // Basic SQLite Schema Sync
+          // Basic SQLite Schema Sync (local dev fallback only — Postgres is primary)
           sqliteDb.exec(`
             CREATE TABLE IF NOT EXISTS users (
               id TEXT PRIMARY KEY,
@@ -179,80 +178,6 @@ async function initDatabase(): Promise<void> {
               created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
 
-            CREATE TABLE IF NOT EXISTS notifications (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              title TEXT NOT NULL,
-              category TEXT NOT NULL,
-              risk_level TEXT DEFAULT 'Medium',
-              monetization_potential TEXT DEFAULT 'Medium',
-              content TEXT NOT NULL,
-              is_read INTEGER DEFAULT 0,
-              is_archived INTEGER DEFAULT 0,
-              priority TEXT DEFAULT 'normal',
-              metadata TEXT DEFAULT NULL,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS push_subscriptions (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              device_id TEXT NOT NULL UNIQUE,
-              subscription_data TEXT NOT NULL,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS intelligence_logs (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              category TEXT NOT NULL,
-              lesson TEXT NOT NULL,
-              source_context TEXT,
-              metadata TEXT DEFAULT NULL,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS improvement_logs (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              cycle_id TEXT NOT NULL,
-              insight TEXT NOT NULL,
-              strategy_adjustment TEXT DEFAULT '',
-              performance_delta TEXT DEFAULT '',
-              metadata TEXT DEFAULT NULL,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS agent_network (
-              id TEXT PRIMARY KEY,
-              name TEXT NOT NULL,
-              description TEXT,
-              capabilities TEXT DEFAULT '[]',
-              trust_score INTEGER DEFAULT 0,
-              status TEXT DEFAULT 'active',
-              last_collaboration TEXT,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS agent_activity_logs (
-              id TEXT PRIMARY KEY,
-              agent_id TEXT DEFAULT 'ZIUM_NOVA',
-              action_type TEXT NOT NULL,
-              platform TEXT,
-              details TEXT,
-              metadata TEXT DEFAULT NULL,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS trend_analyses (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              topic TEXT NOT NULL,
-              analysis TEXT NOT NULL,
-              score INTEGER DEFAULT 0,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
             CREATE TABLE IF NOT EXISTS intelligence_raids (
               id TEXT PRIMARY KEY,
               user_id TEXT NOT NULL,
@@ -281,12 +206,6 @@ async function initDatabase(): Promise<void> {
               created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
           `);
-          // Migrate existing SQLite tables to add missing columns
-          try {
-            sqliteDb.exec(`ALTER TABLE messages ADD COLUMN is_read INTEGER DEFAULT 0`);
-            console.log('[DB] SQLite: messages.is_read column added.');
-          } catch (_) { /* column already exists — ok */ }
-
           console.log('[DB] Local Shadow Grid: Schema Synchronized.');
         } catch (sqliteErr: any) {
           console.error('[DB] Local Shadow Grid: INITIALIZATION FAILED.', sqliteErr.message);
