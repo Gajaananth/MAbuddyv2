@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-import { initDatabase, isPostgresActive } from './db/connection.js';
+import { initDatabase } from './db/connection.js';
 
 import fs from 'fs';
 const logFile = 'debug_grid.log';
@@ -30,13 +30,8 @@ async function testConnection() {
     console.log('Time: ' + new Date().toISOString());
     try {
         await initDatabase();
-        if (isPostgresActive) {
-            console.log('SUCCESS: Database Grid is ONLINE.');
-            setTimeout(() => process.exit(0), 1000);
-        } else {
-            console.log('FAILURE: Database Grid is OFFLINE (SQLite Fallback Active).');
-            setTimeout(() => process.exit(1), 1000);
-        }
+        console.log('SUCCESS: Database Grid (PostgreSQL) is ONLINE.');
+        setTimeout(() => process.exit(0), 1000);
     } catch (err: any) {
         console.log('CRITICAL ERROR: ' + err.message);
         if (err.stack) console.log('STACK: ' + err.stack);

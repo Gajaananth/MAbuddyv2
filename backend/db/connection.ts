@@ -7,9 +7,6 @@ dotenv.config();
 // Global SSL Bypass: Required for certain Supabase/Vercel certificate chains.
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-// better-sqlite3 is a native C++ addon — it will be loaded dynamically if needed
-// and NEVER on Vercel to avoid runtime crashes.
-let sqliteDb: any = null;
 let isPostgresActive = false;
 let isInitializing = false;
 
@@ -51,8 +48,6 @@ function getPool() {
   
   return pool;
 }
-
-const DB_PATH = path.join(process.cwd(), 'zium_nova.sqlite');
 
 let initPromise: Promise<void> | null = null;
 
@@ -100,118 +95,7 @@ async function initDatabase(): Promise<void> {
       console.error('[DB] ERROR DETAILS:', error.message);
       if (error.stack) console.error('[DB] ERROR STACK:', error.stack);
       
-      // If we are on Vercel, we need to be very explicit about the timeout logic
-      if (process.env.VERCEL) {
-        throw new Error(`[Zium Nova] Database Grid Timeout/Failure: ${error.message}`);
-      }
-      
-      console.warn('[DB] CONNECTION REJECTED. Activating Local Shadow Logic (SQLite Fallback).');
-      isPostgresActive = false;
-
-      // Initialize SQLite Fallback
-      if (!sqliteDb && !process.env.VERCEL) {
-        try {
-          // @ts-ignore - dynamic import for local dev only
-          const Database = (await import('better-sqlite3')).default;
-          sqliteDb = new Database(DB_PATH);
-          console.log(`[DB] Local Shadow Grid: ONLINE | Path: ${DB_PATH}`);
-          // Basic SQLite Schema Sync (local dev fallback only — Postgres is primary)
-          sqliteDb.exec(`
-            CREATE TABLE IF NOT EXISTS users (
-              id TEXT PRIMARY KEY,
-              dob_hash TEXT NOT NULL,
-              pin_hash TEXT NOT NULL,
-              q1_hash TEXT NOT NULL,
-              q2_hash TEXT NOT NULL,
-              q3_hash TEXT NOT NULL,
-              failed_attempts INTEGER DEFAULT 0,
-              lock_until TEXT DEFAULT NULL,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-            
-            CREATE TABLE IF NOT EXISTS devices (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-              device_identifier TEXT NOT NULL,
-              fingerprint TEXT NOT NULL,
-              os_type TEXT,
-              public_key TEXT,
-              credential_id TEXT,
-              counter INTEGER DEFAULT 0,
-              current_challenge TEXT,
-              notifications_enabled INTEGER DEFAULT 1,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS tasks (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              task_id_str TEXT NOT NULL,
-              task_name TEXT NOT NULL,
-              assigned_to TEXT DEFAULT 'ZIUM NOVA',
-              status TEXT DEFAULT 'TODO',
-              priority TEXT DEFAULT 'MEDIUM',
-              action_plan TEXT DEFAULT '',
-              notes TEXT DEFAULT '',
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-              updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-              UNIQUE(user_id, task_id_str)
-            );
-
-            CREATE TABLE IF NOT EXISTS conversations (
-              id TEXT PRIMARY KEY,
-              title TEXT NOT NULL DEFAULT 'New Conversation',
-              topic_tag TEXT DEFAULT NULL,
-              is_deleted INTEGER DEFAULT 0,
-              user_id TEXT DEFAULT 'default_user',
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-              updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS messages (
-              id TEXT PRIMARY KEY,
-              conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
-              role TEXT NOT NULL,
-              content TEXT NOT NULL,
-              metadata TEXT DEFAULT NULL,
-              is_read INTEGER DEFAULT 0,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS intelligence_raids (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              category TEXT NOT NULL,
-              risk_level TEXT DEFAULT 'Medium',
-              source_platform TEXT,
-              content TEXT,
-              summary TEXT,
-              tags TEXT DEFAULT '[]',
-              metadata TEXT DEFAULT NULL,
-              ride_type TEXT DEFAULT 'mid-week',
-              opportunity_score INTEGER DEFAULT 0,
-              status TEXT DEFAULT 'active',
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE IF NOT EXISTS weekly_reports (
-              id TEXT PRIMARY KEY,
-              user_id TEXT NOT NULL,
-              report_data TEXT NOT NULL,
-              period_start TEXT,
-              period_end TEXT,
-              ride_type TEXT DEFAULT 'end-week',
-              opportunity_score INTEGER DEFAULT 0,
-              status TEXT DEFAULT 'active',
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-          `);
-          console.log('[DB] Local Shadow Grid: Schema Synchronized.');
-        } catch (sqliteErr: any) {
-          console.error('[DB] Local Shadow Grid: INITIALIZATION FAILED.', sqliteErr.message);
-          sqliteDb = null;
-        }
-      }
+      throw new Error(`[Zium Nova] Database Grid Failure/Timeout: ${error.message}`);
     }
   })();
 
@@ -451,11 +335,10 @@ async function runMigrations(client: any) {
 
 const db = {
     get pool() { return pool; },
-    get sqliteDb() { return sqliteDb; },
     get isPostgresActive() { return isPostgresActive; },
     initDatabase,
     getPool
 };
 
 export default db;
-export { pool, sqliteDb, isPostgresActive, initDatabase, getPool };
+export { pool, isPostgresActive, initDatabase, getPool };

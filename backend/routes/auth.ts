@@ -21,13 +21,11 @@ router.get('/diag', async (_req: Request, res: Response) => {
 
     try {
         await db.initDatabase();
-        dbStatus = db.isPostgresActive ? 'online' : 'fallback_active';
+        dbStatus = 'online';
         
-        if (db.isPostgresActive) {
-            // More direct check for the column
-            const colCheck = await db.pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'devices' AND column_name = 'current_challenge'");
-            columnCheck = colCheck.rows.length > 0 ? 'exists' : 'missing';
-        }
+        // More direct check for the column
+        const colCheck = await db.pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'devices' AND column_name = 'current_challenge'");
+        columnCheck = colCheck.rows.length > 0 ? 'exists' : 'missing';
     } catch (err: any) {
         dbStatus = 'error';
         error = err.message;
@@ -266,7 +264,7 @@ router.get('/status', async (_req: Request, res: Response) => {
             maxDevicesTotal: 17,
             adminDeviceLimit: 5,
             operatorDeviceLimit: 3,
-            database: db.isPostgresActive ? 'PostgreSQL' : 'SQLite'
+            database: 'PostgreSQL'
         });
 
     } catch (error: any) {
@@ -280,30 +278,12 @@ router.post('/reset-protocol-data-purge', async (req: Request, res: Response) =>
         const { secret } = req.body;
         if (secret !== 'nova-purge-2026') return res.status(403).json({ error: 'Unauthorized' });
 
-        const { pool, sqliteDb, isPostgresActive } = db;
-        if (db.isPostgresActive) {
-            // Postgres cascade wipe — order matters
-            await db.pool.query(`
-                TRUNCATE TABLE push_subscriptions, devices, notifications,
-                messages, conversations, intelligence_raids, weekly_reports,
-                trend_analyses, users, agent_network, agent_activity_logs CASCADE
-            `);
-        } else if (sqliteDb) {
-            // SQLite: delete children BEFORE parents (FK order)
-            const tables = [
-                'push_subscriptions', 'devices', 'notifications',
-                'messages', 'conversations',
-                'intelligence_raids', 'weekly_reports', 'trend_analyses',
-                'agent_activity_logs', 'users'
-            ];
-            sqliteDb.exec('PRAGMA foreign_keys = OFF');
-            sqliteDb.transaction(() => {
-                for (const table of tables) {
-                    sqliteDb.prepare(`DELETE FROM ${table}`).run();
-                }
-            })();
-            sqliteDb.exec('PRAGMA foreign_keys = ON');
-        }
+        // Postgres cascade wipe — order matters
+        await db.pool.query(`
+            TRUNCATE TABLE push_subscriptions, devices, notifications,
+            messages, conversations, intelligence_raids, weekly_reports,
+            trend_analyses, users, agent_network, agent_activity_logs CASCADE
+        `);
         res.json({ success: true, message: 'FULL PROTOCOL DATA PURGED — SYSTEM READY' });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
