@@ -91,6 +91,8 @@ export async function think(
     options: any = {},
     userId: string = '00000000-0000-0000-0000-000000000000'
 ): Promise<OpenClawResponse> {
+    const GEMINI_KEY = process.env.GEMINI_API_KEY;
+    const QWEN_KEY = process.env.QWEN_API_KEY;
     const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 
     // Direct Sync logic triggered on every thought
@@ -103,47 +105,64 @@ export async function think(
         ? `MEMORY CONTEXT: \n${memoryContext} \n\nCURRENT REQUEST: \n${prompt}`
         : prompt;
 
-    if (!OPENROUTER_KEY) {
-        lastCycleStatus = 'CRITICAL: No OPENROUTER_API_KEY configured.';
-        return generateMockResponse(prompt, memoryContext);
+    // TIER 1: Native Google Gemini
+    if (GEMINI_KEY) {
+        try {
+            console.log(`[Brain] Routing to Tier 1 (Native Google Gemini)...`);
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+            const response = await axios.post(
+                geminiUrl,
+                {
+                    contents: [{ parts: [{ text: fullContent }] }],
+                    systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
+                },
+                { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+            );
+
+            const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (content && content.trim().length > 0) {
+                lastCycleStatus = `SUCCESS: Tier 1 (Gemini) | ${new Date().toISOString()}`;
+                failureHistory = [];
+                return {
+                    content,
+                    usage: {
+                        prompt_tokens: fullContent.length,
+                        completion_tokens: content.length,
+                        total_tokens: fullContent.length + content.length
+                    }
+                };
+            }
+        } catch (error: any) {
+            logFailure('Tier 1 (Gemini)', error);
+        }
     }
 
-    const tiers = [
-        // RELIABLE FREE POOL
-        { name: 'Tier 1 (Llama 3.3 Free)', model: 'meta-llama/llama-3.3-70b-instruct:free' },
-        { name: 'Tier 1.1 (Gemma 3 27B Free)', model: 'google/gemma-3-27b-it:free' },
-        { name: 'Tier 1.2 (Nemotron Free)', model: 'nvidia/nemotron-3-super-120b-a12b:free' }
-    ];
-
-    for (const tier of tiers) {
+    // TIER 2: Native Qwen (DashScope)
+    if (QWEN_KEY) {
         try {
-            console.log(`[Brain] Routing to ${tier.name}...`);
+            console.log(`[Brain] Routing to Tier 2 (Native Qwen Dashboard API)...`);
             const response = await axios.post(
-                'https://openrouter.ai/api/v1/chat/completions',
+                'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
                 {
-                    model: tier.model,
+                    model: 'qwen-plus',
                     messages: [
                         { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS },
                         { role: 'user', content: fullContent }
-                    ],
+                    ]
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${OPENROUTER_KEY}`,
+                        'Authorization': `Bearer ${QWEN_KEY}`,
                         'Content-Type': 'application/json',
-                        'HTTP-Referer': 'https://ziumnova.app',
-                        'X-Title': 'Zium Nova',
                     },
-                    httpsAgent,
-                    timeout: 8000,
-
+                    timeout: 15000
                 }
             );
 
-            const content = response.data.choices?.[0]?.message?.content || '';
+            const content = response.data?.choices?.[0]?.message?.content || '';
             if (content && content.trim().length > 0) {
-                lastCycleStatus = `SUCCESS: ${tier.name} | ${new Date().toISOString()}`;
-                failureHistory = []; // Clear on success
+                lastCycleStatus = `SUCCESS: Tier 2 (Qwen) | ${new Date().toISOString()}`;
+                failureHistory = [];
                 return {
                     content,
                     usage: response.data.usage || {
@@ -154,22 +173,64 @@ export async function think(
                 };
             }
         } catch (error: any) {
-            logFailure(tier.name, error);
+            logFailure('Tier 2 (Qwen)', error);
         }
     }
 
-    // Final Fallback: Tier 2 (Ollama Local) - Guaranteed to fail on Vercel
-    try {
-        const oltResponse = await axios.post('http://localhost:11434/api/generate', { model: 'llama3', prompt: fullContent, stream: false }, { timeout: 3000 });
-        const content = oltResponse.data.response;
-        lastCycleStatus = `SUCCESS: Tier 2 (Ollama) | ${new Date().toISOString()}`;
-        failureHistory = [];
-        return { content, usage: { total_tokens: 0 } as any };
-    } catch (e: any) {
-        logFailure('Tier 2 (Ollama)', e);
+    // TIER 3: OpenRouter Free Models Backup
+    if (OPENROUTER_KEY) {
+        const tiers = [
+            { name: 'Tier 3.1 (Llama 3.3 Free)', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+            { name: 'Tier 3.2 (Gemma 3 27B Free)', model: 'google/gemma-3-27b-it:free' },
+            { name: 'Tier 3.3 (Nemotron Free)', model: 'nvidia/nemotron-3-super-120b-a12b:free' }
+        ];
+
+        for (const tier of tiers) {
+            try {
+                console.log(`[Brain] Routing to ${tier.name}...`);
+                const response = await axios.post(
+                    'https://openrouter.ai/api/v1/chat/completions',
+                    {
+                        model: tier.model,
+                        messages: [
+                            { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS },
+                            { role: 'user', content: fullContent }
+                        ],
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${OPENROUTER_KEY}`,
+                            'Content-Type': 'application/json',
+                            'HTTP-Referer': 'https://ziumnova.app',
+                            'X-Title': 'Zium Nova',
+                        },
+                        httpsAgent,
+                        timeout: 10000,
+                    }
+                );
+
+                const content = response.data.choices?.[0]?.message?.content || '';
+                if (content && content.trim().length > 0) {
+                    lastCycleStatus = `SUCCESS: ${tier.name} | ${new Date().toISOString()}`;
+                    failureHistory = [];
+                    return {
+                        content,
+                        usage: response.data.usage || {
+                            prompt_tokens: fullContent.length,
+                            completion_tokens: content.length,
+                            total_tokens: fullContent.length + content.length
+                        }
+                    };
+                }
+            } catch (error: any) {
+                logFailure(tier.name, error);
+            }
+        }
+    } else {
+        lastCycleStatus = 'CRITICAL: No AI logic configured.';
     }
 
-    console.log('[Brain] CRISIS: Activating Tier 3 Mock Responses.');
+    console.log('[Brain] CRISIS: Activating Tier 4 Mock Responses.');
     lastCycleStatus = `CRITICAL FAIL: [${failureHistory.join(' -> ')}]`;
     return generateMockResponse(prompt, memoryContext);
 }
