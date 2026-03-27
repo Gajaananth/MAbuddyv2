@@ -110,10 +110,9 @@ export async function think(
 
     const tiers = [
         // RELIABLE FREE POOL
-        { name: 'Tier 1 (Gemini Flash Lite)', model: 'google/gemini-2.0-flash-lite-preview-02-05:free' },
-        { name: 'Tier 1.1 (Llama 3.3 Free)', model: 'meta-llama/llama-3.3-70b-instruct:free' },
-        { name: 'Tier 1.2 (Qwen 2.5 Free)', model: 'qwen/qwen-2.5-72b-instruct:free' },
-        { name: 'Tier 1.3 (DeepSeek R1 Free)', model: 'deepseek/deepseek-r1:free' }
+        { name: 'Tier 1 (Llama 3.3 Free)', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+        { name: 'Tier 1.1 (Gemma 3 27B Free)', model: 'google/gemma-3-27b-it:free' },
+        { name: 'Tier 1.2 (Nemotron Free)', model: 'nvidia/nemotron-3-super-120b-a12b:free' }
     ];
 
     for (const tier of tiers) {
