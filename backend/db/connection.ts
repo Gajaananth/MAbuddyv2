@@ -204,6 +204,15 @@ async function runMigrations(pool: any) {
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'metadata') THEN
           ALTER TABLE notifications ADD COLUMN metadata JSONB DEFAULT NULL;
         END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'is_read') THEN
+          ALTER TABLE notifications ADD COLUMN is_read BOOLEAN DEFAULT FALSE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'is_archived') THEN
+          ALTER TABLE notifications ADD COLUMN is_archived BOOLEAN DEFAULT FALSE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'notifications' AND column_name = 'priority') THEN
+          ALTER TABLE notifications ADD COLUMN priority VARCHAR(20) DEFAULT 'normal';
+        END IF;
       END $$;
 
       CREATE TABLE IF NOT EXISTS intelligence_logs (
