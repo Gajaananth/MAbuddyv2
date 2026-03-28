@@ -106,9 +106,19 @@ async function initDatabase(): Promise<void> {
  * Optimized Migration Protocol
  */
 async function runMigrations(pool: any) {
-    console.log('[DB] Grid: Synchronizing Protocol Tables...');
+    console.log('[DB] Grid: Requesting Advisory Lock for Protocol Synchronization...');
     const client = await pool.connect();
+    let lockAcquired = false;
     try {
+      const lockRes = await client.query('SELECT pg_try_advisory_lock(1001) as got_lock');
+      lockAcquired = lockRes.rows[0].got_lock;
+      
+      if (!lockAcquired) {
+          console.log('[DB] Grid: Another instance is syncing schema. Skipping migration run.');
+          return;
+      }
+      
+      console.log('[DB] Grid: Acquired Lock. Synchronizing Protocol Tables...');
       await client.query(`
       CREATE EXTENSION IF NOT EXISTS "pgcrypto";
       
@@ -334,6 +344,10 @@ async function runMigrations(pool: any) {
     `);
     console.log('[DB] Grid: Schema Synchronized.');
     } finally {
+      if (lockAcquired) {
+          await client.query('SELECT pg_advisory_unlock(1001)');
+          console.log('[DB] Grid: Advisory Lock Released.');
+      }
       client.release();
     }
 }

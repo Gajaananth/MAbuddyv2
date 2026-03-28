@@ -5,7 +5,7 @@ async function testProd() {
     try {
         console.log('Logging in to PROD...');
         // Login with correct payload
-        const loginRes = await axios.post('https://m-abuddyv2.vercel.app/api/auth/login', {
+        const loginRes = await axios.post('http://localhost:3001/api/auth/login', {
             pin: '1234',
             device: {
                 id: 'test-device-' + Date.now(),
@@ -27,7 +27,7 @@ async function testProd() {
         
         console.log('Got token, sending chat request...');
         
-        const chatRes = await axios.post('https://m-abuddyv2.vercel.app/api/chat', {
+        const chatRes = await axios.post('http://localhost:3001/api/chat', {
             message: 'test ping ' + Date.now(),
             publish_to_moltbook: false
         }, {
@@ -38,10 +38,7 @@ async function testProd() {
         
         console.log('CHAT SUCCESS:', chatRes.data);
     } catch (e: any) {
-        console.error('CHAT ERROR:', e.response ? e.response.data : e.message);
-        if (e.response && e.response.status === 503) {
-            console.error('Server is overloaded (503). Retrying...');
-        }
+        console.error('CHAT ERROR:', e.response?.data || e.message);
     }
 }
 
