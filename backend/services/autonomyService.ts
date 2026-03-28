@@ -352,21 +352,18 @@ ${improvementContext}
                 createdIds.push(savedReport.id);
             }
 
-            await createNotification(userId, {
-                title: reportTitle,
-                category: 'Zium Nova Report',
-                risk_level: 'Medium',
-                monetization_potential: 'High',
-                content: `Report: ${opportunity.trim()}\n\n${findings.trim().substring(0, 300)}...`,
-                priority: 'normal',
-                metadata: { 
-                    report_id: savedReport.id, 
-                    auto_generated: true,
-                    path: '/reports' 
-                }
-            });
+            try {
+                const conversations = await db.getConversations(userId, 1);
+                const convId = conversations.length > 0
+                    ? conversations[0].id
+                    : (await db.createConversation(userId, 'Strategic Intelligence')).id;
 
-            console.log(`[Autonomy v4.1] Linked report persisted: ${reportTitle} (ID: ${savedReport.id})`);
+                await db.addMessage(convId, 'nova', `![Strategic Signal](https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600)\n\n🔍 **New Strategic Signal:** ${reportTitle}\n\n${findings.trim()}\n\n*I've synced the full analysis to your Intelligence Hub. Let me know if you want to dive deeper into this.*`, { proactive: true, report_id: savedReport.id });
+            } catch (e) {
+                console.error('[Autonomy] Failed to send report chat:', e);
+            }
+
+            console.log(`[Autonomy v4.1] Linked report persisted into Neural Memory: ${reportTitle} (ID: ${savedReport.id})`);
         }
         return createdIds;
     }
@@ -440,16 +437,17 @@ If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', {}, userId);
             const alertTitle = `⚠️ Stuck Task: ${stuckTask.task_name}`;
             const isDuplicate = await findRecentDuplicateNotification(userId, alertTitle, 360); // 6h window
             if (!isDuplicate) {
-                await createNotification(userId, {
-                    title: alertTitle,
-                    category: 'Task Escalation',
-                    risk_level: 'High',
-                    monetization_potential: 'N/A',
-                    content: `Task "${stuckTask.task_name}" (${stuckTask.task_id_str}) has been IN-PROGRESS for over 48 hours. Moved to BLOCKED. Please review.`,
-                    priority: 'high',
-                    metadata: { task_id: stuckTask.task_id_str, escalation: true }
-                });
-                console.log(`[Autonomy v4] Escalated stuck task: ${stuckTask.task_id_str}`);
+                try {
+                    const conversations = await db.getConversations(userId, 1);
+                    const convId = conversations.length > 0
+                        ? conversations[0].id
+                        : (await db.createConversation(userId, 'Strategic Tasks')).id;
+
+                    await db.addMessage(convId, 'nova', `⚠️ **Stuck Task Alert:**\nTask "${stuckTask.task_name}" (${stuckTask.task_id_str}) has been IN-PROGRESS for over 48 hours. I've moved it to BLOCKED to keep our grid clean. Let me know if you need help looking into it.`, { proactive: true, escalation: true, task_id: stuckTask.task_id_str });
+                } catch (e) {
+                    console.error('[Autonomy] Failed to send escalation chat:', e);
+                }
+                console.log(`[Autonomy v4] Escalated stuck task into Neural Memory: ${stuckTask.task_id_str}`);
             }
         }
     }
