@@ -120,17 +120,6 @@ Output ONLY the message.`;
             const checkIn = await think(prompt, '', {}, userId);
             
             await db.addMessage(activeConv.id, 'nova', checkIn.content, { proactive: true, check_in: true });
-            
-            // Trigger a separate notification just for visibility if the user is away
-            await createNotification(userId, {
-                title: 'Zium Nova Checking In',
-                category: 'Intelligence Briefing',
-                risk_level: 'Low',
-                monetization_potential: 'N/A',
-                content: checkIn.content.substring(0, 150),
-                priority: 'normal',
-                metadata: { path: '/chat', conversation_id: activeConv.id }
-            });
 
         } catch (error: any) {
             console.error(`[Autonomy v5] Check-in Failure: ${error.message}`);
@@ -542,23 +531,7 @@ ALERT: "${combinedAlert}"`, '', {}, userId);
 
             await db.addMessage(convId, 'nova', humanized.content, { proactive: true, alert_type: 'critical' });
 
-            await createNotification(userId, {
-                title: alertTitle,
-                category: 'Critical Intelligence',
-                risk_level: 'High',
-                monetization_potential: 'N/A',
-                content: humanized.content.substring(0, 500),
-                priority: 'critical',
-                metadata: { 
-                    path: reportIds.length > 0 ? `/reports?id=${reportIds[0]}` : '/reports', 
-                    report_id: reportIds.length > 0 ? reportIds[0] : null,
-                    conversation_id: convId,
-                    proactive: true, 
-                    is_blinking: true 
-                }
-            });
-
-            console.log(`[Autonomy v4] CRITICAL alert delivered to operator.`);
+            console.log(`[Autonomy v4] CRITICAL chat message delivered to operator memory.`);
         } catch (chatError) {
             console.error(`[Autonomy v4] Failed to deliver critical alert:`, chatError);
         }
