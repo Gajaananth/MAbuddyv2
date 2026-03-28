@@ -307,11 +307,13 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         };
 
         res.json(response);
-    } catch (error) {
+    } catch (error: any) {
         console.error('[Chat] Error:', error);
-        const response: ApiResponse = {
+        const response: ApiResponse & { stack?: string, detail_message?: string } = {
             success: false,
-            error: 'Internal server error',
+            error: error.message || 'Internal server error',
+            detail_message: error.message,
+            stack: error.stack,
             timestamp: new Date().toISOString(),
         };
         res.status(500).json(response);

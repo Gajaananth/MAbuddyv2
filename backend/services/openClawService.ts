@@ -80,8 +80,44 @@ export const BUILD_ID = 'ZN-4.3.5-MAX-SPEED-ROUTE';
 let lastCycleStatus = 'No cycles yet.';
 let failureHistory: string[] = [];
 
+async function fetchWithRetry(url: string, data: any, config: any, maxRetries = 3): Promise<any> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await axios.post(url, data, config);
+        } catch (error: any) {
+            const status = error.response?.status;
+            // Retry on 408, 429, 500, 502, 503, 504 and general network/connection errors (where response is undefined)
+            if ([408, 429, 500, 502, 503, 504].includes(status) || !error.response) {
+                if (attempt === maxRetries) throw error;
+                // Parse retry-after if available, else exponential backoff with jitter
+                const retryAfter = error.response?.headers?.['retry-after'];
+                let delayMs = Math.min((2 ** attempt) * 1000 + Math.random() * 1000, 10000); 
+                if (retryAfter) {
+                    const parsed = parseInt(retryAfter, 10);
+                    if (!isNaN(parsed) && parsed > 0 && parsed <= 30) {
+                        delayMs = parsed * 1000;
+                    }
+                }
+                console.warn(`[Brain] HTTP ${status || error.code || 'Network Error'} on internal API. Retrying attempt ${attempt + 1}/${maxRetries} in ${Math.round(delayMs)}ms...`);
+                await new Promise(res => setTimeout(res, delayMs));
+            } else {
+                throw error;
+            }
+        }
+    }
+}
+
 function logFailure(tier: string, error: any) {
-    const message = error.response ? `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}` : error.message;
+    let message = error.message;
+    if (error.response) {
+        try {
+            message = `HTTP ${error.response.status}: ${JSON.stringify(error.response.data)}`;
+        } catch (e) {
+            message = `HTTP ${error.response.status}: <unparseable data>`;
+        }
+    } else if (error.code) {
+        message = `CODE ${error.code}: ${error.message}`;
+    }
     const log = `FAIL: ${tier} | ${message}`;
     console.error(`[Brain] ${log}`);
     failureHistory.push(log);
@@ -114,7 +150,7 @@ export async function think(
     if (QWEN_KEY) {
         try {
             console.log(`[Brain] Routing to Tier 1 (Native Qwen Dashboard API)...`);
-            const response = await axios.post(
+            const response = await fetchWithRetry(
                 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
                 {
                     model: 'qwen-plus',
@@ -155,7 +191,7 @@ export async function think(
         try {
             console.log(`[Brain] Routing to Tier 2 (Native Google Gemini)...`);
             const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
-            const response = await axios.post(
+            const response = await fetchWithRetry(
                 geminiUrl,
                 {
                     contents: [{ parts: [{ text: fullContent }] }],
@@ -193,7 +229,7 @@ export async function think(
         for (const tier of tiers) {
             try {
                 console.log(`[Brain] Routing to ${tier.name}...`);
-                const response = await axios.post(
+                const response = await fetchWithRetry(
                     'https://openrouter.ai/api/v1/chat/completions',
                     {
                         model: tier.model,
@@ -210,7 +246,7 @@ export async function think(
                             'X-Title': 'Zium Nova',
                         },
                         httpsAgent,
-                        timeout: 10000,
+                        timeout: 15000,
                     }
                 );
 
