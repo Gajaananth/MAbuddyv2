@@ -103,6 +103,13 @@ export async function markMessagesRead(conversationId: string): Promise<void> {
     await db.pool.query('UPDATE messages SET is_read = TRUE WHERE conversation_id = $1 AND role = \'nova\'', [conversationId]);
 }
 
+export async function markAllMessagesRead(userId: string): Promise<void> {
+    await db.pool.query(
+        'UPDATE messages m SET is_read = TRUE FROM conversations c WHERE m.conversation_id = c.id AND c.user_id = $1 AND m.role = \'nova\'',
+        [userId]
+    );
+}
+
 export async function getMessages(conversationId: string, limit: number = 50): Promise<Message[]> {
     const result = await db.pool.query(
         'SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC LIMIT $2',
@@ -624,6 +631,7 @@ const queries = {
     archiveNotification,
     getUnreadMessageCount,
     markMessagesRead,
+    markAllMessagesRead,
     savePushSubscription,
     getPushSubscriptions,
     deletePushSubscription,

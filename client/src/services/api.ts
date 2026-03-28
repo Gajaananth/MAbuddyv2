@@ -1,15 +1,20 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
+    let url = '';
     const envUrl = import.meta.env.VITE_API_BASE_URL;
-    if (envUrl) return envUrl;
-
-    // Auto-detect Vercel environment and use local /api
-    if (typeof window !== 'undefined' && (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'ma-buddy.vercel.app')) {
-        return '/api';
+    
+    if (envUrl) {
+        url = envUrl;
+    } else if (typeof window !== 'undefined' && (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'ma-buddy.vercel.app')) {
+        url = '/api';
+    } else {
+        url = 'http://localhost:3001/api';
     }
-
-    return 'http://localhost:3001/api';
+    
+    // Ensure we don't return 'api/' but '/api' if relative
+    if (url === 'api' || url === 'api/') return '/api';
+    return url;
 };
 
 const API_BASE_URL = getBaseUrl();
@@ -61,10 +66,12 @@ export const memoryService = {
         api.delete(`/memory/conversations/${id}?permanent=${permanent}`),
     updateTitle: (id: string, title: string) =>
         api.patch(`/memory/conversations/${id}`, { title }),
-    getUnreadCount: () =>
+    getUnreadCount: () => 
         api.get('/memory/unread-count'),
-    markRead: (id: string) =>
+    markRead: (id: string) => 
         api.post(`/memory/conversations/${id}/read`),
+    markAllRead: () => 
+        api.post('/memory/read-all'),
 };
 
 export const intelligenceService = {

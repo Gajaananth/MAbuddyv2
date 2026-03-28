@@ -77,6 +77,23 @@ router.post('/conversations/:id/read', authenticate, async (req: AuthRequest, re
 });
 
 /**
+ * POST /api/memory/read-all
+ * Mark all messages across all conversations as read for the user.
+ */
+router.post('/read-all', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        await db.markAllMessagesRead(userId);
+        res.json({ success: true, message: 'All messages marked as read' });
+    } catch (error) {
+        console.error('[Memory] Mark All Read Error:', error);
+        res.status(500).json({ success: false, error: 'Failed' });
+    }
+});
+
+/**
  * GET /api/memory/conversations/:id
  * Get a full conversation with messages, restricted to owner.
  */

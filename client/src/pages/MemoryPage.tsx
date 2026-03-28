@@ -21,6 +21,13 @@ const MemoryPage: React.FC = () => {
         try {
             const response = await memoryService.getConversations();
             setConversations(response.data.data);
+            
+            // Auto-clear unread badge across all conversations when accessing the hub
+            try {
+                await memoryService.markAllRead();
+            } catch (e) {
+                console.error('[Memory] Background read-all failed', e);
+            }
         } catch (error) {
             console.error('Fetch Conversations Error:', error);
         } finally {
