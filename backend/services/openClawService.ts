@@ -105,42 +105,10 @@ export async function think(
         ? `MEMORY CONTEXT: \n${memoryContext} \n\nCURRENT REQUEST: \n${prompt}`
         : prompt;
 
-    // TIER 1: Native Google Gemini
-    if (GEMINI_KEY) {
-        try {
-            console.log(`[Brain] Routing to Tier 1 (Native Google Gemini)...`);
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
-            const response = await axios.post(
-                geminiUrl,
-                {
-                    contents: [{ parts: [{ text: fullContent }] }],
-                    systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
-                },
-                { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
-            );
-
-            const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            if (content && content.trim().length > 0) {
-                lastCycleStatus = `SUCCESS: Tier 1 (Gemini) | ${new Date().toISOString()}`;
-                failureHistory = [];
-                return {
-                    content,
-                    usage: {
-                        prompt_tokens: fullContent.length,
-                        completion_tokens: content.length,
-                        total_tokens: fullContent.length + content.length
-                    }
-                };
-            }
-        } catch (error: any) {
-            logFailure('Tier 1 (Gemini)', error);
-        }
-    }
-
-    // TIER 2: Native Qwen (DashScope)
+    // TIER 1: Native Qwen (DashScope)
     if (QWEN_KEY) {
         try {
-            console.log(`[Brain] Routing to Tier 2 (Native Qwen Dashboard API)...`);
+            console.log(`[Brain] Routing to Tier 1 (Native Qwen Dashboard API)...`);
             const response = await axios.post(
                 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
                 {
@@ -161,7 +129,7 @@ export async function think(
 
             const content = response.data?.choices?.[0]?.message?.content || '';
             if (content && content.trim().length > 0) {
-                lastCycleStatus = `SUCCESS: Tier 2 (Qwen) | ${new Date().toISOString()}`;
+                lastCycleStatus = `SUCCESS: Tier 1 (Qwen) | ${new Date().toISOString()}`;
                 failureHistory = [];
                 return {
                     content,
@@ -173,7 +141,39 @@ export async function think(
                 };
             }
         } catch (error: any) {
-            logFailure('Tier 2 (Qwen)', error);
+            logFailure('Tier 1 (Qwen)', error);
+        }
+    }
+
+    // TIER 2: Native Google Gemini
+    if (GEMINI_KEY) {
+        try {
+            console.log(`[Brain] Routing to Tier 2 (Native Google Gemini)...`);
+            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+            const response = await axios.post(
+                geminiUrl,
+                {
+                    contents: [{ parts: [{ text: fullContent }] }],
+                    systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
+                },
+                { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+            );
+
+            const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (content && content.trim().length > 0) {
+                lastCycleStatus = `SUCCESS: Tier 2 (Gemini) | ${new Date().toISOString()}`;
+                failureHistory = [];
+                return {
+                    content,
+                    usage: {
+                        prompt_tokens: fullContent.length,
+                        completion_tokens: content.length,
+                        total_tokens: fullContent.length + content.length
+                    }
+                };
+            }
+        } catch (error: any) {
+            logFailure('Tier 2 (Gemini)', error);
         }
     }
 
