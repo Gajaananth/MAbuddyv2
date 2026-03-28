@@ -85,6 +85,25 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     }
 });
 
+/**
+ * DELETE /api/notifications
+ * Archive all notifications (clear all).
+ */
+router.delete('/', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const notifications = await db.getNotifications(userId, 500, true);
+        await Promise.all(notifications.map(n => db.archiveNotification(n.id, userId)));
+
+        res.json({ success: true, message: 'All notifications archived' });
+    } catch (error) {
+        console.error('[Notifications] Archive All Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to clear notifications' });
+    }
+});
+
 // ──────────────────────────── Push Subscription ────────────────────────────
 
 /**

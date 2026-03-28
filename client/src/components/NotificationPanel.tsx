@@ -132,10 +132,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
 
     const handleMarkAllRead = async () => {
         try {
-            const ids = notifications.filter(n => !isRead(n)).map(n => n.id);
-            if (!ids.length) return;
-            await Promise.all(ids.map(id => notificationService.markRead(id)));
-            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            if (!notifications.length) return;
+            await notificationService.clearAll();
+            setNotifications([]);
             await fetchUnreadCount();
         } catch { /* silent */ }
     };

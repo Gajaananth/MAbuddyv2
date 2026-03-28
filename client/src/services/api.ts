@@ -68,9 +68,9 @@ export const memoryService = {
 };
 
 export const intelligenceService = {
-    getRides: (limit = 50) =>
+    getRides: (limit = 100) =>
         api.get(`/intelligence/raids?limit=${limit}`),
-    getReports: (limit = 10) =>
+    getReports: (limit = 100) =>
         api.get(`/intelligence/reports?limit=${limit}`),
     triggerRide: (type: 'mid-week' | 'end-of-week' = 'mid-week') =>
         api.post('/intelligence/raid/trigger', { type }),
@@ -128,6 +128,8 @@ export const notificationService = {
         api.patch(`/notifications/${id}/read`),
     archive: (id: string) =>
         api.delete(`/notifications/${id}`),
+    clearAll: () =>
+        api.delete('/notifications'),
 };
 
 export const missionService = {
