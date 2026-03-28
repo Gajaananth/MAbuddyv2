@@ -327,14 +327,12 @@ async function runMigrations(pool: any) {
 
       UPDATE intelligence_raids
       SET user_id = 'a1a2ccc0-c3fb-48fc-a440-12192a80d87d'
-      WHERE user_id = 'default_user' 
-         OR user_id = 'a1a2ccc0-c3fb-48fc-a440-121922a80d87'
+      WHERE user_id = 'a1a2ccc0-c3fb-48fc-a440-121922a80d87'
          OR user_id IS NULL;
 
       UPDATE weekly_reports
       SET user_id = 'a1a2ccc0-c3fb-48fc-a440-12192a80d87d'
-      WHERE user_id = 'default_user'
-         OR user_id = 'a1a2ccc0-c3fb-48fc-a440-121922a80d87'
+      WHERE user_id = 'a1a2ccc0-c3fb-48fc-a440-121922a80d87'
          OR user_id IS NULL;
 
       -- Ensure Root persists
@@ -344,11 +342,16 @@ async function runMigrations(pool: any) {
     `);
     console.log('[DB] Grid: Schema Synchronized.');
     } finally {
-      if (lockAcquired) {
-          await client.query('SELECT pg_advisory_unlock(1001)');
-          console.log('[DB] Grid: Advisory Lock Released.');
+      try {
+          if (lockAcquired) {
+              await client.query('SELECT pg_advisory_unlock(1001)');
+              console.log('[DB] Grid: Advisory Lock Released.');
+          }
+      } catch (e) {
+          console.error('[DB] Grid: Failed to release advisory lock.', e);
+      } finally {
+          client.release();
       }
-      client.release();
     }
 }
 
