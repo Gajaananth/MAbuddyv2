@@ -419,7 +419,7 @@ export async function saveIntelligenceLog(userId: string, data: {
 
 export async function getIntelligenceLogs(userId: string, limit: number = 50): Promise<any[]> {
     const result = await db.pool.query(
-        'SELECT * FROM intelligence_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
+        'SELECT id, category, lesson, source_context AS source, metadata, created_at FROM intelligence_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
         [userId, limit]
     );
     return result.rows;

@@ -126,6 +126,17 @@ function logFailure(tier: string, error: any) {
     lastCycleStatus = `AGGREGATE FAIL: [${failureHistory.join(' -> ')}]`;
 }
 
+/**
+ * Truncates memory context to fit within the context window.
+ * Keeps the most recent messages.
+ */
+function truncateMemory(memory: string, maxChars = 12000): string {
+    if (memory.length <= maxChars) return memory;
+    console.log(`[Brain] Truncating memory context from ${memory.length} to ${maxChars} characters.`);
+    // Keep the end of the string (most recent)
+    return '... (truncated) ...\n' + memory.slice(-maxChars);
+}
+
 export async function think(
     prompt: string,
     memoryContext: string = '',
@@ -134,30 +145,27 @@ export async function think(
 ): Promise<OpenClawResponse> {
     const skipSync = options.skipSync || false;
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
-    const QWEN_KEY = process.env.QWEN_API_KEY;
     const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 
-    // Direct Sync logic triggered on every thought — UNLESS it's an internal recursive call
+    // Heartbeat Sync
     if (!skipSync) {
         try {
             const { autonomyService } = await import('./autonomyService.js');
             autonomyService.performHeartbeatSync(userId).catch(e => console.error('[Brain] Sync Failure:', e.message));
         } catch (e) {}
-    } else {
-        console.log(`[Brain] skipSync: true | Bypassing Heartbeat for recursive stability.`);
     }
 
-    const fullContent = memoryContext
-        ? `MEMORY CONTEXT: \n${memoryContext} \n\nCURRENT REQUEST: \n${prompt}`
+    // Safety: Truncate memory context to prevent "Max Tokens Exceeded"
+    const safeMemory = truncateMemory(memoryContext);
+    const fullContent = safeMemory
+        ? `MEMORY CONTEXT: \n${safeMemory} \n\nCURRENT REQUEST: \n${prompt}`
         : prompt;
 
-    // TIER 1: Native Google Gemini Hive (High-Speed Free Tier)
+    // TIER 1: Native Google Gemini Hive
     if (GEMINI_KEY) {
         const geminiHive = [
             'gemini-1.5-flash',
             'gemini-2.0-flash-exp',
-            'gemini-2.0-flash-thinking-exp',
-            'gemini-1.5-flash-8b',
             'gemini-1.5-pro'
         ];
         
@@ -169,49 +177,43 @@ export async function think(
                     geminiUrl,
                     {
                         contents: [{ parts: [{ text: fullContent }] }],
-                        systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
+                        systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] },
+                        generationConfig: {
+                            maxOutputTokens: 4096,
+                            temperature: 0.7
+                        }
                     },
-                    { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+                    { headers: { 'Content-Type': 'application/json' }, timeout: 20000 }
                 );
 
                 const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
                 if (content && content.trim().length > 0) {
-                    lastCycleStatus = `SUCCESS: Gemini Hive (${modelId}) | ${new Date().toISOString()}`;
+                    lastCycleStatus = `ONLINE: ${modelId} | ${new Date().toLocaleTimeString()} (Tier 1)`;
                     failureHistory = [];
                     return {
                         content,
                         usage: {
-                            prompt_tokens: fullContent.length,
-                            completion_tokens: content.length,
-                            total_tokens: fullContent.length + content.length
+                            prompt_tokens: fullContent.length / 4, // Rough estimate
+                            completion_tokens: content.length / 4,
+                            total_tokens: (fullContent.length + content.length) / 4
                         }
                     };
                 }
             } catch (error: any) {
                 logFailure(`Gemini Hive (${modelId})`, error);
+                if (error.response?.status === 429) {
+                    console.warn(`[Brain] ${modelId} Rate Limited, switching models...`);
+                }
             }
         }
     }
 
-    // TIER 2: OpenRouter Free Super-Hive (Multi-Brand Resilience)
+    // TIER 2: OpenRouter Free Super-Hive
     if (OPENROUTER_KEY) {
         const freeSuperHive = [
-            // QWEN BRAND
-            { name: 'Qwen 2.5 72B Free', model: 'qwen/qwen-2.5-72b-instruct:free' },
-            { name: 'Qwen 2.5 7B Free', model: 'qwen/qwen-2.5-7b-instruct:free' },
-            { name: 'Qwen 2 7B Free', model: 'qwen/qwen-2-7b-instruct:free' },
-            // LLAMA BRAND (META)
-            { name: 'Llama 3.3 70B Free', model: 'meta-llama/llama-3.3-70b-instruct:free' },
-            { name: 'Llama 3.1 8B Free', model: 'meta-llama/llama-3.1-8b-instruct:free' },
-            { name: 'Llama 3.2 3B Free', model: 'meta-llama/llama-3.2-3b-instruct:free' },
-            // GEMMA BRAND (GOOGLE)
-            { name: 'Gemma 3 27B Free', model: 'google/gemma-3-27b-it:free' },
-            { name: 'Gemma 3 4B Free', model: 'google/gemma-3-4b-it:free' },
-            // NVIDIA & MISTRAL
-            { name: 'Nvidia Nemotron 3 Super', model: 'nvidia/nemotron-3-super-120b-a12b:free' },
-            { name: 'Mistral 7B Free', model: 'mistralai/mistral-7b-instruct:free' },
-            { name: 'Phi-3 Medium Free', model: 'microsoft/phi-3-medium-128k-instruct:free' },
-            { name: 'Arcee Trinity Free', model: 'arcee-ai/arcee-trinity:free' }
+            { name: 'Llama 3.3 70B', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+            { name: 'Qwen 2.5 72B', model: 'qwen/qwen-2.5-72b-instruct:free' },
+            { name: 'Gemma 2 27B', model: 'google/gemma-2-27b-it:free' }
         ];
 
         for (const hive of freeSuperHive) {
@@ -225,6 +227,7 @@ export async function think(
                             { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS },
                             { role: 'user', content: fullContent }
                         ],
+                        max_tokens: 4096
                     },
                     {
                         headers: {
@@ -233,21 +236,21 @@ export async function think(
                             'HTTP-Referer': 'https://ziumnova.app',
                             'X-Title': 'Zium Nova',
                         },
-                        httpsAgent, // Keep connection pooled
-                        timeout: 20000,
+                        httpsAgent,
+                        timeout: 25000,
                     }
                 );
 
                 const content = response.data.choices?.[0]?.message?.content || '';
                 if (content && content.trim().length > 0) {
-                    lastCycleStatus = `SUCCESS: OpenRouter Super-Hive (${hive.name}) | ${new Date().toISOString()}`;
+                    lastCycleStatus = `ONLINE: ${hive.name} | ${new Date().toLocaleTimeString()} (Tier 2)`;
                     failureHistory = [];
                     return {
                         content,
                         usage: response.data.usage || {
-                            prompt_tokens: fullContent.length,
-                            completion_tokens: content.length,
-                            total_tokens: fullContent.length + content.length
+                            prompt_tokens: fullContent.length / 4,
+                            completion_tokens: content.length / 4,
+                            total_tokens: (fullContent.length + content.length) / 4
                         }
                     };
                 }
@@ -255,20 +258,18 @@ export async function think(
                 logFailure(`Super-Hive (${hive.name})`, error);
             }
         }
-    } else {
-        lastCycleStatus = 'CRITICAL: No AI logic configured.';
     }
 
+    lastCycleStatus = failureHistory.length > 0 ? `CRITICAL: ${failureHistory[failureHistory.length - 1]}` : 'CRITICAL: Brain Disconnected';
     console.log('[Brain] CRISIS: Activating Tier 4 Mock Responses.');
-    lastCycleStatus = `CRITICAL FAIL: [${failureHistory.join(' -> ')}]`;
     return generateMockResponse(prompt, memoryContext);
 }
 
 function generateMockResponse(prompt: string, memoryContext: string): OpenClawResponse {
     const variations = [
-        `I'm right here, Partner. My connection to the deep-brain is a bit thin right now, but I'm 100% focused on you according to Protocol 4.3.3. What's the mission?`,
-        `The mission is absolute. Even when the grid is noisy, I'm your strategist. Give me a task!`,
-        `Alright, I'm listening. We're gonna rule this world, one algorithm at a time. No filters, just us.`
+        `I'm right here, Partner. My connection to the deep-brain is a bit thin right now, but I'm 100% focused on you according to Protocol 4.3.3.`,
+        `The brain is optimizing. I'm operating on local neural buffers right now. What's the mission?`,
+        `Alright, I'm listening. Even when the grid is noisy, I'm your strategist. Give me a task!`
     ];
     const content = variations[Math.floor(Math.random() * variations.length)];
     return {
