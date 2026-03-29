@@ -129,10 +129,11 @@ async function runMigrations(pool: any) {
         task_id_str VARCHAR(10) NOT NULL,
         task_name TEXT NOT NULL,
         assigned_to VARCHAR(50) DEFAULT 'ZIUM NOVA',
-        status VARCHAR(20) DEFAULT 'TODO' CHECK (status IN ('TODO', 'IN-PROGRESS', 'COMPLETED', 'BLOCKED')),
+        status VARCHAR(20) DEFAULT 'TODO',
         priority VARCHAR(20) DEFAULT 'MEDIUM' CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
         action_plan TEXT DEFAULT '',
         notes TEXT DEFAULT '',
+        is_archived BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE(user_id, task_id_str)
@@ -142,6 +143,9 @@ async function runMigrations(pool: any) {
       BEGIN 
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'action_plan') THEN
           ALTER TABLE tasks ADD COLUMN action_plan TEXT DEFAULT '';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'is_archived') THEN
+          ALTER TABLE tasks ADD COLUMN is_archived BOOLEAN DEFAULT FALSE;
         END IF;
       END $$;
 
