@@ -146,6 +146,9 @@ export async function think(
     const skipSync = options.skipSync || false;
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+    const QWEN_KEY = process.env.QWEN_API_KEY;
+
+    console.log(`[Brain] Key Status -> Gemini: ${!!GEMINI_KEY}, OR: ${!!OPENROUTER_KEY}, Qwen: ${!!QWEN_KEY}`);
 
     // Heartbeat Sync
     if (!skipSync) {
@@ -161,68 +164,156 @@ export async function think(
         ? `MEMORY CONTEXT: \n${safeMemory} \n\nCURRENT REQUEST: \n${prompt}`
         : prompt;
 
-    // TIER 1: Native Google Gemini Hive
+    // TIER 1: Native Google Gemini Hive (Primary)
     if (GEMINI_KEY) {
         const geminiHive = [
             'gemini-1.5-flash',
-            'gemini-2.0-flash-exp',
+            'gemini-1.5-flash-8b',
             'gemini-1.5-pro'
         ];
         
         for (const modelId of geminiHive) {
             try {
-                console.log(`[Brain] Routing to Gemini Hive: ${modelId}...`);
+                console.log(`[Brain] Tier 1 -> Gemini Hive: ${modelId}...`);
+                // Standard REST API often uses snake_case: system_instruction
                 const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_KEY}`;
                 const response = await fetchWithRetry(
                     geminiUrl,
                     {
                         contents: [{ parts: [{ text: fullContent }] }],
-                        systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] },
+                        system_instruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] },
                         generationConfig: {
                             maxOutputTokens: 4096,
                             temperature: 0.7
                         }
                     },
-                    { headers: { 'Content-Type': 'application/json' }, timeout: 20000 }
+                    { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
                 );
 
                 const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
                 if (content && content.trim().length > 0) {
-                    lastCycleStatus = `ONLINE: ${modelId} | ${new Date().toLocaleTimeString()} (Tier 1)`;
+                    lastCycleStatus = `SUCCESS: Gemini Hive (${modelId})`;
                     failureHistory = [];
                     return {
                         content,
                         usage: {
-                            prompt_tokens: fullContent.length / 4, // Rough estimate
-                            completion_tokens: content.length / 4,
-                            total_tokens: (fullContent.length + content.length) / 4
+                            prompt_tokens: Math.ceil(fullContent.length / 4),
+                            completion_tokens: Math.ceil(content.length / 4),
+                            total_tokens: Math.ceil((fullContent.length + content.length) / 4)
                         }
                     };
                 }
             } catch (error: any) {
                 logFailure(`Gemini Hive (${modelId})`, error);
-                if (error.response?.status === 429) {
-                    console.warn(`[Brain] ${modelId} Rate Limited, switching models...`);
-                }
+                
+                // FALLBACK: Try v1 endpoint if v1beta or system_instruction fails
+                try {
+                    console.log(`[Brain] Attempting simple v1 fallback for ${modelId}...`);
+                    const v1Url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${GEMINI_KEY}`;
+                    const v1Response = await axios.post(v1Url, {
+                        contents: [
+                            { role: 'user', parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] },
+                            { role: 'model', parts: [{ text: "Understood. I am Zium Nova. I will follow your instructions in English." }] },
+                            { role: 'user', parts: [{ text: fullContent }] }
+                        ]
+                    });
+                    const content = v1Response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                    if (content) {
+                        lastCycleStatus = `SUCCESS: Gemini Hive V1 (${modelId})`;
+                        return { content, usage: { total_tokens: 0 } as any };
+                    }
+                } catch (e) {}
             }
         }
     }
 
-    // TIER 2: OpenRouter Free Super-Hive
+    // TIER 2: Direct Qwen Tier (Secondary) - Using QWEN_API_KEY if available
+    if (QWEN_KEY) {
+        const qwenModels = [
+            'qwen-max',
+            'qwen-plus',
+            'qwen-turbo'
+        ];
+        for (const modelId of qwenModels) {
+            try {
+                console.log(`[Brain] Tier 2 -> Direct Qwen: ${modelId}...`);
+                const response = await fetchWithRetry(
+                    'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation',
+                    {
+                        model: modelId,
+                        input: {
+                            messages: [
+                                { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS },
+                                { role: 'user', content: fullContent }
+                            ]
+                        },
+                        parameters: {
+                            max_tokens: 2000,
+                            temperature: 0.7
+                        }
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${QWEN_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 20000
+                    }
+                );
+
+                const content = response.data?.output?.text || '';
+                if (content && content.trim().length > 0) {
+                    lastCycleStatus = `SUCCESS: Direct Qwen (${modelId})`;
+                    failureHistory = [];
+                    return {
+                        content,
+                        usage: {
+                            prompt_tokens: response.data.usage?.input_tokens || 0,
+                            completion_tokens: response.data.usage?.output_tokens || 0,
+                            total_tokens: (response.data.usage?.input_tokens || 0) + (response.data.usage?.output_tokens || 0)
+                        }
+                    };
+                }
+            } catch (error: any) {
+                logFailure(`Direct Qwen (${modelId})`, error);
+            }
+        }
+    }
+
+    // TIER 3: OpenRouter Free Super-Hive (20+ Model Arsenal)
     if (OPENROUTER_KEY) {
         const freeSuperHive = [
-            { name: 'Llama 3.3 70B', model: 'meta-llama/llama-3.3-70b-instruct:free' },
-            { name: 'Qwen 2.5 72B', model: 'qwen/qwen-2.5-72b-instruct:free' },
-            { name: 'Gemma 2 27B', model: 'google/gemma-2-27b-it:free' }
+            'meta-llama/llama-3.3-70b-instruct:free',
+            'qwen/qwen-2.5-72b-instruct:free',
+            'google/gemini-2.0-flash-lite-preview-02-05:free',
+            'google/gemma-2-27b-it:free',
+            'google/gemma-2-9b-it:free',
+            'mistralai/pixtral-12b:free',
+            'mistralai/mistral-7b-instruct:free',
+            'deepseek/deepseek-chat:free',
+            'nvidia/llama-3.1-nemotron-70b-instruct:free',
+            'microsoft/phi-3-mini-128k-instruct:free',
+            'microsoft/phi-3-medium-128k-instruct:free',
+            'meta-llama/llama-3.2-3b-instruct:free',
+            'meta-llama/llama-3.2-1b-instruct:free',
+            'meta-llama/llama-3.1-70b-instruct:free',
+            'openchat/openchat-7b:free',
+            'gryphe/mythomist-7b:free',
+            'undi95/toppy-m-7b:free',
+            'huggingfaceh4/zephyr-7b-beta:free',
+            'liquid/lfm-40b:free',
+            'cognitivecomputations/dolphin-mixtral-8x7b:free',
+            'nousresearch/hermes-3-llama-3.1-8b:free',
+            'openrouter/auto' // Auto-fallback
         ];
 
-        for (const hive of freeSuperHive) {
+        for (const modelId of freeSuperHive) {
             try {
-                console.log(`[Brain] Routing to OpenRouter Super-Hive: ${hive.name}...`);
+                console.log(`[Brain] Tier 3 -> Super-Hive: ${modelId}...`);
                 const response = await fetchWithRetry(
                     'https://openrouter.ai/api/v1/chat/completions',
                     {
-                        model: hive.model,
+                        model: modelId,
                         messages: [
                             { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS },
                             { role: 'user', content: fullContent }
@@ -243,25 +334,27 @@ export async function think(
 
                 const content = response.data.choices?.[0]?.message?.content || '';
                 if (content && content.trim().length > 0) {
-                    lastCycleStatus = `ONLINE: ${hive.name} | ${new Date().toLocaleTimeString()} (Tier 2)`;
+                    lastCycleStatus = `SUCCESS: Super-Hive (${modelId})`;
                     failureHistory = [];
                     return {
                         content,
                         usage: response.data.usage || {
-                            prompt_tokens: fullContent.length / 4,
-                            completion_tokens: content.length / 4,
-                            total_tokens: (fullContent.length + content.length) / 4
+                            prompt_tokens: Math.ceil(fullContent.length / 4),
+                            completion_tokens: Math.ceil(content.length / 4),
+                            total_tokens: Math.ceil((fullContent.length + content.length) / 4)
                         }
                     };
                 }
             } catch (error: any) {
-                logFailure(`Super-Hive (${hive.name})`, error);
+                logFailure(`Super-Hive (${modelId})`, error);
+                // If it's a critical auth error, don't keep trying this key
+                if (error.response?.status === 401) break;
             }
         }
     }
 
-    lastCycleStatus = failureHistory.length > 0 ? `CRITICAL: ${failureHistory[failureHistory.length - 1]}` : 'CRITICAL: Brain Disconnected';
-    console.log('[Brain] CRISIS: Activating Tier 4 Mock Responses.');
+    lastCycleStatus = failureHistory.length > 0 ? `OFFLINE: ${failureHistory[failureHistory.length - 1]}` : 'OFFLINE: Brain Connection Lost';
+    console.error('[Brain] CRITICAL FAIL: All tiers exhausted. Local mode engaged.');
     return generateMockResponse(prompt, memoryContext);
 }
 
