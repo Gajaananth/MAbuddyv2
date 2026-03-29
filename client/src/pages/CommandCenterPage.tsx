@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Bird, User, Search, Circle, CheckCircle2, AlertCircle, 
-    Terminal, Activity, Shield, TrendingUp, Loader2,
+    Terminal, Activity, Shield,
     Trash2, Archive, ArchiveRestore, ArrowLeftRight, Clock,
-    FileText, Plus, X, ListTodo
+    FileText, ListTodo
 } from 'lucide-react';
-import { missionService, trendService } from '../services/api';
+import { missionService } from '../services/api';
 import { formatTimestamp } from '../utils/formatUtils';
 
 const STATUS_CONFIG = {
@@ -28,8 +28,7 @@ const TaskCard: React.FC<{
     onArchive: (id: string, a: boolean) => void;
     onDelete: (id: string) => void;
     onAssign: (id: string, to: string) => void;
-    isOperator?: boolean;
-}> = ({ task, onStatus, onArchive, onDelete, onAssign, isOperator }) => {
+}> = ({ task, onStatus, onArchive, onDelete, onAssign }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const StatusIcon = STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.icon || Circle;
 
@@ -132,29 +131,24 @@ const CommandCenterPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
-    const [recentTrends, setRecentTrends] = useState<any[]>([]);
-    const [isLoadingTrends, setIsLoadingTrends] = useState(true);
 
     const loadData = async () => {
         try {
-            const [tasksRes, archivedRes, trendsRes] = await Promise.all([
+            const [tasksRes, archivedRes] = await Promise.all([
                 missionService.getTasks(),
-                missionService.getTasks(true),
-                trendService.getTrends()
+                missionService.getTasks(true)
             ]);
             
             // Merge or handle based on tab
             const allTasks = [...tasksRes.data.data, ...archivedRes.data.data.filter((t: any) => t.is_archived)];
             // Removing duplicates if any
-            const uniqueTasks = Array.from(new Map(allTasks.map(t => [t.id, t])).values());
+            const uniqueTasks = Array.from(new Map(allTasks.map((t: any) => [t.id, t])).values());
             setTasks(uniqueTasks);
             
-            setRecentTrends(trendsRes.data?.data?.slice(0, 3) || []);
         } catch (e) {
             console.error('Grid Sync Error', e);
         } finally {
             setLoading(false);
-            setIsLoadingTrends(false);
         }
     };
 
@@ -195,9 +189,9 @@ const CommandCenterPage: React.FC = () => {
         total: tasks.filter(t => !t.is_archived).length,
         completed: tasks.filter(t => t.status === 'DONE' || t.status === 'COMPLETED').length,
     };
-    const progress = stats.total > 0 ? Math.round((stats.completed / (tasks.filter(t => !t.is_archived).length || 1)) * 100) : 0;
+    const progress = stats.total > 0 ? Math.round((stats.completed / (tasks.filter((t: any) => !t.is_archived).length || 1)) * 100) : 0;
 
-    const filteredTasks = tasks.filter(t => 
+    const filteredTasks = tasks.filter((t: any) => 
         (activeTab === 'active' ? !t.is_archived : t.is_archived) &&
         (t.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
          t.task_id_str.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -292,10 +286,10 @@ const CommandCenterPage: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredTasks.filter(t => t.assigned_to === 'BUDDY').length === 0 ? (
+                            {filteredTasks.filter((t: any) => t.assigned_to === 'BUDDY').length === 0 ? (
                                 <div className="col-span-full py-16 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-20 italic">No assigned objectives.</div>
                             ) : (
-                                filteredTasks.filter(t => t.assigned_to === 'BUDDY').map((task) => (
+                                filteredTasks.filter((t: any) => t.assigned_to === 'BUDDY').map((task: any) => (
                                     <TaskCard 
                                         key={task.id} 
                                         task={task} 
@@ -303,7 +297,6 @@ const CommandCenterPage: React.FC = () => {
                                         onArchive={handleArchive}
                                         onDelete={handleDelete}
                                         onAssign={handleAssign}
-                                        isOperator
                                     />
                                 ))
                             )}
@@ -326,10 +319,10 @@ const CommandCenterPage: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredTasks.filter(t => t.assigned_to !== 'BUDDY').length === 0 ? (
+                            {filteredTasks.filter((t: any) => t.assigned_to !== 'BUDDY').length === 0 ? (
                                 <div className="col-span-full py-16 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-20 italic">No active agentic cycles.</div>
                             ) : (
-                                filteredTasks.filter(t => t.assigned_to !== 'BUDDY').map((task) => (
+                                filteredTasks.filter((t: any) => t.assigned_to !== 'BUDDY').map((task: any) => (
                                     <TaskCard 
                                         key={task.id} 
                                         task={task} 
