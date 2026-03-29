@@ -16,8 +16,8 @@ import { missionService } from './missionService.js';
  */
 class AutonomyService {
     private heartbeatInterval: NodeJS.Timeout | null = null;
-    private userId: string = 'system_autonomous_operator';
     private lastRaidCheck: Map<string, number> = new Map(); // userId -> timestamp
+    private lastSyncTime: Map<string, number> = new Map(); // userId -> timestamp
 
     /**
      * Start the autonomous heartbeat loop.
@@ -42,6 +42,15 @@ class AutonomyService {
     async performHeartbeatSync(userId: string) {
         if (!userId || userId === '00000000-0000-0000-0000-000000000000') return;
         
+        // Throttling: Only run full maintenance once every 15 minutes per user
+        const nowMs = Date.now();
+        const lastSync = this.lastSyncTime.get(userId) || 0;
+        if (nowMs - lastSync < 15 * 60 * 1000) {
+            console.log(`[Autonomy] Throttling sync for ${userId} (Last sync: ${new Date(lastSync).toLocaleTimeString()})`);
+            return;
+        }
+        this.lastSyncTime.set(userId, nowMs);
+
         console.log(`[Autonomy v4.2] Sync Triggered for User: ${userId}`);
         try {
             // 0. Essential Maintenance
@@ -117,7 +126,7 @@ Rules:
 
 Output ONLY the message.`;
 
-            const checkIn = await think(prompt, '', {}, userId);
+            const checkIn = await think(prompt, '', { skipSync: true }, userId);
             
             await db.addMessage(activeConv.id, 'nova', checkIn.content, { proactive: true, check_in: true });
 
@@ -221,7 +230,7 @@ ${taskContext}
 ${improvementContext}
 `;
 
-            const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC' }, userId);
+            const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC', skipSync: true }, userId);
             const content = response.content;
             console.log(`[Autonomy v4.2] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
 
@@ -413,7 +422,7 @@ ${taskSummary}
 
 Identify if any tasks are now IN-PROGRESS or COMPLETED based on my recent intelligence logs.
 Output EXACTLY: UPDATE: [ID] | STATUS: [NEW_STATUS] | REASON: [Short Reason]
-If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', {}, userId);
+If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', { skipSync: true }, userId);
 
         const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*REASON:\s*(.*)/gi);
         for (const match of updateMatches) {
@@ -525,7 +534,7 @@ RULES:
 - Just calm, real-world conversation.
 BANNED: "mind's sharp," "watching your back," "ready to shake things up."
 
-ALERT: "${combinedAlert}"`, '', {}, userId);
+ALERT: "${combinedAlert}"`, '', { skipSync: true }, userId);
 
             await db.addMessage(convId, 'nova', humanized.content, { proactive: true, alert_type: 'critical' });
 

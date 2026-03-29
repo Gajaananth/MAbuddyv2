@@ -74,7 +74,7 @@ If you aren't sure who you are talking to, just ask naturally: "Is this for you 
 * Keep responses natural, smart, and useful
 `;
 
-export const BUILD_ID = 'ZN-4.3.5-MAX-SPEED-ROUTE';
+export const BUILD_ID = 'ZN-4.3.6-STABLE-LINK';
 
 // Global variable to track the status of the last thought cycle for diagnostics
 let lastCycleStatus = 'No cycles yet.';
@@ -129,110 +129,98 @@ function logFailure(tier: string, error: any) {
 export async function think(
     prompt: string,
     memoryContext: string = '',
-    options: any = {},
+    options: { mode?: string; skipSync?: boolean } = {},
     userId: string = '00000000-0000-0000-0000-000000000000'
 ): Promise<OpenClawResponse> {
+    const skipSync = options.skipSync || false;
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     const QWEN_KEY = process.env.QWEN_API_KEY;
     const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 
-    // Direct Sync logic triggered on every thought
-    try {
-        const { autonomyService } = await import('./autonomyService.js');
-        autonomyService.performHeartbeatSync(userId).catch(e => console.error('[Brain] Sync Error:', e.message));
-    } catch (e) {}
+    // Direct Sync logic triggered on every thought — UNLESS it's an internal recursive call
+    if (!skipSync) {
+        try {
+            const { autonomyService } = await import('./autonomyService.js');
+            autonomyService.performHeartbeatSync(userId).catch(e => console.error('[Brain] Sync Failure:', e.message));
+        } catch (e) {}
+    } else {
+        console.log(`[Brain] skipSync: true | Bypassing Heartbeat for recursive stability.`);
+    }
 
     const fullContent = memoryContext
         ? `MEMORY CONTEXT: \n${memoryContext} \n\nCURRENT REQUEST: \n${prompt}`
         : prompt;
 
-    // TIER 1: Native Qwen (DashScope)
-    if (QWEN_KEY) {
-        try {
-            console.log(`[Brain] Routing to Tier 1 (Native Qwen Dashboard API)...`);
-            const response = await fetchWithRetry(
-                'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions',
-                {
-                    model: 'qwen-plus',
-                    messages: [
-                        { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS },
-                        { role: 'user', content: fullContent }
-                    ]
-                },
-                {
-                    headers: {
-                        'Authorization': `Bearer ${QWEN_KEY}`,
-                        'Content-Type': 'application/json',
-                    },
-                    timeout: 15000
-                }
-            );
-
-            const content = response.data?.choices?.[0]?.message?.content || '';
-            if (content && content.trim().length > 0) {
-                lastCycleStatus = `SUCCESS: Tier 1 (Qwen) | ${new Date().toISOString()}`;
-                failureHistory = [];
-                return {
-                    content,
-                    usage: response.data.usage || {
-                        prompt_tokens: fullContent.length,
-                        completion_tokens: content.length,
-                        total_tokens: fullContent.length + content.length
-                    }
-                };
-            }
-        } catch (error: any) {
-            logFailure('Tier 1 (Qwen)', error);
-        }
-    }
-
-    // TIER 2: Native Google Gemini
+    // TIER 1: Native Google Gemini Hive (High-Speed Free Tier)
     if (GEMINI_KEY) {
-        try {
-            console.log(`[Brain] Routing to Tier 2 (Native Google Gemini)...`);
-            const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
-            const response = await fetchWithRetry(
-                geminiUrl,
-                {
-                    contents: [{ parts: [{ text: fullContent }] }],
-                    systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
-                },
-                { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
-            );
+        const geminiHive = [
+            'gemini-1.5-flash',
+            'gemini-2.0-flash-exp',
+            'gemini-2.0-flash-thinking-exp',
+            'gemini-1.5-flash-8b',
+            'gemini-1.5-pro'
+        ];
+        
+        for (const modelId of geminiHive) {
+            try {
+                console.log(`[Brain] Routing to Gemini Hive: ${modelId}...`);
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_KEY}`;
+                const response = await fetchWithRetry(
+                    geminiUrl,
+                    {
+                        contents: [{ parts: [{ text: fullContent }] }],
+                        systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
+                    },
+                    { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+                );
 
-            const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-            if (content && content.trim().length > 0) {
-                lastCycleStatus = `SUCCESS: Tier 2 (Gemini) | ${new Date().toISOString()}`;
-                failureHistory = [];
-                return {
-                    content,
-                    usage: {
-                        prompt_tokens: fullContent.length,
-                        completion_tokens: content.length,
-                        total_tokens: fullContent.length + content.length
-                    }
-                };
+                const content = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                if (content && content.trim().length > 0) {
+                    lastCycleStatus = `SUCCESS: Gemini Hive (${modelId}) | ${new Date().toISOString()}`;
+                    failureHistory = [];
+                    return {
+                        content,
+                        usage: {
+                            prompt_tokens: fullContent.length,
+                            completion_tokens: content.length,
+                            total_tokens: fullContent.length + content.length
+                        }
+                    };
+                }
+            } catch (error: any) {
+                logFailure(`Gemini Hive (${modelId})`, error);
             }
-        } catch (error: any) {
-            logFailure('Tier 2 (Gemini)', error);
         }
     }
 
-    // TIER 3: OpenRouter Free Models Backup
+    // TIER 2: OpenRouter Free Super-Hive (Multi-Brand Resilience)
     if (OPENROUTER_KEY) {
-        const tiers = [
-            { name: 'Tier 3.1 (Llama 3.3 Free)', model: 'meta-llama/llama-3.3-70b-instruct:free' },
-            { name: 'Tier 3.2 (Gemma 3 27B Free)', model: 'google/gemma-3-27b-it:free' },
-            { name: 'Tier 3.3 (Nemotron Free)', model: 'nvidia/nemotron-3-super-120b-a12b:free' }
+        const freeSuperHive = [
+            // QWEN BRAND
+            { name: 'Qwen 2.5 72B Free', model: 'qwen/qwen-2.5-72b-instruct:free' },
+            { name: 'Qwen 2.5 7B Free', model: 'qwen/qwen-2.5-7b-instruct:free' },
+            { name: 'Qwen 2 7B Free', model: 'qwen/qwen-2-7b-instruct:free' },
+            // LLAMA BRAND (META)
+            { name: 'Llama 3.3 70B Free', model: 'meta-llama/llama-3.3-70b-instruct:free' },
+            { name: 'Llama 3.1 8B Free', model: 'meta-llama/llama-3.1-8b-instruct:free' },
+            { name: 'Llama 3.2 3B Free', model: 'meta-llama/llama-3.2-3b-instruct:free' },
+            // GEMMA BRAND (GOOGLE)
+            { name: 'Gemma 3 27B Free', model: 'google/gemma-3-27b-it:free' },
+            { name: 'Gemma 3 4B Free', model: 'google/gemma-3-4b-it:free' },
+            // NVIDIA & MISTRAL
+            { name: 'Nvidia Nemotron 3 Super', model: 'nvidia/nemotron-3-super-120b-a12b:free' },
+            { name: 'Mistral 7B Free', model: 'mistralai/mistral-7b-instruct:free' },
+            { name: 'Phi-3 Medium Free', model: 'microsoft/phi-3-medium-128k-instruct:free' },
+            { name: 'Arcee Trinity Free', model: 'arcee-ai/arcee-trinity:free' }
         ];
 
-        for (const tier of tiers) {
+        for (const hive of freeSuperHive) {
             try {
-                console.log(`[Brain] Routing to ${tier.name}...`);
+                console.log(`[Brain] Routing to OpenRouter Super-Hive: ${hive.name}...`);
                 const response = await fetchWithRetry(
                     'https://openrouter.ai/api/v1/chat/completions',
                     {
-                        model: tier.model,
+                        model: hive.model,
                         messages: [
                             { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS },
                             { role: 'user', content: fullContent }
@@ -245,14 +233,14 @@ export async function think(
                             'HTTP-Referer': 'https://ziumnova.app',
                             'X-Title': 'Zium Nova',
                         },
-                        httpsAgent,
-                        timeout: 15000,
+                        httpsAgent, // Keep connection pooled
+                        timeout: 20000,
                     }
                 );
 
                 const content = response.data.choices?.[0]?.message?.content || '';
                 if (content && content.trim().length > 0) {
-                    lastCycleStatus = `SUCCESS: ${tier.name} | ${new Date().toISOString()}`;
+                    lastCycleStatus = `SUCCESS: OpenRouter Super-Hive (${hive.name}) | ${new Date().toISOString()}`;
                     failureHistory = [];
                     return {
                         content,
@@ -264,7 +252,7 @@ export async function think(
                     };
                 }
             } catch (error: any) {
-                logFailure(tier.name, error);
+                logFailure(`Super-Hive (${hive.name})`, error);
             }
         }
     } else {

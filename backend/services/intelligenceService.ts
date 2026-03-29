@@ -53,7 +53,7 @@ Based on the accumulated internet intelligence findings, generate a natural stra
 
 Raw Findings: ${raidSummary}`;
 
-        const analysis = await think(reportPrompt, '', {}, userId);
+        const analysis = await think(reportPrompt, '', { skipSync: true }, userId);
 
         // Structure the report
         const reportData = {
@@ -120,7 +120,7 @@ export async function generateMidWeekReport(userId: string): Promise<void> {
         
         Format as a concise, high-impact intelligence summary for the operator.`;
 
-        const analysis = await think(midWeekPrompt, '', {}, userId);
+        const analysis = await think(midWeekPrompt, '', { skipSync: true }, userId);
 
         await saveWeeklyReport(userId, {
             report_data: {

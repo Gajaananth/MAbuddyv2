@@ -97,17 +97,9 @@ export function initRaidingSchedule() {
         } catch (err) { console.error('[Ride] End-of-week Error:', err); }
     });
 
-    // Daily Activity Mode: Every morning at 09:00 Local/UTC
-    cron.schedule('0 9 * * *', async () => {
-        try {
-            const users = await getAllUsers();
-            for (const user of users) {
-                await performDailyObservation(user.id);
-            }
-        } catch (err) { console.error('[Ride] Daily Mode Error:', err); }
-    });
 
-    console.log('[Ride] Schedule ARMED: Daily 09:00 | Wed & Sun 00:00 UTC');
+
+    console.log('[Ride] Schedule ARMED: Wed & Sun 00:00 UTC (Daily Mode: Disabled)');
 }
 
 /**
@@ -176,7 +168,7 @@ Topic: ${cluster.topic}
                     status: 'analyzing',
                 });
 
-                const analysis = await think(raidPrompt, '', {}, userId);
+                const analysis = await think(raidPrompt, '', { skipSync: true }, userId);
                 analysisContent = analysis.content;
                 console.log(`[Ride] [${cluster.name}] AI Analysis complete. Content length: ${analysisContent.length}`);
 
@@ -287,63 +279,7 @@ Topic: ${cluster.topic}
     }
 }
 
-/**
- * ZIUM NOVA v3.1.0: Daily Activity Mode
- * Observes signals and identifies early advantages every 24 hours.
- */
-export async function performDailyObservation(userId: string): Promise<void> {
-    console.log(`[Ride] Starting Daily Observation Mode for user ${userId}...`);
-    
-    const observationPrompt = `ZIUM NOVA DAILY OBSERVATION — v3.1.0
-Mission: Silent scouting of digital ecosystem shifts and AI agent behavior.
 
-[STRATEGIC FOCUS]
-- Emerging Opportunity Detection.
-- Scam/Hype Pattern Recognition.
-- AI Agent Ecosystem & Algorithm Shifts.
-
-[OUTPUT PROTOCOL]
-- Speak like a smart buddy. 
-- No robotic headers or "Category:" fields.
-- If a high-quality signal is found, explain it naturally.
-- Keep the tactical scoring internal.`;
-
-    try {
-        const result = await think(observationPrompt, '', {}, userId);
-        
-        // Log activity
-        await logAgentActivity({
-            action_type: 'DAILY_OBSERVATION',
-            platform: 'Global Digital Grid',
-            details: 'Daily signal scan and agent behavior analysis completed.',
-        });
-
-        // Detect high-quality opportunity (Ultra Mode)
-        const extractScore = (key: string) => {
-            const match = result.content.match(new RegExp(`${key}:\\s*(\\d+)`, 'i'));
-            return match ? parseInt(match[1], 10) : 0;
-        };
-
-        const score = (extractScore('Technology_Value') + extractScore('Market_Demand') + extractScore('Monetization_Strength')) 
-                    - (extractScore('Hype_Noise') + extractScore('Scam_Probability'));
-
-        if (score >= 80) {
-            console.log(`[Ride] ULTRA MODE Signal Detected in daily scan. Confidence: ${score}%`);
-            await createOpportunityAlert(userId, {
-                platform: 'Daily Activity Mode',
-                source: 'Platform Signal Observation',
-                opportunityType: 'Ultra Discovery',
-                credibility: 'Nova Observation Contextual Match',
-                earningPotential: 'Strategic Growth Detected',
-                confidenceLevel: score,
-                recommendedActions: 'Immediate operational review of the digital ecosystem shift.'
-            });
-        }
-
-    } catch (err) {
-        console.error('[Ride] Daily Observation Failed:', err);
-    }
-}
 
 /**
  * Manual trigger — called from the API route.

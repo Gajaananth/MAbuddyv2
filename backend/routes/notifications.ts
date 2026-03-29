@@ -94,8 +94,7 @@ router.delete('/', authenticate, async (req: AuthRequest, res: Response) => {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const notifications = await db.getNotifications(userId, 500, true);
-        await Promise.all(notifications.map(n => db.archiveNotification(n.id, userId)));
+        await db.archiveAllNotifications(userId);
 
         res.json({ success: true, message: 'All notifications archived' });
     } catch (error) {

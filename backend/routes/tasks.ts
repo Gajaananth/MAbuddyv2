@@ -14,7 +14,8 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const tasks = await db.getTasks(userId);
+        const showArchived = req.query.archived === 'true';
+        const tasks = await db.getTasks(userId, showArchived);
 
         const response: ApiResponse = {
             success: true,
@@ -39,9 +40,9 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
         const id = String(req.params.id);
-        const { status, notes, priority } = req.body;
+        const { status, notes } = req.body;
 
-        const updatedTask = await db.updateTaskStatus(userId, id, req.body.status as any);
+        const updatedTask = await db.updateTaskStatus(userId, id, status, notes);
 
         res.json({
             success: true,
@@ -51,6 +52,44 @@ router.patch('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     } catch (error) {
         console.error('[Tasks] Update Error:', error);
         res.status(500).json({ success: false, error: 'Failed to update task' });
+    }
+});
+
+/**
+ * PATCH /api/tasks/:id/archive
+ */
+router.patch('/:id/archive', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const id = String(req.params.id);
+        const { is_archived } = req.body;
+
+        const updatedTask = await db.archiveTask(userId, id, is_archived);
+
+        res.json({ success: true, data: updatedTask });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to archive task' });
+    }
+});
+
+/**
+ * PATCH /api/tasks/:id/assign
+ */
+router.patch('/:id/assign', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const id = String(req.params.id);
+        const { assigned_to } = req.body;
+
+        const updatedTask = await db.updateTaskAssignment(userId, id, assigned_to);
+
+        res.json({ success: true, data: updatedTask });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to update assignment' });
     }
 });
 

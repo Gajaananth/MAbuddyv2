@@ -467,27 +467,53 @@ export async function createTask(userId: string, task: {
     }
 }
 
-export async function getTasks(userId: string): Promise<any[]> {
-    const result = await db.pool.query('SELECT * FROM tasks WHERE user_id = $1 ORDER BY task_id_str ASC', [userId]);
+export async function getTasks(userId: string, includeArchived: boolean = false): Promise<any[]> {
+    const archivedFilter = includeArchived ? '' : 'AND is_archived = FALSE';
+    const result = await db.pool.query(
+        `SELECT * FROM tasks WHERE user_id = $1 ${archivedFilter} ORDER BY task_id_str ASC`,
+        [userId]
+    );
     return result.rows;
 }
 
-export async function updateTaskStatus(userId: string, taskIdStr: string, status: 'TODO' | 'IN-PROGRESS' | 'COMPLETED' | 'BLOCKED', notes?: string): Promise<any> {
+export async function archiveTask(userId: string, taskIdStr: string, isArchived: boolean = true): Promise<any> {
+    const result = await db.pool.query(
+        'UPDATE tasks SET is_archived = $1, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *',
+        [isArchived, userId, taskIdStr]
+    );
+    return result.rows[0];
+}
+
+export async function updateTaskStatus(
+    userId: string, 
+    taskIdStr: string, 
+    status: string, 
+    notes?: string
+): Promise<any> {
     let queryArgs: any[] = [];
     let queryStr = '';
-    
-    // Use raw taskIdStr for lookups to support both auto-increment (001) and weekly IDs (W12-26-01)
-    const normalizedIdStr = taskIdStr;
+
+    // Automatic archiving if status is 'DONE' or 'COMPLETED'
+    const isDone = ['DONE', 'COMPLETED'].includes(status.toUpperCase());
+    const archiveClause = isDone ? ', is_archived = TRUE' : '';
 
     if (notes !== undefined) {
-        queryStr = 'UPDATE tasks SET status = $1, notes = $2, updated_at = NOW() WHERE user_id = $3 AND (task_id_str = $4 OR id::text = $4) RETURNING *';
-        queryArgs = [status, notes, userId, normalizedIdStr];
+        queryStr = `UPDATE tasks SET status = $1, notes = $2${archiveClause}, updated_at = NOW() WHERE user_id = $3 AND (task_id_str = $4 OR id::text = $4) RETURNING *`;
+        queryArgs = [status.toUpperCase(), notes, userId, taskIdStr];
     } else {
-        queryStr = 'UPDATE tasks SET status = $1, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *';
-        queryArgs = [status, userId, normalizedIdStr];
+        queryStr = `UPDATE tasks SET status = $1${archiveClause}, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *`;
+        queryArgs = [status.toUpperCase(), userId, taskIdStr];
     }
 
     const result = await db.pool.query(queryStr, queryArgs);
+    return result.rows[0];
+}
+
+export async function updateTaskAssignment(userId: string, taskIdStr: string, assignedTo: string): Promise<any> {
+    const result = await db.pool.query(
+        'UPDATE tasks SET assigned_to = $1, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *',
+        [assignedTo.toUpperCase(), userId, taskIdStr]
+    );
     return result.rows[0];
 }
 
@@ -593,6 +619,15 @@ export async function getTaskProgress(userId: string): Promise<{
     };
 }
 
+async function archiveAllNotifications(userId: string): Promise<void> {
+    const query = `
+        UPDATE notifications 
+        SET status = 'archived' 
+        WHERE user_id = $1 AND status != 'archived'
+    `;
+    await db.pool.query(query, [userId]);
+}
+
 const queries = {
     getConversationDetail,
     getConversations,
@@ -629,6 +664,7 @@ const queries = {
     getUnreadNotificationCount,
     markNotificationRead,
     archiveNotification,
+    archiveAllNotifications,
     getUnreadMessageCount,
     markMessagesRead,
     markAllMessagesRead,
@@ -642,6 +678,8 @@ const queries = {
     createTask,
     getTasks,
     updateTaskStatus,
+    updateTaskAssignment,
+    archiveTask,
     deleteTask,
     deleteAllTasks,
     findRecentDuplicateNotification,

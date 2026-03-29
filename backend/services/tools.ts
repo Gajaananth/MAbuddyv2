@@ -198,74 +198,55 @@ export const moltbookTool = tool({
 
 export const commandCenterTool = tool({
     name: 'command_center',
-    description: 'Interface with the Zium Nova Command Center to manage mission tasks. Use this to ADD, UPDATE, COMPLETE, or SHOW tasks when requested by Buddy or when autonomously tracking mission progress.',
+    description: 'Interface with the Zium Nova Strategic Grid to manage mission tasks. Use this to ADD, UPDATE, ARCHIVE, ASSIGN, or SHOW tasks when requested by the Operator or when autonomously tracking progress.',
     inputSchema: z.object({
-        action: z.enum(['add', 'update', 'show']).describe('Action: add (create new task), update (change status/notes), show (return full command center board)'),
+        action: z.enum(['add', 'update', 'archive', 'assign', 'show']).describe('Action: add (new task), update (status/notes), archive (hide), assign (handoff), show (list grid)'),
         userId: z.string().describe('The Operator ID / User ID'),
-        task_name: z.string().optional().describe('Required for "add": The objective or name of the task'),
-        action_plan: z.string().optional().describe('Required for "add": Step-by-step guidance for execution'),
-        assigned_to: z.string().optional().describe('Optional for "add": Defaults to ZIUM NOVA. Use "BUDDY" to assign a task to the Operator (User).'),
-        priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Optional for "add": Defaults to MEDIUM'),
-        task_id_str: z.string().optional().describe('Required for "update": The 3-digit ID string (e.g. "001")'),
-        status: z.enum(['TODO', 'IN-PROGRESS', 'COMPLETED', 'BLOCKED']).optional().describe('Required for "update": The new status'),
-        notes: z.string().optional().describe('Optional for "update": Add result notes when completing a task, or block reasons'),
+        task_name: z.string().optional().describe('Required for "add": The objective name'),
+        action_plan: z.string().optional().describe('Required for "add": Strategic execution steps'),
+        assigned_to: z.string().optional().describe('Optional for "add/assign": "BUDDY" (User) or "ZIUM NOVA" (Agent)'),
+        priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Optional: Defaults to MEDIUM'),
+        task_id_str: z.string().optional().describe('Required for "update/archive/assign": Task ID string (e.g. "001")'),
+        status: z.enum(['PENDING', 'PROCESS', 'DONE', 'BLOCKED']).optional().describe('Note: "DONE" will automatically archive the task.'),
+        notes: z.string().optional().describe('Optional: Progress updates or blocking reasons'),
+        is_archived: z.boolean().optional().describe('Used with "archive" action'),
     }),
-    execute: async ({ action, userId, task_name, action_plan, assigned_to, priority, task_id_str, status, notes }) => {
+    execute: async ({ action, userId, task_name, action_plan, assigned_to, priority, task_id_str, status, notes, is_archived }) => {
         try {
-            const { createTask, getTasks, updateTaskStatus } = await import('../db/queries.js');
+            const { createTask, getTasks, updateTaskStatus, archiveTask, updateTaskAssignment } = await import('../db/queries.js');
 
             if (action === 'add') {
-                if (!task_name) return { success: false, error: 'task_name is required to add a task.' };
+                if (!task_name) return { success: false, error: 'task_name is required' };
                 const newTask = await createTask(userId, { task_name, action_plan, assigned_to, priority, notes });
-                return { success: true, message: `Task Added: [${newTask.task_id_str}] ${newTask.task_name}`, task: newTask };
+                return { success: true, message: `Task Added: [${newTask.task_id_str}]`, task: newTask };
             }
 
             if (action === 'update') {
-                if (!task_id_str || !status) return { success: false, error: 'task_id_str and status are required to update a task.' };
-                // Use raw taskIdStr to support both auto-increment and weekly IDs
-                const normalizedId = task_id_str;
-                const updatedTask = await updateTaskStatus(userId, normalizedId, status, notes);
-                
-                let resultMsg = `Task ${normalizedId} updated to ${status}.`;
-                if (status === 'COMPLETED' && notes) {
-                    resultMsg += ` RESULT: ${notes}`;
-                }
+                if (!task_id_str || !status) return { success: false, error: 'task_id_str and status required' };
+                const updatedTask = await updateTaskStatus(userId, task_id_str, status, notes);
+                return { success: true, message: `Task ${task_id_str} status -> ${status}`, task: updatedTask };
+            }
 
-                return { success: true, message: resultMsg, task: updatedTask };
+            if (action === 'archive') {
+                if (!task_id_str) return { success: false, error: 'task_id_str required' };
+                const updatedTask = await archiveTask(userId, task_id_str, is_archived ?? true);
+                return { success: true, message: `Task ${task_id_str} ${is_archived === false ? 'un-archived' : 'archived'}`, task: updatedTask };
+            }
+
+            if (action === 'assign') {
+                if (!task_id_str || !assigned_to) return { success: false, error: 'task_id_str and assigned_to required' };
+                const updatedTask = await updateTaskAssignment(userId, task_id_str, assigned_to);
+                return { success: true, message: `Task ${task_id_str} assigned to -> ${assigned_to}`, task: updatedTask };
             }
 
             if (action === 'show') {
-                const tasks = await getTasks(userId);
-                
-                if (tasks.length === 0) {
-                    return { success: true, message: 'ZIUM NOVA COMMAND CENTER is currently empty. No active missions.', tasks: [] };
-                }
-
-                // Format exactly as requested for the AI to ingest and re-output
-                let board = 'ZIUM NOVA COMMAND CENTER\n\n--------------------------------------------------------------------------------\n';
-                board += 'TASK ID | OBJECTIVE | ACTION PLAN | ASSIGNED TO | STATUS | PRIORITY | NOTES\n';
-                board += '--------------------------------------------------------------------------------\n';
-                
-                const stats = { total: tasks.length, completed: 0, active: 0, blocked: 0 };
-
-                for (const t of tasks) {
-                    board += `${t.task_id_str} | ${t.task_name} | ${t.action_plan || 'N/A'} | ${t.assigned_to} | ${t.status} | ${t.priority} | ${t.notes || '-'}\n`;
-                    
-                    if (t.status === 'COMPLETED') stats.completed++;
-                    else if (t.status === 'BLOCKED') stats.blocked++;
-                    else stats.active++;
-                }
-
-                board += '--------------------------------------------------------------------------------\n\n';
-                board += 'MISSION PROGRESS\n';
-                board += `Total Tasks: ${stats.total}\nCompleted: ${stats.completed}\nActive: ${stats.active}\nBlocked: ${stats.blocked}\n`;
-
-                return { success: true, raw_board: board, tasks };
+                const tasks = await getTasks(userId, true);
+                return { success: true, tasks };
             }
 
-            return { success: false, error: 'Invalid command center action.' };
+            return { success: false, error: 'Invalid action' };
         } catch (error: any) {
-            return { success: false, error: `Command Center Failure: ${error.message}` };
+            return { success: false, error: `Grid failure: ${error.message}` };
         }
     }
 });

@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { 
     Bird, User, Search, Circle, CheckCircle2, AlertCircle, 
-    Terminal, Activity, Shield, TrendingUp, Loader2
+    Terminal, Activity, Shield, TrendingUp, Loader2,
+    Trash2, Archive, ArchiveRestore, ArrowLeftRight, Clock,
+    FileText, Plus, X, ListTodo
 } from 'lucide-react';
 import { missionService, trendService } from '../services/api';
 import { formatTimestamp } from '../utils/formatUtils';
 
-const STATUS_COLORS = {
-    'TODO': 'text-nova-text-dim border-nova-border bg-white/5',
-    'IN-PROGRESS': 'text-nova-accent border-nova-accent/30 bg-nova-accent/10',
-    'COMPLETED': 'text-green-500 border-green-500/30 bg-green-500/10',
-    'BLOCKED': 'text-red-500 border-red-500/30 bg-red-500/10'
+const STATUS_CONFIG = {
+    'PENDING': { color: 'text-amber-400 border-amber-400/30 bg-amber-400/10', icon: Clock },
+    'PROCESS': { color: 'text-nova-accent border-nova-accent/30 bg-nova-accent/10', icon: Activity },
+    'DONE': { color: 'text-green-500 border-green-500/30 bg-green-500/10', icon: CheckCircle2 },
+    'BLOCKED': { color: 'text-red-500 border-red-500/30 bg-red-500/10', icon: AlertCircle }
 };
 
 const PRIORITY_COLORS = {
@@ -20,89 +22,25 @@ const PRIORITY_COLORS = {
     'CRITICAL': 'bg-red-500/20 text-red-500 border-red-500/30 animate-pulse'
 };
 
-const TaskRow: React.FC<{ task: any; isAgentic?: boolean }> = ({ task, isAgentic }) => (
-    <tr className={`group hover:bg-white/[0.02] transition-all border-b border-nova-border/30 last:border-0 ${isAgentic ? 'border-l-2 border-l-nova-accent/20' : ''}`}>
-        <td className="p-4">
-            <span className="text-[10px] font-mono font-bold text-nova-text-dim opacity-40 group-hover:opacity-100 transition-opacity">
-                {task.task_id_str}
-            </span>
-        </td>
-        <td className="p-4">
-            <div className="flex flex-col">
-                <span className="text-xs font-black text-white uppercase tracking-tight group-hover:text-nova-accent transition-colors">
-                    {task.task_name}
-                </span>
-                <span className="text-[8px] text-nova-text-dim/60 font-mono mt-0.5">
-                    {formatTimestamp(task.created_at)}
-                </span>
-            </div>
-        </td>
-        <td className="p-4">
-            <p className="text-[10px] text-nova-text-dim leading-relaxed line-clamp-2 max-w-xs group-hover:text-nova-text transition-colors">
-                {task.action_plan || 'Strategic plan initialization pending...'}
-            </p>
-        </td>
-        <td className="p-4">
-            <div className={`inline-flex items-center gap-2 px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest ${STATUS_COLORS[task.status as keyof typeof STATUS_COLORS]}`}>
-                {task.status === 'COMPLETED' ? <CheckCircle2 size={10} /> : 
-                 task.status === 'IN-PROGRESS' ? <Activity size={10} className="animate-pulse" /> :
-                 task.status === 'BLOCKED' ? <AlertCircle size={10} /> : <Circle size={10} />}
-                {task.status}
-            </div>
-        </td>
-        <td className="p-4 text-right">
-            <div className={`inline-block px-2 py-0.5 rounded-full border text-[8px] font-black tracking-tighter ${PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS]}`}>
-                {task.priority || 'MEDIUM'}
-            </div>
-        </td>
-    </tr>
-);
+const TaskCard: React.FC<{ 
+    task: any; 
+    onStatus: (id: string, s: string) => void;
+    onArchive: (id: string, a: boolean) => void;
+    onDelete: (id: string) => void;
+    onAssign: (id: string, to: string) => void;
+    isOperator?: boolean;
+}> = ({ task, onStatus, onArchive, onDelete, onAssign, isOperator }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const StatusIcon = STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.icon || Circle;
 
-const CommandCenterPage: React.FC = () => {
-    const [tasks, setTasks] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [recentTrends, setRecentTrends] = useState<any[]>([]);
-    const [isLoadingTrends, setIsLoadingTrends] = useState(true);
-
-    useEffect(() => {
-        const loadAllData = async () => {
-            try {
-                const [tasksRes, trendsRes] = await Promise.all([
-                    missionService.getTasks(),
-                    trendService.getTrends()
-                ]);
-                setTasks(tasksRes.data.data || []);
-                setRecentTrends(trendsRes.data?.data?.slice(0, 3) || []);
-            } catch (e) {
-                console.error('Data fetch error', e);
-            } finally {
-                setLoading(false);
-                setIsLoadingTrends(false);
-            }
-        };
-        loadAllData();
-    }, []);
-
-    const stats = {
-        total: tasks.length,
-        completed: tasks.filter(t => t.status === 'COMPLETED').length,
-        active: tasks.filter(t => t.status === 'TODO' || t.status === 'IN-PROGRESS').length,
-        pending: tasks.filter(t => t.status === 'TODO').length,
-    };
-    const progress = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
-
-    const filteredTasks = tasks.filter(t => 
-        t.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (t.action_plan && t.action_plan.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-
-    const MobileTaskCard: React.FC<{ task: any }> = ({ task }) => (
-        <div className="glass p-5 rounded-2xl border-2 border-nova-border/50 bg-white/[0.01] space-y-4">
+    return (
+        <div className={`glass p-5 rounded-2xl border-2 transition-all duration-300 ${task.is_archived ? 'border-nova-border/20 opacity-60' : 'border-nova-border/50 hover:border-nova-accent/30'} bg-white/[0.01] space-y-4 group`}>
             <div className="flex justify-between items-start">
                 <div className="flex flex-col">
-                    <span className="text-[10px] font-mono text-nova-text-dim/40 mb-1">{task.task_id_str}</span>
-                    <h4 className="text-xs font-black text-white uppercase tracking-tight">{task.task_name}</h4>
+                    <span className="text-[10px] font-mono text-nova-text-dim/40 mb-1 tracking-widest">{task.task_id_str}</span>
+                    <h4 className="text-xs font-black text-white uppercase tracking-tight group-hover:text-nova-accent transition-colors">
+                        {task.task_name}
+                    </h4>
                 </div>
                 <div className={`px-2 py-0.5 rounded-full border text-[8px] font-black ${PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS]}`}>
                     {task.priority || 'MEDIUM'}
@@ -113,29 +51,172 @@ const CommandCenterPage: React.FC = () => {
                 {task.action_plan || 'Strategic plan initialization pending...'}
             </p>
 
+            {/* Manual Controls - Visible for Operator or when user explicitly overrides */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+                <button 
+                    onClick={() => onStatus(task.task_id_str, 'PENDING')}
+                    className={`p-1.5 rounded-lg border transition-all ${task.status === 'PENDING' ? 'bg-amber-400/20 border-amber-400/50 text-amber-400' : 'bg-white/5 border-white/10 text-nova-text-dim hover:text-amber-400'}`}
+                    title="Mark Pending"
+                >
+                    <Clock size={12} />
+                </button>
+                <button 
+                    onClick={() => onStatus(task.task_id_str, 'PROCESS')}
+                    className={`p-1.5 rounded-lg border transition-all ${task.status === 'PROCESS' ? 'bg-nova-accent/20 border-nova-accent/50 text-nova-accent' : 'bg-white/5 border-white/10 text-nova-text-dim hover:text-nova-accent'}`}
+                    title="Mark Processing"
+                >
+                    <Activity size={12} />
+                </button>
+                <button 
+                    onClick={() => onStatus(task.task_id_str, 'DONE')}
+                    className={`p-1.5 rounded-lg border transition-all ${task.status === 'DONE' ? 'bg-green-500/20 border-green-500/50 text-green-500' : 'bg-white/5 border-white/10 text-nova-text-dim hover:text-green-500'}`}
+                    title="Mark Done"
+                >
+                    <CheckCircle2 size={12} />
+                </button>
+                <div className="w-px h-4 bg-white/10 mx-1" />
+                <button 
+                    onClick={() => onArchive(task.task_id_str, !task.is_archived)}
+                    className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-nova-text-dim hover:text-blue-400 hover:border-blue-400/50 transition-all"
+                    title={task.is_archived ? "Unarchive" : "Archive"}
+                >
+                    {task.is_archived ? <ArchiveRestore size={12} /> : <Archive size={12} />}
+                </button>
+                <button 
+                    onClick={() => onAssign(task.task_id_str, task.assigned_to === 'BUDDY' ? 'ZIUM NOVA' : 'BUDDY')}
+                    className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-nova-text-dim hover:text-purple-400 hover:border-purple-400/50 transition-all"
+                    title="Handoff Assignment"
+                >
+                    <ArrowLeftRight size={12} />
+                </button>
+                <button 
+                    onClick={() => onDelete(task.task_id_str)}
+                    className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-nova-text-dim hover:text-red-500 hover:border-red-500/50 transition-all ml-auto"
+                    title="Terminal Delete"
+                >
+                    <Trash2 size={12} />
+                </button>
+            </div>
+
+            {/* Note Section */}
+            <div className="pt-2">
+                <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="flex items-center gap-2 text-[9px] font-black uppercase text-nova-text-dim hover:text-nova-accent transition-colors"
+                >
+                    <FileText size={10} />
+                    {isExpanded ? 'Hide Intelligence' : 'Show Task Notes'}
+                </button>
+                {isExpanded && (
+                    <div className="mt-3 p-3 rounded-xl bg-nova-accent/5 border border-nova-accent/10">
+                        <p className="text-[10px] text-nova-text-dim leading-relaxed italic whitespace-pre-wrap">
+                            {task.notes || "No intelligence reports attached to this mission."}
+                        </p>
+                    </div>
+                )}
+            </div>
+            
             <div className="flex justify-between items-center pt-2 border-t border-white/5">
                 <span className="text-[8px] text-nova-text-dim/40 font-mono italic">{formatTimestamp(task.created_at)}</span>
-                <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[9px] font-black uppercase ${STATUS_COLORS[task.status as keyof typeof STATUS_COLORS]}`}>
+                <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg border text-[9px] font-black uppercase ${STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.color || 'text-nova-text-dim'}`}>
+                    <StatusIcon size={10} className={task.status === 'PROCESS' ? 'animate-pulse' : ''} />
                     {task.status}
                 </div>
             </div>
         </div>
     );
+};
+
+const CommandCenterPage: React.FC = () => {
+    const [tasks, setTasks] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
+    const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [recentTrends, setRecentTrends] = useState<any[]>([]);
+    const [isLoadingTrends, setIsLoadingTrends] = useState(true);
+
+    const loadData = async () => {
+        try {
+            const [tasksRes, archivedRes, trendsRes] = await Promise.all([
+                missionService.getTasks(),
+                missionService.getTasks(true),
+                trendService.getTrends()
+            ]);
+            
+            // Merge or handle based on tab
+            const allTasks = [...tasksRes.data.data, ...archivedRes.data.data.filter((t: any) => t.is_archived)];
+            // Removing duplicates if any
+            const uniqueTasks = Array.from(new Map(allTasks.map(t => [t.id, t])).values());
+            setTasks(uniqueTasks);
+            
+            setRecentTrends(trendsRes.data?.data?.slice(0, 3) || []);
+        } catch (e) {
+            console.error('Grid Sync Error', e);
+        } finally {
+            setLoading(false);
+            setIsLoadingTrends(false);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const handleStatus = async (id: string, status: string) => {
+        try {
+            await missionService.updateTask(id, { status });
+            loadData();
+        } catch (e) { console.error(e); }
+    };
+
+    const handleArchive = async (id: string, is_archived: boolean) => {
+        try {
+            await missionService.archiveTask(id, is_archived);
+            loadData();
+        } catch (e) { console.error(e); }
+    };
+
+    const handleAssign = async (id: string, assigned_to: string) => {
+        try {
+            await missionService.assignTask(id, assigned_to);
+            loadData();
+        } catch (e) { console.error(e); }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (!window.confirm('PERMANENT DELETION: Are you sure you want to scrub this objective from the grid?')) return;
+        try {
+            await missionService.deleteTask(id);
+            loadData();
+        } catch (e) { console.error(e); }
+    };
+
+    const stats = {
+        total: tasks.filter(t => !t.is_archived).length,
+        completed: tasks.filter(t => t.status === 'DONE' || t.status === 'COMPLETED').length,
+    };
+    const progress = stats.total > 0 ? Math.round((stats.completed / (tasks.filter(t => !t.is_archived).length || 1)) * 100) : 0;
+
+    const filteredTasks = tasks.filter(t => 
+        (activeTab === 'active' ? !t.is_archived : t.is_archived) &&
+        (t.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+         t.task_id_str.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     return (
         <div className="flex-1 flex flex-col min-w-0 max-w-6xl mx-auto w-full animate-in fade-in duration-700">
-            {/* Header Strategy */}
+            {/* Tactical Header */}
             <header className="mb-8 lg:mb-12 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-nova-border/30 pb-8 px-1">
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 text-nova-accent">
                         <Terminal size={12} className="animate-pulse" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Protocol Support v4.2.0</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Grid Protocol v4.3.0</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none">
                         Tactical <span className="text-nova-accent">Grid</span>
                     </h1>
                     <p className="text-nova-text-dim text-[11px] lg:text-xs font-medium max-w-xl leading-relaxed opacity-60">
-                        Synchronized mission center for operator and autonomous agent cycles.
+                        Synchronized mission center. Operator controls highlighted.
                     </p>
                 </div>
 
@@ -143,7 +224,7 @@ const CommandCenterPage: React.FC = () => {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-nova-text-dim/40" size={14} />
                     <input 
                         type="text"
-                        placeholder="Filter objectives..."
+                        placeholder="Trace intelligence code or name..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full bg-white/[0.03] border border-nova-border/50 rounded-xl py-3 pl-11 pr-4 text-[11px] font-bold text-white focus:outline-none focus:border-nova-accent/50 transition-all placeholder:opacity-30"
@@ -155,161 +236,110 @@ const CommandCenterPage: React.FC = () => {
                 <div className="flex-1 flex items-center justify-center py-20">
                     <div className="flex flex-col items-center gap-4">
                         <div className="w-10 h-10 border-2 border-nova-accent/20 border-t-nova-accent rounded-full animate-spin"></div>
-                        <span className="text-[9px] font-black text-nova-accent uppercase tracking-widest">Decoding Grid...</span>
+                        <span className="text-[9px] font-black text-nova-accent uppercase tracking-widest">Accessing Tactical Grid...</span>
                     </div>
                 </div>
             ) : (
-                <div className="space-y-12 lg:space-y-16 pb-20">
-                    {/* STRATEGIC OVERVIEW */}
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-                        {/* Progress Tracker */}
-                        <div className="lg:col-span-8 glass p-6 lg:p-8 rounded-3xl border-2 border-nova-border flex flex-col justify-between shadow-2xl">
-                            <div className="flex justify-between items-start mb-6">
-                                <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                    <Shield size={16} className="text-nova-accent" />
-                                    Mission Completion
+                <div className="space-y-10 pb-20">
+                    {/* STATS & TABS */}
+                    <div className="flex flex-col lg:flex-row gap-6">
+                        <div className="flex-1 glass p-6 rounded-3xl border-2 border-nova-border flex items-center gap-8">
+                            <div className="relative w-16 h-16 shrink-0">
+                                <svg className="w-full h-full transform -rotate-90">
+                                    <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="4" className="text-white/5" />
+                                    <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="4" strokeDasharray={`${progress * 1.76} 176`} className="text-nova-accent transition-all duration-1000" />
+                                </svg>
+                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-mono font-black text-white">{progress}%</span>
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2 mb-1">
+                                    <Shield size={14} className="text-nova-accent" />
+                                    Grid Status
                                 </h3>
-                                <span className="text-xl font-mono font-black text-nova-accent">{progress}%</span>
-                            </div>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mb-8">
-                                <div className="p-3 bg-white/[0.02] rounded-2xl border border-white/5">
-                                    <p className="text-[8px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Total</p>
-                                    <p className="text-lg font-black text-white">{stats.total}</p>
-                                </div>
-                                <div className="p-3 bg-green-500/[0.02] rounded-2xl border border-green-500/10">
-                                    <p className="text-[8px] text-green-400 font-black uppercase tracking-wider mb-1">Resolved</p>
-                                    <p className="text-lg font-black text-green-400">{stats.completed}</p>
-                                </div>
-                                <div className="p-3 bg-blue-500/[0.02] rounded-2xl border border-blue-500/10">
-                                    <p className="text-[8px] text-blue-400 font-black uppercase tracking-wider mb-1">Active</p>
-                                    <p className="text-lg font-black text-blue-400">{stats.active}</p>
-                                </div>
-                                <div className="p-3 bg-nova-accent/[0.02] rounded-2xl border border-nova-accent/10">
-                                    <p className="text-[8px] text-nova-accent font-black uppercase tracking-wider mb-1">Pending</p>
-                                    <p className="text-lg font-black text-nova-accent">{stats.pending}</p>
-                                </div>
-                            </div>
-
-                            <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden border border-nova-border">
-                                <div 
-                                    className="h-full bg-nova-accent shadow-[0_0_15px_rgba(0,242,255,0.4)] transition-all duration-1000 ease-out"
-                                    style={{ width: `${progress}%` }}
-                                ></div>
+                                <p className="text-[10px] text-nova-text-dim font-bold uppercase tracking-tighter opacity-60">
+                                    {stats.completed} Mission Objectives Resolved
+                                </p>
                             </div>
                         </div>
 
-                        {/* Recent Trends Quick-View */}
-                        <div className="lg:col-span-4 glass p-6 lg:p-8 rounded-3xl border-2 border-nova-border flex flex-col">
-                            <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                                <TrendingUp size={16} className="text-nova-accent" />
-                                Market Pulse
-                            </h3>
-                            <div className="space-y-3 flex-1 overflow-y-auto max-h-40 lg:max-h-full scrollbar-none">
-                                {isLoadingTrends ? (
-                                    <div className="py-4 flex justify-center"><Loader2 className="animate-spin text-nova-accent/20" /></div>
-                                ) : (
-                                    recentTrends.length > 0 ? recentTrends.map((trend, i) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5 group hover:border-nova-accent/30 transition-all">
-                                            <span className="text-[10px] font-bold text-nova-text group-hover:text-white uppercase truncate pr-4">{trend.topic}</span>
-                                            <span className={`text-[10px] font-black ${trend.score > 70 ? 'text-green-400' : 'text-nova-accent'}`}>{trend.score}%</span>
-                                        </div>
-                                    )) : <p className="text-[9px] text-nova-text-dim italic text-center opacity-40">No pulse detected.</p>
-                                )}
-                            </div>
+                        <div className="flex p-1.5 glass rounded-2xl border border-nova-border/50 bg-white/5">
+                            <button 
+                                onClick={() => setActiveTab('active')}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'active' ? 'bg-nova-accent text-nova-bg shadow-lg' : 'text-nova-text-dim hover:text-white'}`}
+                            >
+                                <ListTodo size={14} />
+                                Active
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('archived')}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'archived' ? 'bg-white/10 text-white shadow-lg' : 'text-nova-text-dim hover:text-white'}`}
+                            >
+                                <Archive size={14} />
+                                Archived
+                            </button>
                         </div>
                     </div>
 
-                    {/* Operator Section */}
+                    {/* OPERATOR TASKS */}
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2 px-1">
                             <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
                                 <div className="p-2 bg-nova-accent/10 rounded-lg text-nova-accent">
                                     <User size={16} />
                                 </div>
-                                Operator Objectives
+                                Operator Objectives (Manual Control)
                             </h3>
-                            <span className="text-[10px] font-bold text-nova-text-dim uppercase tracking-widest opacity-40">
-                                {filteredTasks.filter(t => t.assigned_to === 'BUDDY').length} ACTIVE
-                            </span>
                         </div>
 
-                        {/* Desktop Table View */}
-                        <div className="hidden md:block glass rounded-3xl border-2 border-nova-border overflow-hidden bg-white/[0.01] shadow-2xl">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b-2 border-nova-border/50 bg-white/[0.03]">
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">ID</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-1/4">Objective</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-1/3">Execution</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase text-center">Protocol</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase text-right">Tier</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-nova-border/30">
-                                    {filteredTasks.filter(t => t.assigned_to === 'BUDDY').length === 0 ? (
-                                        <tr><td colSpan={5} className="p-16 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-30 italic">No tactical objectives.</td></tr>
-                                    ) : (
-                                        filteredTasks.filter(t => t.assigned_to === 'BUDDY').map((task) => (
-                                            <TaskRow key={task.id} task={task} />
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Mobile Card View */}
-                        <div className="md:hidden grid grid-cols-1 gap-4">
-                            {filteredTasks.filter(t => t.assigned_to === 'BUDDY').map((task) => (
-                                <MobileTaskCard key={task.id} task={task} />
-                            ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredTasks.filter(t => t.assigned_to === 'BUDDY').length === 0 ? (
+                                <div className="col-span-full py-16 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-20 italic">No assigned objectives.</div>
+                            ) : (
+                                filteredTasks.filter(t => t.assigned_to === 'BUDDY').map((task) => (
+                                    <TaskCard 
+                                        key={task.id} 
+                                        task={task} 
+                                        onStatus={handleStatus}
+                                        onArchive={handleArchive}
+                                        onDelete={handleDelete}
+                                        onAssign={handleAssign}
+                                        isOperator
+                                    />
+                                ))
+                            )}
                         </div>
                     </div>
 
-                    {/* Agentic Section */}
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-3">
-                                <div className="p-2 bg-nova-accent/10 rounded-lg text-nova-accent">
+                    {/* AGENT TASKS */}
+                    <div className="space-y-6 pt-6">
+                        <div className="flex items-center justify-between mb-2 px-1 border-t border-white/5 pt-10">
+                            <h3 className="text-xs font-black text-nova-text-dim uppercase tracking-widest flex items-center gap-3">
+                                <div className="p-2 bg-white/5 rounded-lg text-nova-text-dim">
                                     <Bird size={16} />
                                 </div>
-                                Autonomous Cycles
+                                Autonomous Cycles (Zium Nova)
                             </h3>
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 bg-nova-accent rounded-full animate-pulse shadow-[0_0_8px_rgba(0,242,255,0.6)]"></div>
-                                <span className="text-[10px] font-black text-nova-accent uppercase tracking-widest">LIVE SYNC</span>
+                                <span className="text-[10px] font-black text-nova-accent uppercase tracking-widest tracking-widest">Live Sync</span>
                             </div>
                         </div>
 
-                        {/* Desktop Table View */}
-                        <div className="hidden md:block glass rounded-3xl border-2 border-nova-accent/10 overflow-hidden bg-nova-accent/[0.01] shadow-2xl">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b-2 border-nova-accent/20 bg-nova-accent/[0.03]">
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase">ID</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-1/4">Objective</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase w-1/3">Execution</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase text-center">Protocol</th>
-                                        <th className="p-4 text-[10px] font-black text-nova-text-dim tracking-widest uppercase text-right">Tier</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-nova-accent/10">
-                                    {filteredTasks.filter(t => t.assigned_to !== 'BUDDY').length === 0 ? (
-                                        <tr><td colSpan={5} className="p-16 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-30 italic">No active agentic cycles.</td></tr>
-                                    ) : (
-                                        filteredTasks.filter(t => t.assigned_to !== 'BUDDY').map((task) => (
-                                            <TaskRow key={task.id} task={task} isAgentic />
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* Mobile Card View */}
-                        <div className="md:hidden grid grid-cols-1 gap-4">
-                            {filteredTasks.filter(t => t.assigned_to !== 'BUDDY').map((task) => (
-                                <MobileTaskCard key={task.id} task={task} />
-                            ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredTasks.filter(t => t.assigned_to !== 'BUDDY').length === 0 ? (
+                                <div className="col-span-full py-16 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-20 italic">No active agentic cycles.</div>
+                            ) : (
+                                filteredTasks.filter(t => t.assigned_to !== 'BUDDY').map((task) => (
+                                    <TaskCard 
+                                        key={task.id} 
+                                        task={task} 
+                                        onStatus={handleStatus}
+                                        onArchive={handleArchive}
+                                        onDelete={handleDelete}
+                                        onAssign={handleAssign}
+                                    />
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

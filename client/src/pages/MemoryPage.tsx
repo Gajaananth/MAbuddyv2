@@ -25,6 +25,8 @@ const MemoryPage: React.FC = () => {
             // Auto-clear unread badge across all conversations when accessing the hub
             try {
                 await memoryService.markAllRead();
+                // Trigger global UI refresh for unread badge
+                window.dispatchEvent(new CustomEvent('nova-messages-read'));
             } catch (e) {
                 console.error('[Memory] Background read-all failed', e);
             }

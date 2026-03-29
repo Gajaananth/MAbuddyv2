@@ -113,6 +113,8 @@ const ChatPage: React.FC = () => {
                 })));
                 // Mark conversation as read
                 await memoryService.markRead(id);
+                // Trigger global UI refresh for unread badge
+                window.dispatchEvent(new CustomEvent('nova-messages-read'));
             }
         } catch (error) {
             console.error('Load Conversation Error:', error);

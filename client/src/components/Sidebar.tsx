@@ -27,8 +27,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         };
 
         fetchUnread();
+        
+        // Listen for internal "Read" events to clear the dot instantly
+        const handleReadEvents = () => fetchUnread();
+        window.addEventListener('nova-messages-read', handleReadEvents);
+
         const interval = setInterval(fetchUnread, 15000); // Poll every 15s
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('nova-messages-read', handleReadEvents);
+        };
     }, []);
 
     const navItems = [

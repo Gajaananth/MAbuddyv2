@@ -242,7 +242,7 @@ router.get('/raid/status', authenticate, async (req: AuthRequest, res: Response)
  * POST /api/intelligence/raid/trigger
  * Manually trigger a regional/global intelligence scan.
  */
-router.post('/raid/trigger', async (req: AuthRequest, res: Response) => {
+router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         console.log(`[Intelligence] DEBUG: RAID_TRIGGER_HIT. User: ${userId}`);
