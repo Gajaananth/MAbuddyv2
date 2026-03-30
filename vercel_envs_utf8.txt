@@ -1,0 +1,13 @@
+﻿
+ name                               value               environments                        created    
+ DATABASE_URL                       Encrypted           Production                          23d ago    
+ NEXT_PUBLIC_SUPABASE_ANON_KEY      Encrypted           Production                          23d ago    
+ NEXT_PUBLIC_SUPABASE_URL           Encrypted           Production                          23d ago    
+ VAPID_PUBLIC_KEY                   Encrypted           Development, Preview, Production    23d ago    
+ VAPID_PRIVATE_KEY                  Encrypted           Development, Preview, Production    23d ago    
+ VAPID_SUBJECT                      Encrypted           Development, Preview, Production    23d ago    
+ NEXTAUTH_SECRET                    Encrypted           Development, Preview, Production    24d ago    
+ FRONTEND_URL                       Encrypted           Development, Preview, Production    24d ago    
+ OPENROUTER_API_KEY                 Encrypted           Development, Preview, Production    24d ago    
+ JWT_SECRET                         Encrypted           Development, Preview, Production    24d ago    
+

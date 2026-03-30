@@ -68,17 +68,26 @@ app.use(express.json({ limit: '10mb' }));
 
 // ─── Health Check ─────────────────────────────────────────────
 app.get('/api/health', (_req, res) => {
+    const brainStatus = {
+        gemini: !!process.env.GEMINI_API_KEY,
+        qwen: !!process.env.QWEN_API_KEY,
+        openrouter: !!process.env.OPENROUTER_API_KEY,
+        moltbook: !!process.env.MOLTBOOK_API_KEY,
+    };
+
     res.json({
         status: 'online',
         agent: 'ZIUM NOVA',
-        identity: 'SILENT BEAST DOMINANCE',
-        version: 'v5.0.2',
-        protocol: 'silent_beast_dominance_v2_resilient',
-        mode: process.env.OPENROUTER_API_KEY ? 'live' : 'demo',
+        version: 'v5.0.5',
+        brain_status: brainStatus,
+        mode: brainStatus.gemini || brainStatus.qwen || brainStatus.openrouter ? 'live' : 'MOCK_ONLY_RED_ALERT',
+        message: (!brainStatus.gemini && !brainStatus.qwen && !brainStatus.openrouter) 
+            ? 'CRITICAL: No API keys found in server environment! Brain is disabled.' 
+            : 'Brain is initialized.',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
     });
 });
+
 
 // ─── Resilience Middleware ────────────────────────────────────
 // Ensures database is initialized before processing any API requests
