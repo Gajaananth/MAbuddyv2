@@ -71,7 +71,7 @@ app.get('/api/health', (_req, res) => {
     const brainStatus = {
         gemini: !!process.env.GEMINI_API_KEY,
         qwen: !!process.env.QWEN_API_KEY,
-        openrouter: !!process.env.OPENROUTER_API_KEY,
+        openai: !!process.env.OPENAI_API_KEY,
         moltbook: !!process.env.MOLTBOOK_API_KEY,
     };
 
@@ -80,8 +80,8 @@ app.get('/api/health', (_req, res) => {
         agent: 'ZIUM NOVA',
         version: 'v5.0.5',
         brain_status: brainStatus,
-        mode: brainStatus.gemini || brainStatus.qwen || brainStatus.openrouter ? 'live' : 'MOCK_ONLY_RED_ALERT',
-        message: (!brainStatus.gemini && !brainStatus.qwen && !brainStatus.openrouter) 
+        mode: brainStatus.gemini || brainStatus.qwen || brainStatus.openai ? 'live' : 'MOCK_ONLY_RED_ALERT',
+        message: (!brainStatus.gemini && !brainStatus.qwen && !brainStatus.openai) 
             ? 'CRITICAL: No API keys found in server environment! Brain is disabled.' 
             : 'Brain is initialized.',
         timestamp: new Date().toISOString(),
