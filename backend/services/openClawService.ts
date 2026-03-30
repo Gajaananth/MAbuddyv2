@@ -3,7 +3,16 @@ import dotenv from 'dotenv';
 import https from 'https';
 import { OpenClawResponse } from '../types/index.js';
 
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Search for .env in current, parent, and root directories
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config(); // Also try default
+
 
 // SSL Agent for Vercel environments to bypass certificate issues when hitting OpenRouter
 const httpsAgent = new https.Agent({
@@ -168,15 +177,18 @@ export async function think(
     if (GEMINI_KEY) {
         const geminiHive = [
             'gemini-1.5-flash',
-            'gemini-1.5-flash-8b',
-            'gemini-1.5-pro'
+            'gemini-1.5-pro',
+            'gemini-1.5-flash-8b'
         ];
+
         
         for (const modelId of geminiHive) {
             try {
                 console.log(`[Brain] Tier 1 -> Gemini Hive: ${modelId}...`);
-                // Standard REST API often uses snake_case: system_instruction
-                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${GEMINI_KEY}`;
+                // Ensure modelId has models/ prefix and use v1beta for widest availability
+                const formattedModelId = modelId.startsWith('models/') ? modelId : `models/${modelId}`;
+                const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/${formattedModelId}:generateContent?key=${GEMINI_KEY}`;
+
                 const response = await fetchWithRetry(
                     geminiUrl,
                     {
