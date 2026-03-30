@@ -66,8 +66,11 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
+import { getBrainStatus } from './services/openClawService.js';
+
 // ─── Health Check ─────────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
+app.get('/api/health', async (_req, res) => {
+    const brainLevel = await getBrainStatus();
     const brainStatus = {
         gemini: !!process.env.GEMINI_API_KEY,
         qwen: !!process.env.QWEN_API_KEY,
@@ -80,9 +83,10 @@ app.get('/api/health', (_req, res) => {
         agent: 'ZIUM NOVA',
         version: 'v5.0.5',
         brain_status: brainStatus,
+        last_brain_cycle: brainLevel,
         mode: brainStatus.gemini || brainStatus.qwen || brainStatus.openai ? 'live' : 'MOCK_ONLY_RED_ALERT',
         message: (!brainStatus.gemini && !brainStatus.qwen && !brainStatus.openai) 
-            ? 'CRITICAL: No API keys found in server environment! Brain is disabled.' 
+            ? 'CRITICAL: No API keys found! Brain is disabled.' 
             : 'Brain is initialized.',
         timestamp: new Date().toISOString(),
     });

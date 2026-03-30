@@ -84,8 +84,8 @@ export async function think(
     options: { mode?: string; skipSync?: boolean } = {},
     userId: string = '00000000-0000-0000-0000-000000000000'
 ): Promise<OpenClawResponse> {
-    const GEMINI_KEY = process.env.GEMINI_API_KEY || 'AIzaSyBhzq1Vn2HftQgsj4d2kj1NQCLAJUuPcKY';
-    const OPENAI_KEY = process.env.OPENAI_API_KEY || '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';
+    const GEMINI_KEY = process.env.GEMINI_API_KEY;
+    const OPENAI_KEY = process.env.OPENAI_API_KEY;
     const QWEN_KEY = process.env.QWEN_API_KEY;
 
     const fullContent = memoryContext ? `MEMORY: ${memoryContext.slice(-5000)}\n\nUSER: ${prompt}` : prompt;
@@ -98,9 +98,9 @@ export async function think(
                 console.log(`[Brain] T1 Gemini -> ${model}`);
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
                 const res = await fetchWithRetry(url, {
-                    contents: [{ parts: [{ text: fullContent }] }],
-                    system_instruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
-                }, { timeout: 10000 });
+                    contents: [{ role: 'user', parts: [{ text: fullContent }] }],
+                    systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
+                }, { headers: { 'Content-Type': 'application/json' }, timeout: 10000 });
 
                 const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (text) {
@@ -111,18 +111,27 @@ export async function think(
         }
     }
 
-    // --- TIER 2: NATIVE QWEN (Expanded) ---
+    // --- TIER 2: NATIVE QWEN (OpenAI-Compatible Endpoint) ---
     if (QWEN_KEY) {
         const qwenModels = ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen-long'];
         for (const model of qwenModels) {
             try {
                 console.log(`[Brain] T2 Qwen -> ${model}`);
-                const res = await fetchWithRetry('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', {
+                const res = await fetchWithRetry('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
                     model,
-                    input: { messages: [{ role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, { role: 'user', content: fullContent }] }
-                }, { headers: { 'Authorization': `Bearer ${QWEN_KEY}`, 'Content-Type': 'application/json' }, timeout: 12000 });
+                    messages: [
+                        { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, 
+                        { role: 'user', content: fullContent }
+                    ]
+                }, { 
+                    headers: { 
+                        'Authorization': `Bearer ${QWEN_KEY}`, 
+                        'Content-Type': 'application/json' 
+                    }, 
+                    timeout: 12000 
+                });
 
-                const text = res.data?.output?.text;
+                const text = res.data?.choices?.[0]?.message?.content;
                 if (text) {
                     lastCycleStatus = `LIVE: Qwen (${model})`;
                     return { content: text, usage: { total_tokens: 0 } as any };
@@ -131,7 +140,7 @@ export async function think(
         }
     }
 
-    // --- TIER 3: OPENAI FALLBACK (THE SHIELD) ---
+    // --- TIER 3: OPENAI FALLBACK ---
     if (OPENAI_KEY) {
         const openaiModels = ['gpt-4o-mini', 'gpt-3.5-turbo'];
         for (const model of openaiModels) {
@@ -139,8 +148,17 @@ export async function think(
                 console.log(`[Brain] T3 OpenAI -> ${model}`);
                 const res = await fetchWithRetry('https://api.openai.com/v1/chat/completions', {
                     model,
-                    messages: [{ role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, { role: 'user', content: fullContent }]
-                }, { headers: { 'Authorization': `Bearer ${OPENAI_KEY}` }, timeout: 15000 });
+                    messages: [
+                        { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, 
+                        { role: 'user', content: fullContent }
+                    ]
+                }, { 
+                    headers: { 
+                        'Authorization': `Bearer ${OPENAI_KEY}`,
+                        'Content-Type': 'application/json'
+                    }, 
+                    timeout: 15000 
+                });
 
                 const text = res.data?.choices?.[0]?.message?.content;
                 if (text) {
