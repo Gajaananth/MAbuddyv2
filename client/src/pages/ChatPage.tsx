@@ -20,6 +20,8 @@ const ChatPage: React.FC = () => {
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [editContent, setEditContent] = useState('');
     const [showModeMenu, setShowModeMenu] = useState(false);
+    const [showModelMenu, setShowModelMenu] = useState(false);
+    const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
     const [publishToMoltbook, setPublishToMoltbook] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [showScrollButton, setShowScrollButton] = useState(false);
@@ -40,6 +42,13 @@ const ChatPage: React.FC = () => {
         const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
         setShowScrollButton(!isNearBottom);
     };
+
+    const groqModels = [
+        { label: 'GPT OSS 120B', id: 'llama-3.3-70b-versatile', icon: <Cpu size={14} /> },
+        { label: 'Llama 4 Scout', id: 'llama-3.1-8b-instant', icon: <Zap size={14} /> },
+        { label: 'Qwen 3 32B', id: 'mixtral-8x7b-32768', icon: <BarChart3 size={14} /> },
+        { label: 'Llama 3.3 70B', id: 'llama-3.3-70b-versatile', icon: <Cpu size={14} /> },
+    ];
 
     const modes = [
         { label: 'Normal Mode', command: 'MODE NORMAL', icon: <User size={14} /> },
@@ -140,7 +149,7 @@ const ChatPage: React.FC = () => {
             conversation_id: conversationId || '',
             role: 'user',
             content: input,
-            metadata: null,
+            metadata: { model: selectedModel },
             created_at: new Date().toISOString(),
         };
 
@@ -153,7 +162,7 @@ const ChatPage: React.FC = () => {
         abortControllerRef.current = controller;
 
         try {
-            const response = await chatService.sendMessage(messageText, conversationId, publishToMoltbook, controller.signal);
+            const response = await chatService.sendMessage(messageText, conversationId, publishToMoltbook, controller.signal, selectedModel);
             const { data } = response.data;
 
             const novaMessage: Message = {
@@ -196,7 +205,7 @@ const ChatPage: React.FC = () => {
             conversation_id: conversationId || '',
             role: 'user',
             content: command,
-            metadata: null,
+            metadata: { model: selectedModel },
             created_at: new Date().toISOString(),
         };
 
@@ -207,7 +216,7 @@ const ChatPage: React.FC = () => {
         abortControllerRef.current = controller;
 
         try {
-            const response = await chatService.sendMessage(command, conversationId, publishToMoltbook, controller.signal);
+            const response = await chatService.sendMessage(command, conversationId, publishToMoltbook, controller.signal, selectedModel);
             const { data } = response.data;
 
             const novaMessage: Message = {
@@ -272,7 +281,7 @@ const ChatPage: React.FC = () => {
         abortControllerRef.current = controller;
 
         try {
-            const response = await chatService.sendMessage(editContent.trim(), conversationId, publishToMoltbook, controller.signal);
+            const response = await chatService.sendMessage(editContent.trim(), conversationId, publishToMoltbook, controller.signal, selectedModel);
             const { data } = response.data;
 
             const novaMessage: Message = {
@@ -456,33 +465,73 @@ const ChatPage: React.FC = () => {
                     </button>
                 )}
 
-                <div className="mb-3 relative inline-block">
-                    <button
-                        onClick={() => setShowModeMenu(!showModeMenu)}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl glass border border-nova-accent/30 text-[10px] font-black uppercase tracking-widest hover:border-nova-accent transition-all active:scale-95"
-                    >
-                        <Terminal size={12} className="text-nova-accent" />
-                        <span>System Mode</span>
-                        <ChevronDown size={12} className={`transition-transform duration-300 ${showModeMenu ? 'rotate-180' : ''}`} />
-                    </button>
+                <div className="mb-3 flex items-center gap-2 relative">
+                    {/* Model Switcher Menu */}
+                    <div className="relative">
+                        <button
+                            onClick={() => { setShowModelMenu(!showModelMenu); setShowModeMenu(false); }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl glass border border-nova-accent/30 text-[10px] font-black uppercase tracking-widest hover:border-nova-accent transition-all active:scale-95 shadow-[0_0_20px_rgba(0,242,255,0.05)]"
+                        >
+                            <Zap size={12} className="text-nova-accent" />
+                            <span>{groqModels.find(m => m.id === selectedModel)?.label || 'Select Model'}</span>
+                            <ChevronDown size={12} className={`transition-transform duration-300 ${showModelMenu ? 'rotate-180' : ''}`} />
+                        </button>
 
-                    {showModeMenu && (
-                        <div className="absolute left-0 bottom-full mb-3 w-64 glass border-2 border-nova-border rounded-2xl overflow-hidden shadow-2xl animate-in divide-y divide-white/5 slide-in-from-bottom-4 duration-300">
-                            {modes.map((mode) => (
-                                <button
-                                    key={mode.label}
-                                    onClick={() => handleModeSelect(mode.command)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-nova-accent/10 transition-colors text-left group"
-                                >
-                                    <div className="text-nova-accent/40 group-hover:text-nova-accent shrink-0">{mode.icon}</div>
-                                    <div className="min-w-0">
-                                        <p className="text-[10px] font-black text-white uppercase truncate">{mode.label}</p>
-                                        <p className="text-[8px] text-nova-text-dim font-mono truncate">{mode.command}</p>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                        {showModelMenu && (
+                            <div className="absolute left-0 bottom-full mb-3 w-64 glass border-2 border-nova-border rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
+                                <div className="p-3 border-b border-white/5 bg-white/5">
+                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-nova-text-dim">Groq Neural Engines</p>
+                                </div>
+                                <div className="divide-y divide-white/5">
+                                    {groqModels.map((model) => (
+                                        <button
+                                            key={model.id}
+                                            onClick={() => { setSelectedModel(model.id); setShowModelMenu(false); }}
+                                            className={`w-full flex items-center justify-between px-4 py-3 hover:bg-nova-accent/10 transition-colors text-left group ${selectedModel === model.id ? 'bg-nova-accent/5' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className={`${selectedModel === model.id ? 'text-nova-accent' : 'text-nova-accent/40'} group-hover:text-nova-accent shrink-0`}>{model.icon}</div>
+                                                <div className="min-w-0">
+                                                    <p className={`text-[10px] font-black uppercase truncate ${selectedModel === model.id ? 'text-white' : 'text-nova-text-dim'}`}>{model.label}</p>
+                                                    <p className="text-[8px] text-nova-text-dim/40 font-mono truncate">{model.id}</p>
+                                                </div>
+                                            </div>
+                                            {selectedModel === model.id && <div className="w-1.5 h-1.5 rounded-full bg-nova-accent animate-pulse" />}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="relative">
+                        <button
+                            onClick={() => { setShowModeMenu(!showModeMenu); setShowModelMenu(false); }}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl glass border border-nova-border/50 text-[10px] font-black uppercase tracking-widest hover:border-nova-accent transition-all active:scale-95"
+                        >
+                            <Terminal size={12} className="text-nova-text-dim" />
+                            <span>System Mode</span>
+                            <ChevronDown size={12} className={`transition-transform duration-300 ${showModeMenu ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {showModeMenu && (
+                            <div className="absolute left-0 bottom-full mb-3 w-64 glass border-2 border-nova-border rounded-2xl overflow-hidden shadow-2xl animate-in divide-y divide-white/5 slide-in-from-bottom-4 duration-300 z-50">
+                                {modes.map((mode) => (
+                                    <button
+                                        key={mode.label}
+                                        onClick={() => handleModeSelect(mode.command)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-nova-accent/10 transition-colors text-left group"
+                                    >
+                                        <div className="text-nova-accent/40 group-hover:text-nova-accent shrink-0">{mode.icon}</div>
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-black text-white uppercase truncate">{mode.label}</p>
+                                            <p className="text-[8px] text-nova-text-dim font-mono truncate">{mode.command}</p>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <form onSubmit={handleSend} className="relative flex items-end gap-2 px-1">

@@ -33,8 +33,8 @@ const api = axios.create({
 export default api;
 
 export const chatService = {
-    sendMessage: (message: string, conversation_id?: string, publish_to_moltbook: boolean = false, signal?: AbortSignal) =>
-        api.post('/chat', { message, conversation_id, publish_to_moltbook }, { signal }),
+    sendMessage: (message: string, conversation_id?: string, publish_to_moltbook: boolean = false, signal?: AbortSignal, model?: string) =>
+        api.post('/chat', { message, conversation_id, publish_to_moltbook, model }, { signal }),
     pollMessages: (conversation_id: string, since?: string) =>
         api.get('/chat/poll', { params: { conversation_id, since } }),
 };

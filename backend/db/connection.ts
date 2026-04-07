@@ -93,6 +93,12 @@ async function initDatabase(): Promise<void> {
       initPromise = null; // Allow retry on failure
       console.error('[DB] CRITICAL: Grid Connection Failed.');
       console.error('[DB] ERROR DETAILS:', error.message);
+      
+      // Improved diagnostics for paused Supabase projects
+      if (error.message.includes('ENOTFOUND') && error.message.includes('supabase.co')) {
+        console.warn('\n[DB] PROJECT PAUSED? Detected DNS failure for Supabase. Restore the project at: https://supabase.com/dashboard/project/xotpvugfzaqjcdsyctng\n');
+      }
+      
       if (error.stack) console.error('[DB] ERROR STACK:', error.stack);
       
       throw new Error(`[Zium Nova] Database Grid Failure/Timeout: ${error.message}`);

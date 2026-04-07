@@ -145,8 +145,9 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         memoryContext = await db.getRecentMemoryContext(userId, convId, 15);
 
         console.log('[Chat] Thinking...');
-        // Send to Zium Nova's brain (OpenClaw / OpenAI / Gemini)
-        const openClawResponse = await think(message, memoryContext, {}, userId);
+        // Send to Zium Nova's brain (Groq / Gemini / OpenAI)
+        const { model } = req.body;
+        const openClawResponse = await think(message, memoryContext, { model }, userId);
 
         // Determine if analytics are requested (Specifically matching Rule 3)
         const analyticsRequested = lowerMessage.includes('activate analytics mode');
@@ -282,8 +283,14 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         }
 
         console.log('[Chat] Storing Nova response...');
+        // Merge token usage and model into metadata for tracking
+        const finalMetadata = {
+            ...(metadata || {}),
+            usage: openClawResponse.usage,
+            model: model || 'llama-3.3-70b-versatile'
+        };
         // Store Nova's response
-        await db.addMessage(convId, 'nova', content, metadata);
+        await db.addMessage(convId, 'nova', content, finalMetadata);
 
         // Synchronize tasks from response content to the Command Center DB
         missionService.parseAndSaveTasksFromChat(userId, content).catch(e => console.error('[Chat] Task sync failed:', e));

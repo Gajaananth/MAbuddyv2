@@ -31,6 +31,7 @@ export interface MessageMetadata {
     action_type?: string;
     approved?: boolean;
     stopped?: boolean;
+    model?: string;
 }
 
 export interface FilterScores {
