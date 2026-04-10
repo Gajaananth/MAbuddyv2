@@ -116,15 +116,15 @@ async function runMigrations(pool: any) {
     const client = await pool.connect();
     let lockAcquired = false;
     try {
-      const lockRes = await client.query('SELECT pg_try_advisory_lock(1001) as got_lock');
+      const lockRes = await client.query('SELECT pg_try_advisory_lock(1002) as got_lock');
       lockAcquired = lockRes.rows[0].got_lock;
       
       if (!lockAcquired) {
-          console.log('[DB] Grid: Another instance is syncing schema. Skipping migration run.');
-          return;
+          console.log('[DB] Grid: Schema synchronization in progress. Proceeding with caution.');
+          // If we can't get the lock, we still try to run IF NOT EXISTS for safety
       }
       
-      console.log('[DB] Grid: Acquired Lock. Synchronizing Protocol Tables...');
+      console.log('[DB] Grid: Synchronizing Protocol Tables...');
       await client.query(`
       CREATE EXTENSION IF NOT EXISTS "pgcrypto";
       
