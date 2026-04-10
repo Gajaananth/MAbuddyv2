@@ -110,6 +110,17 @@ export async function markAllMessagesRead(userId: string): Promise<void> {
     );
 }
 
+export async function getMessagesSince(conversationId: string, userId: string, since: string, limit: number = 50): Promise<Message[]> {
+    const result = await db.pool.query(
+        `SELECT m.* FROM messages m 
+         JOIN conversations c ON m.conversation_id = c.id 
+         WHERE m.conversation_id = $1 AND c.user_id = $2 AND m.created_at > $3 
+         ORDER BY m.created_at ASC LIMIT $4`,
+        [conversationId, userId, since, limit]
+    );
+    return result.rows;
+}
+
 export async function getMessages(conversationId: string, limit: number = 50): Promise<Message[]> {
     const result = await db.pool.query(
         'SELECT * FROM messages WHERE conversation_id = $1 ORDER BY created_at ASC LIMIT $2',
@@ -152,14 +163,16 @@ export async function saveTrendAnalysis(
     userId: string,
     topic: string,
     analysis: TrendData,
-    score: number
+    score: number,
+    cluster: string = 'CORE'
 ): Promise<TrendAnalysis> {
     const result = await db.pool.query(
-        'INSERT INTO trend_analyses (user_id, topic, analysis, score) VALUES ($1, $2, $3, $4) RETURNING *',
-        [userId, topic, analysis, score]
+        'INSERT INTO trend_analyses (user_id, topic, cluster, analysis, score) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [userId, topic, cluster.toUpperCase(), analysis, score]
     );
     return result.rows[0];
 }
+
 
 export async function getTrendAnalyses(userId: string, limit: number = 20): Promise<TrendAnalysis[]> {
     const result = await db.pool.query(
@@ -171,6 +184,45 @@ export async function getTrendAnalyses(userId: string, limit: number = 20): Prom
 
 export async function deleteTrendAnalysis(id: string, userId: string): Promise<void> {
     await db.pool.query('DELETE FROM trend_analyses WHERE id = $1 AND user_id = $2', [id, userId]);
+}
+
+export async function getTrendAggregation(userId: string): Promise<any[]> {
+    const result = await db.pool.query(
+        `SELECT 
+            cluster, 
+            AVG(score) as avg_score, 
+            COUNT(*) as frequency,
+            MAX(created_at) as last_detected
+         FROM trend_analyses 
+         WHERE user_id = $1 
+         GROUP BY cluster 
+         ORDER BY avg_score DESC`,
+        [userId]
+    );
+    return result.rows;
+}
+
+// ──────────────────────────── Security Audit ────────────────────────────
+
+export async function logSecurityEvent(userId: string, event: {
+    event_type: string;
+    actor?: string;
+    risk_level?: 'LOW' | 'MEDIUM' | 'HIGH';
+    details: string;
+    metadata?: object;
+}): Promise<void> {
+    await db.pool.query(
+        'INSERT INTO security_audit_logs (user_id, event_type, actor, risk_level, details, metadata) VALUES ($1, $2, $3, $4, $5, $6)',
+        [userId, event.event_type, event.actor || 'SYSTEM', event.risk_level || 'LOW', event.details, event.metadata || null]
+    );
+}
+
+export async function getSecurityLogs(userId: string, limit: number = 20): Promise<any[]> {
+    const result = await db.pool.query(
+        'SELECT * FROM security_audit_logs WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2',
+        [userId, limit]
+    );
+    return result.rows;
 }
 
 // ──────────────────────────── Agent Network ────────────────────────────
@@ -400,7 +452,7 @@ export async function logAgentActivity(action: {
 }): Promise<void> {
     await db.pool.query(
         'INSERT INTO agent_activity_logs (agent_id, action_type, platform, details, metadata) VALUES ($1, $2, $3, $4, $5)',
-        [action.agent_id || 'ZIUM_NOVA', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata || null]
+        [action.agent_id || 'NOVA', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata || null]
     );
 }
 
@@ -429,11 +481,13 @@ export async function getIntelligenceLogs(userId: string, limit: number = 50): P
 
 export async function createTask(userId: string, task: {
     task_name: string;
-    assigned_to?: string;
-    priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    owner?: TaskOwner;
+    priority?: TaskPriority;
+    duration?: TaskDuration;
     action_plan?: string;
     notes?: string;
-    status?: 'TODO' | 'IN-PROGRESS' | 'COMPLETED' | 'BLOCKED';
+    status?: TaskStatus;
+    deadline?: Date;
 }, customTaskIdStr?: string): Promise<any> {
     try {
         let taskIdStr = customTaskIdStr;
@@ -449,16 +503,18 @@ export async function createTask(userId: string, task: {
             taskIdStr = nextIdNum.toString().padStart(3, '0');
         }
 
-        const assignedTo = task.assigned_to || 'ZIUM NOVA';
+        const owner = task.owner || 'NOVA';
         const priority = task.priority || 'MEDIUM';
+        const duration = task.duration || 'MEDIUM';
         const actionPlan = task.action_plan || '';
         const notes = task.notes || '';
         const status = task.status || 'TODO';
+        const deadline = task.deadline || null;
 
         const res = await db.pool.query(
-            `INSERT INTO tasks (user_id, task_id_str, task_name, assigned_to, priority, action_plan, notes, status)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-            [userId, taskIdStr, task.task_name, assignedTo, priority, actionPlan, notes, status]
+            `INSERT INTO tasks (user_id, task_id_str, task_name, owner, priority, duration, action_plan, notes, status, deadline)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+            [userId, taskIdStr, task.task_name, owner, priority, duration, actionPlan, notes, status, deadline]
         );
         return res.rows[0];
     } catch (error) {
@@ -509,10 +565,10 @@ export async function updateTaskStatus(
     return result.rows[0];
 }
 
-export async function updateTaskAssignment(userId: string, taskIdStr: string, assignedTo: string): Promise<any> {
+export async function updateTaskAssignment(userId: string, taskIdStr: string, owner: string): Promise<any> {
     const result = await db.pool.query(
-        'UPDATE tasks SET assigned_to = $1, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *',
-        [assignedTo.toUpperCase(), userId, taskIdStr]
+        'UPDATE tasks SET owner = $1, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *',
+        [owner.toUpperCase(), userId, taskIdStr]
     );
     return result.rows[0];
 }
@@ -593,7 +649,7 @@ export async function getTaskProgress(userId: string): Promise<{
     todo: number;
     blocked: number;
     stuck: any[];
-    by_assignee: { zium_nova: number; buddy: number };
+    by_assignee: { nova: number; operator: number; shared: number };
 }> {
     const tasks = await getTasks(userId);
     const now = Date.now();
@@ -612,10 +668,7 @@ export async function getTaskProgress(userId: string): Promise<{
         todo: tasks.filter(t => t.status === 'TODO').length,
         blocked: tasks.filter(t => t.status === 'BLOCKED').length,
         stuck,
-        by_assignee: {
-            zium_nova: tasks.filter(t => t.assigned_to === 'ZIUM NOVA' || t.assigned_to === 'ZIUM_NOVA').length,
-            buddy: tasks.filter(t => t.assigned_to === 'BUDDY').length,
-        }
+        by_assignee: { nova: tasks.filter(t => t.owner === 'NOVA').length, operator: tasks.filter(t => t.owner === 'OPERATOR').length, shared: tasks.filter(t => t.owner === 'SHARED').length }
     };
 }
 
@@ -686,7 +739,10 @@ const queries = {
     findRecentDuplicateRaid,
     saveImprovementLog,
     getImprovementLogs,
-    getTaskProgress
+    getTaskProgress,
+    getTrendAggregation,
+    logSecurityEvent,
+    getSecurityLogs
 };
 
 export default queries;

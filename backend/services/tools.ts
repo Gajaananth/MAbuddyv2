@@ -204,20 +204,21 @@ export const commandCenterTool = tool({
         userId: z.string().describe('The Operator ID / User ID'),
         task_name: z.string().optional().describe('Required for "add": The objective name'),
         action_plan: z.string().optional().describe('Required for "add": Strategic execution steps'),
-        assigned_to: z.string().optional().describe('Optional for "add/assign": "BUDDY" (User) or "ZIUM NOVA" (Agent)'),
+        owner: z.enum(['OPERATOR', 'NOVA', 'SHARED']).optional().describe('Optional: "OPERATOR", "NOVA", or "SHARED"'),
         priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Optional: Defaults to MEDIUM'),
         task_id_str: z.string().optional().describe('Required for "update/archive/assign": Task ID string (e.g. "001")'),
-        status: z.enum(['PENDING', 'PROCESS', 'DONE', 'BLOCKED']).optional().describe('Note: "DONE" will automatically archive the task.'),
+        duration: z.enum(['SHORT', 'MEDIUM', 'LONG']).optional().describe('Optional: Defaults to MEDIUM'),
+        status: z.enum(['TODO', 'IN_PROGRESS', 'COMPLETED', 'PAUSED', 'PENDING', 'PROCESS', 'DONE', 'BLOCKED']).optional().describe('Note: "DONE" will automatically archive the task.'),
         notes: z.string().optional().describe('Optional: Progress updates or blocking reasons'),
         is_archived: z.boolean().optional().describe('Used with "archive" action'),
     }),
-    execute: async ({ action, userId, task_name, action_plan, assigned_to, priority, task_id_str, status, notes, is_archived }) => {
+    execute: async ({ action, userId, task_name, action_plan, owner, priority, task_id_str, status, duration, notes, is_archived }) => {
         try {
             const { createTask, getTasks, updateTaskStatus, archiveTask, updateTaskAssignment } = await import('../db/queries.js');
 
             if (action === 'add') {
                 if (!task_name) return { success: false, error: 'task_name is required' };
-                const newTask = await createTask(userId, { task_name, action_plan, assigned_to, priority, notes });
+                const newTask = await createTask(userId, { task_name, action_plan, owner, priority, duration, notes });
                 return { success: true, message: `Task Added: [${newTask.task_id_str}]`, task: newTask };
             }
 
@@ -234,9 +235,9 @@ export const commandCenterTool = tool({
             }
 
             if (action === 'assign') {
-                if (!task_id_str || !assigned_to) return { success: false, error: 'task_id_str and assigned_to required' };
-                const updatedTask = await updateTaskAssignment(userId, task_id_str, assigned_to);
-                return { success: true, message: `Task ${task_id_str} assigned to -> ${assigned_to}`, task: updatedTask };
+                if (!task_id_str || !owner) return { success: false, error: 'task_id_str and owner required' };
+                const updatedTask = await updateTaskAssignment(userId, task_id_str, owner);
+                return { success: true, message: `Task ${task_id_str} assigned to -> ${owner}`, task: updatedTask };
             }
 
             if (action === 'show') {

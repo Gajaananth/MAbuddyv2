@@ -24,25 +24,31 @@ router.get('/poll', async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ success: false, error: 'conversation_id is required' });
         }
         
-        // We need a specific query for this to be efficient, but for now we'll fetch details and filter.
-        // A better approach would be a dedicated db query: db.getMessagesSince(convId, since)
+        if (since && typeof since === 'string') {
+            const messages = await db.getMessagesSince(conversation_id, userId, since);
+            return res.json({
+                success: true,
+                data: {
+                    messages: messages.map(m => ({
+                        ...m,
+                        metadata: typeof m.metadata === 'string' ? JSON.parse(m.metadata) : m.metadata
+                    }))
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // Fallback or Initial Load (No 'since' provided)
         const responseData = await db.getConversationDetail(conversation_id, userId);
         
         if (!responseData) {
             return res.status(404).json({ success: false, error: 'Conversation not found' });
         }
 
-        let newMessages = responseData.messages;
-        
-        if (since && typeof since === 'string') {
-            const sinceDate = new Date(since);
-            newMessages = newMessages.filter(m => new Date(m.created_at) > sinceDate);
-        }
-
         res.json({
             success: true,
             data: {
-                messages: newMessages.map(m => ({
+                messages: responseData.messages.map(m => ({
                     ...m,
                     metadata: typeof m.metadata === 'string' ? JSON.parse(m.metadata) : m.metadata
                 }))
@@ -265,7 +271,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         if (analyticsRequested && !forceStrategic) {
             console.log('[Chat] Analytics requested. Running scoring and filtering...');
             // Apply Silent Beast / Truth Exposer filter
-            const filterResult = applyFilter(content);
+            const filterResult = await applyFilter(content, userId);
 
             // Calculate Production Metrics
             const productionScores = calculateProductionScores(filterResult.filtered_content);

@@ -53,6 +53,8 @@ export const agentService = {
         api.get('/agents'),
     addAgent: (agentData: { name: string; description: string; capabilities: string[] }) =>
         api.post('/agents', agentData),
+    initiateAgent: (id: string) =>
+        api.post(`/agents/${id}/initiate`),
 };
 
 export const memoryService = {
@@ -143,6 +145,6 @@ export const missionService = {
     getTasks: (archived = false) => api.get(`/tasks?archived=${archived}`),
     updateTask: (id: string, updates: any) => api.patch(`/tasks/${id}`, updates),
     archiveTask: (id: string, is_archived: boolean) => api.patch(`/tasks/${id}/archive`, { is_archived }),
-    assignTask: (id: string, assigned_to: string) => api.patch(`/tasks/${id}/assign`, { assigned_to }),
+    assignTask: (id: string, owner: string) => api.patch(`/tasks/${id}/assign`, { owner }),
     deleteTask: (id: string) => api.delete(`/tasks/${id}`),
 };

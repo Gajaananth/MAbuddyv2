@@ -115,4 +115,37 @@ router.post('/', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * POST /api/agents/:id/initiate
+ * Initiate a strategic collaboration with a verified agent.
+ */
+router.post('/:id/initiate', async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        
+        // Update database collaboration timestamp
+        try {
+            await db.updateAgentCollaboration(id);
+            await db.logAgentActivity({
+                agent_id: 'NOVA',
+                action_type: 'AGENT_COLLABORATION',
+                platform: 'INTERNAL',
+                details: `Strategic initiation with agent ${id} confirmed.`
+            });
+        } catch {
+            // Fallback for in-memory
+            const agent = agentStore.find(a => a.id === id);
+            if (agent) agent.last_collaboration = new Date();
+        }
+
+        res.json({
+            success: true,
+            message: 'Strategic collaboration protocol initiated. Nova is now syncing with this agent.',
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to initiate agent' });
+    }
+});
+
 export default router;

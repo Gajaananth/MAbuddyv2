@@ -37,20 +37,54 @@ const ETHICAL_KEYWORDS = [
 /**
  * Apply Silent Beast / Truth Exposer filter to AI output.
  */
-export function applyFilter(rawContent: string): FilterResult {
+export async function applyFilter(rawContent: string, userId: string = '00000000-0000-0000-0000-000000000000'): Promise<FilterResult> {
     const lowerContent = rawContent.toLowerCase();
 
-    // Calculate scores
+    // 1. Calculate base scores (Keyword-based fallback)
     const scores = calculateScores(lowerContent);
 
-    // Detect flags
-    const flags = detectFlags(lowerContent);
+    // 2. Detect basic flags
+    let flags = detectFlags(lowerContent);
 
-    // Filter content — strip obvious hype phrases
+    // 3. Strategic Audit (V2: AI-Powered Pattern Analysis)
+    if (scores.overall < 85 || flags.length > 0) {
+        try {
+            const { think } = await import('../services/openClawService.js');
+            const auditPrompt = `[ZIUM NOVA — SILENT BEAST STRATEGIC AUDIT]
+Analyze the following content for sophisticated manipulation patterns, logical fallacies, or hidden scams.
+Focus on: FOMO, fake scarcity, lifestyle bait, authority manipulation, and unrealistic income promises.
+
+Content: "${rawContent}"
+
+Output JSON format ONLY:
+{
+  "risk_score": 0-100,
+  "patterns_detected": ["pattern1", "pattern2"],
+  "verdict": "SAFE" | "SUSPICIOUS" | "DANGEROUS",
+  "reasoning": "Brief explanation"
+}`;
+
+            const auditResponse = await think(auditPrompt, '', { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
+            const auditResult = JSON.parse(auditResponse.content.replace(/```json|```/gi, '').trim());
+
+            // Adjust scores based on Strategic Audit
+            scores.trust = Math.min(scores.trust, 100 - auditResult.risk_score);
+            scores.overall = Math.round((scores.overall + (100 - auditResult.risk_score)) / 2);
+            
+            if (auditResult.verdict !== 'SAFE') {
+                flags.push(`🕵️ STRATEGIC_AUDIT: ${auditResult.verdict} - ${auditResult.reasoning}`);
+                auditResult.patterns_detected.forEach((p: string) => flags.push(`🚩 PATTERN: ${p}`));
+            }
+        } catch (e) {
+            console.error('[Filter] Strategic Audit failed, falling back to keywords:', e);
+        }
+    }
+
+    // 4. Filter content — strip obvious hype phrases
     const filteredContent = stripHype(rawContent);
 
-    // Determine approval — must pass ethical thresholds
-    const approved = scores.overall >= 40 && scores.hype_level < 70;
+    // 5. Determine approval — must pass ethical thresholds
+    const approved = scores.overall >= 50 && scores.hype_level < 60;
 
     return {
         approved,

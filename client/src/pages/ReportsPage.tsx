@@ -16,7 +16,7 @@ interface Report {
 
 interface Raid {
     id: string;
-    target_name: string;
+    source_platform?: string; // Unified naming
     category: string;
     summary: string;
     risk_level: string;
@@ -40,8 +40,8 @@ const ReportsPage: React.FC = () => {
             setLoading(true);
             try {
                 const [reportsRes, raidsRes] = await Promise.all([
-                    api.get('/api/intelligence/reports'),
-                    api.get('/api/intelligence/raids')
+                    api.get('/intelligence/reports'),
+                    api.get('/intelligence/raids')
                 ]);
                 
                 let allReports = reportsRes.data.data || [];
@@ -192,7 +192,7 @@ const ReportsPage: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <h3 className="text-base sm:text-xl font-black text-white leading-tight">Raid: {raid.target_name}</h3>
+                                    <h3 className="text-base sm:text-xl font-black text-white leading-tight">Raid: {raid.category || raid.source_platform || 'Unknown Target'}</h3>
                                     <p className="text-sm sm:text-base text-nova-text-dim leading-relaxed font-medium">
                                         {raid.summary}
                                     </p>

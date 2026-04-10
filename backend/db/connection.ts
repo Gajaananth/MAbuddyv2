@@ -128,22 +128,45 @@ async function runMigrations(pool: any) {
       await client.query(`
       CREATE EXTENSION IF NOT EXISTS "pgcrypto";
       
-      -- Multi-Agent Task Support (v3.2.0)
+      -- Master Intelligence Pipeline Task Support (v5.0.0)
       CREATE TABLE IF NOT EXISTS tasks (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL,
         task_id_str VARCHAR(10) NOT NULL,
         task_name TEXT NOT NULL,
-        assigned_to VARCHAR(50) DEFAULT 'ZIUM NOVA',
+        owner VARCHAR(20) DEFAULT 'NOVA' CHECK (owner IN ('OPERATOR', 'NOVA', 'SHARED')),
         status VARCHAR(20) DEFAULT 'TODO',
         priority VARCHAR(20) DEFAULT 'MEDIUM' CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
+        duration VARCHAR(20) DEFAULT 'MEDIUM' CHECK (duration IN ('SHORT', 'MEDIUM', 'LONG')),
         action_plan TEXT DEFAULT '',
         notes TEXT DEFAULT '',
         is_archived BOOLEAN DEFAULT FALSE,
+        deadline TIMESTAMPTZ DEFAULT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW(),
         UNIQUE(user_id, task_id_str)
       );
+
+      DO $$ 
+      BEGIN 
+        -- Add missing columns if they don't exist
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'owner') THEN
+          ALTER TABLE tasks ADD COLUMN owner VARCHAR(20) DEFAULT 'NOVA';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'duration') THEN
+          ALTER TABLE tasks ADD COLUMN duration VARCHAR(20) DEFAULT 'MEDIUM';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'deadline') THEN
+          ALTER TABLE tasks ADD COLUMN deadline TIMESTAMPTZ DEFAULT NULL;
+        END IF;
+
+        -- Migrating assigned_to to owner if assigned_to exists
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'assigned_to') THEN
+          UPDATE tasks SET owner = 'OPERATOR' WHERE assigned_to = 'BUDDY';
+          UPDATE tasks SET owner = 'NOVA' WHERE assigned_to = 'ZIUM NOVA' OR assigned_to = 'NOVA';
+          -- Final cleanup will happen in code, but this moves data over
+        END IF;
+      END $$;
 
       DO $$ 
       BEGIN 
@@ -318,12 +341,28 @@ async function runMigrations(pool: any) {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      CREATE TABLE IF NOT EXISTS security_audit_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        event_type VARCHAR(100) NOT NULL,
+        actor VARCHAR(100) NOT NULL DEFAULT 'SYSTEM',
+        risk_level VARCHAR(20) DEFAULT 'LOW' CHECK (risk_level IN ('LOW', 'MEDIUM', 'HIGH')),
+        details TEXT,
+        metadata JSONB DEFAULT null,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_security_logs_user ON security_audit_logs(user_id);
+      CREATE INDEX IF NOT EXISTS idx_security_logs_type ON security_audit_logs(event_type);
+
       CREATE TABLE IF NOT EXISTS trend_analyses (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL,
         topic VARCHAR(255) NOT NULL,
+        cluster VARCHAR(100) DEFAULT 'CORE',
         analysis JSONB NOT NULL,
         score INTEGER DEFAULT 0,
+        metadata JSONB DEFAULT null,
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 

@@ -2,6 +2,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import authQueries from '../db/authQueries.js';
+import { logSecurityEvent } from '../db/queries.js';
+import { eventService, ZiumEvent } from './eventService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
 const MAX_USERS = 5;
@@ -137,6 +139,15 @@ export async function register(u: {
         os_type: u.device.os
     });
 
+    await logSecurityEvent(user.id, {
+        event_type: 'REGISTER',
+        actor: 'OPERATOR',
+        risk_level: 'LOW',
+        details: `New device or profile registration sequence completed: ${u.device.identifier}`
+    });
+
+    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId: user.id, type: 'REGISTER' });
+
     return { success: true, userId: user.id };
 }
 
@@ -251,6 +262,15 @@ export async function login(c: {
         { expiresIn: '72h' }
     );
 
+    await logSecurityEvent(matchedUser.id, {
+        event_type: 'LOGIN',
+        actor: 'OPERATOR',
+        risk_level: 'LOW',
+        details: `Successful grid access via PIN: Device ${c.device.identifier}`
+    });
+
+    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN' });
+
     return {
         success: true,
         token,
@@ -313,6 +333,15 @@ export async function loginBiometric(c: {
     // 4. Generate Session
     const token = jwt.sign({ userId: matchedUser.id, deviceId: device.id }, JWT_SECRET, { expiresIn: '24h' });
 
+    await logSecurityEvent(matchedUser.id, {
+        event_type: 'LOGIN_BIOMETRIC',
+        actor: 'OPERATOR',
+        risk_level: 'LOW',
+        details: `Biometric grid access: Device ${c.device.identifier}`
+    });
+
+    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN_BIOMETRIC' });
+
     return {
         success: true,
         token,
@@ -354,6 +383,16 @@ export async function changePin(userId: string, data: { oldPin: string, newPin: 
     // 3. Update
     const newHash = await hashValue(data.newPin);
     await authQueries.updatePin(userId, newHash);
+
+    await logSecurityEvent(userId, {
+        event_type: 'PIN_CHANGE',
+        actor: 'OPERATOR',
+        risk_level: 'MEDIUM',
+        details: 'Self-service PIN update completed successfully.'
+    });
+
+    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId, type: 'PIN_CHANGE' });
+
     return { success: true };
 }
 

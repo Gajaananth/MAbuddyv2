@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import NotificationPanel from './NotificationPanel';
 import { memoryService } from '../services/api';
 import {
-    Bird, Shield, TrendingUp, X, Terminal, Database, PlusCircle
+    Bird, Shield, TrendingUp, X, Database, PlusCircle, Brain, Lock, BarChart3, UserCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -50,9 +50,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         },
         { icon: <Bird size={18} />, label: 'Intelligence', path: '/intelligence' },
         { icon: <TrendingUp size={18} />, label: 'Market Trends', path: '/trends' },
-        { icon: <Shield size={18} />, label: 'Learning Outcomes', path: '/learning' },
-        { icon: <Terminal size={18} />, label: 'Reports Archive', path: '/reports' },
-        { icon: <Shield size={18} />, label: 'Security Grid', path: '/security' },
+        { icon: <Brain size={18} />, label: 'Learning Outcomes', path: '/learning' },
+        { icon: <BarChart3 size={18} />, label: 'Reports Archive', path: '/reports' },
+        { icon: <UserCheck size={18} />, label: 'Agent Network', path: '/agents' },
+        { icon: <Lock size={18} />, label: 'Security Grid', path: '/security' },
     ];
 
     return (

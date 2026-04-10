@@ -45,6 +45,7 @@ export interface FilterScores {
 export interface TrendAnalysis {
     id: string;
     topic: string;
+    cluster: string;
     analysis: TrendData;
     score: number;
     created_at: string;

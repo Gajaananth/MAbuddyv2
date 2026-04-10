@@ -3,13 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { think } from '../services/openClawService.js';
 import { applyFilter } from '../filters/silentBeastFilter.js';
 import db from '../db/queries.js';
+import { getTrendAggregation, getSecurityLogs } from '../db/queries.js';
 import { ApiResponse, TrendData } from '../types/index.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { eventService, ZiumEvent } from '../services/eventService.js';
 
 const router = Router();
 
-// In-memory fallback
-let trendStore: any[] = [];
+// No fallbacks allowed. Grid must be persistent.
 
 /**
  * POST /api/trends/analyze
@@ -46,7 +47,7 @@ Provide a structured analysis with:
 
 Be brutally honest. No hype. Data-driven. Expose manipulation.`;
 
-        const openClawResponse = await think(prompt, '', {}, userId);
+        const openClawResponse = await think(prompt, '', { mode: 'STRATEGIC' }, userId);
         const filterResult = applyFilter(openClawResponse.content);
 
         const trendData: TrendData = {
@@ -59,20 +60,16 @@ Be brutally honest. No hype. Data-driven. Expose manipulation.`;
         };
 
         const score = filterResult.scores.overall;
-        let savedTrend;
+        // Derive cluster from first meaningful word of topic (uppercase)
+        const cluster = topic.trim().split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '') || 'CORE';
+        const savedTrend = await db.saveTrendAnalysis(userId, topic, trendData, score, cluster);
 
-        try {
-            savedTrend = await db.saveTrendAnalysis(userId, topic, trendData, score);
-        } catch {
-            savedTrend = {
-                id: uuidv4(),
-                topic,
-                analysis: trendData,
-                score,
-                created_at: new Date(),
-            };
-            trendStore.push(savedTrend);
-        }
+        eventService.emitZium(ZiumEvent.TREND_UPDATED, {
+            userId,
+            topic,
+            score,
+            cluster: cluster
+        });
 
         const response: ApiResponse = {
             success: true,
@@ -105,12 +102,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        let trends;
-        try {
-            trends = await db.getTrendAnalyses(userId, 20);
-        } catch {
-            trends = trendStore.slice(-20).reverse();
-        }
+        const trends = await db.getTrendAnalyses(userId, 20);
 
         const response: ApiResponse = {
             success: true,
@@ -158,6 +150,40 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
             timestamp: new Date().toISOString(),
         };
         res.status(500).json(response);
+    }
+});
+
+/**
+ * GET /api/trends/aggregation
+ * Returns aggregated trend intelligence grouped by cluster.
+ */
+router.get('/aggregation', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const aggregation = await getTrendAggregation(userId);
+        res.json({ success: true, data: aggregation, timestamp: new Date().toISOString() });
+    } catch (error) {
+        console.error('[Trends] Aggregation Error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+});
+
+/**
+ * GET /api/trends/security-logs
+ * Returns the real-time security audit trail for the Security Vault.
+ */
+router.get('/security-logs', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const logs = await getSecurityLogs(userId, 30);
+        res.json({ success: true, data: logs, timestamp: new Date().toISOString() });
+    } catch (error) {
+        console.error('[Trends] Security Logs Error:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
     }
 });
 

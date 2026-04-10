@@ -1,5 +1,27 @@
 // Zium Nova — Shared TypeScript Types
 
+export type TaskOwner = 'OPERATOR' | 'NOVA' | 'SHARED';
+export type TaskDuration = 'SHORT' | 'MEDIUM' | 'LONG';
+export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'PAUSED' | 'PENDING' | 'PROCESS' | 'DONE' | 'BLOCKED';
+
+export interface Task {
+    id: string;
+    user_id: string;
+    task_id_str: string;
+    task_name: string;
+    owner: TaskOwner;
+    status: TaskStatus;
+    priority: TaskPriority;
+    action_plan: string;
+    duration: TaskDuration;
+    notes?: string;
+    is_archived: boolean;
+    deadline?: Date;
+    created_at: Date;
+    updated_at: Date;
+}
+
 export interface Conversation {
     id: string;
     title: string;

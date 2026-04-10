@@ -1,9 +1,9 @@
 import cron from 'node-cron';
 import { think } from './openClawService.js';
-import { saveRaidResult, logAgentActivity, findRecentDuplicateRaid, saveIntelligenceLog, saveTrendAnalysis } from '../db/queries.js';
 import { getAllUsers } from '../db/authQueries.js';
 import { generateWeeklyReport, generateMidWeekReport } from './intelligenceService.js';
-import { evaluateAndNotify, createOpportunityAlert } from './notificationService.js';
+import { lifecycleService } from './lifecycleService.js';
+import { eventService, ZiumEvent } from './eventService.js';
 
 // Track active raids per user for UI progress feedback
 export const activeRaids = new Map<string, {
@@ -71,12 +71,13 @@ function extractRiskLevel(content: string): 'Low' | 'Medium' | 'High' {
 
 /**
  * Initialize Cron Schedule
+ * Configured for Sri Lanka Time (GMT +5:30)
  */
 export function initRaidingSchedule() {
-    console.log('[Ride] Initializing Antigravity Schedule...');
+    console.log('[Ride] Initializing Strategic Pipeline (SL Time GMT+5:30)...');
 
-    // Mid-week scan: Wednesday midnight UTC
-    cron.schedule('0 0 * * 3', async () => {
+    // Mid-week Briefing: Wednesday 02:00 AM SL Time
+    cron.schedule('0 2 * * 3', async () => {
         try {
             const users = await getAllUsers();
             for (const user of users) {
@@ -84,22 +85,26 @@ export function initRaidingSchedule() {
                 await generateMidWeekReport(user.id);
             }
         } catch (err) { console.error('[Ride] Mid-week Error:', err); }
-    });
+    }, { timezone: "Asia/Colombo" });
 
-    // End-of-week scan + report: Sunday midnight UTC
-    cron.schedule('0 0 * * 0', async () => {
+    // End-of-week Intelligence Report: Sunday 02:00 AM SL Time
+    cron.schedule('0 2 * * 0', async () => {
         try {
             const users = await getAllUsers();
+            const { taskService } = await import('./taskService.js');
             for (const user of users) {
                 await performInternetRaid('end-of-week', user.id);
+                // 1. End-of-week Intelligence Report for the past week
                 await generateWeeklyReport(user.id);
+                
+                // 2. Initialize new mandatory missions for the upcoming week (Unified via MissionService)
+                const { missionService } = await import('./missionService.js');
+                await missionService.generateWeeklyTasks(user.id);
             }
         } catch (err) { console.error('[Ride] End-of-week Error:', err); }
-    });
+    }, { timezone: "Asia/Colombo" });
 
-
-
-    console.log('[Ride] Schedule ARMED: Wed & Sun 00:00 UTC (Daily Mode: Disabled)');
+    console.log('[Ride] Schedule ARMED: Wed & Sun 02:00 AM (Asia/Colombo)');
 }
 
 /**
@@ -157,18 +162,44 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
             let analysisContent = '';
 
             try {
-                const raidPrompt = `[ZIUM NOVA — INTERNET RIDE AUTOMATION v4.0]
-Topic: ${cluster.topic}
+                const raidPrompt = `[ZIUM NOVA — INTERNET RIDE SCAN v5.0 — SCOUTING MODE]
+Task: Analyze intelligence cluster "${cluster.name}"
+Core Mandate: Scout for emerging high-leverage signals. Identify trends before saturation.
 
-MANDATE:
-1. Provide a strategic brief on this cluster.
-2. Identify specific earning signals or risks.
-3. Be concise but highly intelligent.
-4. Output in plain text, friendly but expert buddy tone.`;
+Cluster Focus: ${cluster.topic}
+
+Requirement: 
+- Provide an intelligence brief (Strategic scouting).
+- Flag specific earning signals or manipulation risks.
+- Include a MANDATORY "STRATEGIC LESSON" section:
+  1. OBSERVATION: [What was seen]
+  2. PATTERN: [The underlying logic]
+  3. LESSON: [The core takeaway for the team]
+  4. APPLICATION: [How we use this right now]
+- Ensure 100% alignment with Operator's ethical mission.`;
 
                 activeRaids.set(userId, { ...activeRaids.get(userId)!, status: 'analyzing' });
                 const analysis = await think(raidPrompt, '', { skipSync: true }, userId);
                 analysisContent = analysis.content;
+
+                // --- Opportunity Intelligence Engine (V3 Integration) ---
+                const { opportunityService } = await import('./opportunityService.js');
+                const signals = await opportunityService.evaluateSignals(analysisContent, userId);
+                
+                if (signals.length > 0) {
+                    console.log(`[Ride] [${cluster.name}] Opportunity Pulse: Detected ${signals.length} potential signals.`);
+                    
+                    for (const s of signals) {
+                        const automationResult = await opportunityService.handleAutomation(s, userId);
+                        console.log(`[Ride] Automation for ${s.topic}: ${automationResult}`);
+                    }
+
+                    // Attach signals to cluster analysis for storage
+                    analysisContent += '\n\n### 🚀 Opportunity Intelligence signals\n';
+                    signals.forEach(s => {
+                        analysisContent += `- **${s.topic}** (Score: ${s.overall_score}/10) | Demand: ${s.demand} | Competition: ${s.competition}\n  - *Insight*: ${s.strategic_insight}\n  - *Action*: ${s.recommended_action}\n`;
+                    });
+                }
             } catch (err: any) {
                 console.error(`[Ride] [${cluster.name}] Analysis failed:`, err.message);
                 analysisContent = `Analysis unavailable for ${cluster.name}. Error: ${err.message}`;
@@ -178,7 +209,7 @@ MANDATE:
                 const riskLevel = extractRiskLevel(analysisContent) || cluster.defaultRisk;
 
                 // 1. Persist to intelligence_raids (The raw finding)
-                const savedFinding = await saveRaidResult(userId, {
+                const savedFinding = await db.saveRaidResult(userId, {
                     category: cluster.name,
                     risk_level: riskLevel,
                     source_platform: 'Zium Nova AI Analysis',
@@ -190,49 +221,37 @@ MANDATE:
                     status: 'active',
                 });
 
-                // 2. Persist to intelligence_logs (For Learning Outcomes page)
-                await saveIntelligenceLog(userId, {
+                // 2. Pass to Lifecycle Engine for full Agentic Enforcement (Score -> Decision -> Task -> Action -> Learning)
+                await lifecycleService.processSignal(userId, {
                     category: cluster.name,
-                    lesson: analysisContent.slice(0, 1000),
-                    source_context: `Internet Ride: ${type}`,
+                    source: `Internet Ride: ${type}`,
+                    content: analysisContent,
                     metadata: { finding_id: savedFinding?.id, risk: riskLevel }
                 });
 
                 // 3. Persist to trend_analyses (For Market Trends page) - Skip for "Cyber-Scam" cluster
                 if (cluster.name !== 'Cyber-Scam & Manipulation Filtering') {
                     const trendData = parseToTrendData(analysisContent, cluster.name);
-                    await saveTrendAnalysis(
+                    // Standardize cluster naming: Derive from cluster name or use CORE
+                    const clusterKey = cluster.name.split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '') || 'CORE';
+                    await db.saveTrendAnalysis(
                         userId,
                         cluster.name,
                         trendData,
-                        riskLevel === 'Low' ? 90 : 60
+                        riskLevel === 'Low' ? 90 : 60,
+                        clusterKey
                     );
                 }
 
-                // 4. Notifications & Alerts
-                if (analysisContent.includes('OPPORTUNITY') || analysisContent.includes('SIGNAL')) {
-                    await createOpportunityAlert(userId, {
-                        platform: cluster.name,
-                        source: 'Zium Nova Autonomous Internet Ride',
-                        opportunityType: cluster.name,
-                        credibility: 'AI Verified Protocol',
-                        earningPotential: 'Strategic Leverage',
-                        confidenceLevel: 85,
-                        recommendedActions: 'Check Command Center for mission breakdown.',
-                        findingId: savedFinding?.id
-                    });
-                }
-
-                await evaluateAndNotify(userId, analysisContent, cluster.name, { finding_id: savedFinding?.id });
-                
-                await logAgentActivity({
+                await db.logAgentActivity({
+                    agent_id: 'NOVA',
                     action_type: 'INTERNET_RIDE',
                     platform: cluster.name,
                     details: `Cluster scan completed: ${cluster.name} | Risk: ${riskLevel}`,
                 });
 
             } catch (persistErr: any) {
-                console.error(`[Ride] [${cluster.name}] Persistence failed:`, persistErr.message);
+                console.error(`[Ride] [${cluster.name}] Lifecycle Enforcement failed:`, persistErr.message);
             }
 
             completed++;

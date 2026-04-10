@@ -3,6 +3,8 @@ import { createNotification, findRecentDuplicateNotification } from '../db/queri
 import db from '../db/queries.js';
 import { getAllUsers } from '../db/authQueries.js';
 import { missionService } from './missionService.js';
+import { lifecycleService } from './lifecycleService.js';
+import { eventService, ZiumEvent } from './eventService.js';
 
 /**
  * Zium Nova Autonomy Service v4.0.0
@@ -11,7 +13,7 @@ import { missionService } from './missionService.js';
  * - Duplicate report prevention
  * - Continuous improvement logging
  * - Critical-only operator alerts
- * - Smart task auto-assignment (self + buddy)
+ * - Smart task auto-assignment (self + operator)
  * - Stuck task escalation
  */
 class AutonomyService {
@@ -194,7 +196,7 @@ Output ONLY the message.`;
                 ? `RECENT INTERNET RIDE FINDINGS:\n${recentRaids.map(r => `[${r.category}] ${r.summary?.substring(0, 100)}`).join('\n')}`
                 : 'No recent internet ride findings.';
 
-            const taskContext = `ACTIVE TASKS:\n${activeTasks.filter(t => t.status !== 'COMPLETED').map(t => `[${t.task_id_str}] ${t.task_name} (Assigned: ${t.assigned_to})`).join('\n')}`;
+            const taskContext = `ACTIVE TASKS:\n${activeTasks.filter(t => t.status !== 'COMPLETED').map(t => `[${t.task_id_str}] ${t.task_name} (Owner: ${t.owner})`).join('\n')}`;
 
             // Fetch improvement history for self-learning
             const recentImprovements = await db.getImprovementLogs(userId, 3);
@@ -217,7 +219,7 @@ Identity: Strategic Agent of the Operator
 
 [TACTICAL EXECUTION (STRUCTURED ONLY)]
 LOG: [Mission Point #] | [Finding] | [Strategic Value]
-TASK: [Name] | PRIORITY: [HIGH/MED] | ASSIGNED: [ZIUM NOVA/BUDDY] | PLAN: [Execution]
+TASK: [Name] | PRIORITY: [HIGH/MED] | OWNER: [NOVA/OPERATOR] | PLAN: [Execution]
 CRITICAL_ALERT: [Natural message for the operator — Calm, intelligent, authoritative.]
 
 [CURRENT GRID CONTEXT]
@@ -234,14 +236,21 @@ ${improvementContext}
             const content = response.content;
             console.log(`[Autonomy v4.2] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
 
-            // Execute response processing
-            await this.parseAndCreateTasks(userId, content);
-            await this.parseAndSaveLogs(userId, content);
-            const reportIds = await this.parseAndSaveReports(userId, content);
-            await this.selfAuditTasks(userId, learningContext);
+            // Execute response processing via Lifecycle Engine (Signal -> Score -> Decision -> Action -> Task -> Learning)
+            await lifecycleService.processSignal(userId, {
+                category: 'AUTONOMOUS_HEARTBEAT',
+                source: cycleId,
+                content: content,
+                metadata: { cycle_id: cycleId }
+            });
+
+            // Special Autonomy steps (Improvement logic & Critical Alerts)
             await this.parseAndSaveImprovement(userId, cycleId, content);
-            
+            const reportIds = await this.parseAndSaveReports(userId, content);
             await this.handleCriticalAlerts(userId, content, reportIds);
+            
+            // Self-Audit
+            await this.selfAuditTasks(userId, learningContext);
             
         } catch (error: any) {
             console.error(`[Autonomy v4.2] User Cycle Failure (${userId}):`, error.message);
@@ -249,10 +258,10 @@ ${improvementContext}
     }
 
     /**
-     * Parse TASK: lines from AI output and create tasks (both ZIUM NOVA and BUDDY).
+     * Parse TASK: lines from AI output and create tasks (both NOVA and OPERATOR).
      */
     private async parseAndCreateTasks(userId: string, content: string) {
-        const taskMatches = content.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*ASSIGNED:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
+        const taskMatches = content.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*OWNER:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
         let created = 0;
 
         for (const match of taskMatches) {
@@ -271,24 +280,42 @@ ${improvementContext}
                 continue;
             }
 
-            await db.createTask(userId, {
+            const taskData = {
                 task_name: name.trim().substring(0, 255),
-                assigned_to: assignedTo === 'BUDDY' ? 'BUDDY' : 'ZIUM NOVA',
-                priority: (priority.trim().toUpperCase().substring(0, 10) as any) || 'MEDIUM',
+                owner: assignedTo === 'OPERATOR' ? 'OPERATOR' : 'NOVA',
+                priority: (priority.trim().toUpperCase() as any) || 'MEDIUM',
                 action_plan: plan.trim(),
-                notes: `Auto-assigned by Zium Nova v4.0 to ${assignedTo}.`
+                notes: `Auto-assigned by Zium Nova Strategic Autonomy to ${assignedTo}.`,
+                source: 'autonomy_heartbeat',
+                duration: 'MEDIUM' // Default for autonomy
+            };
+
+            // Hard Validation Rule
+            if (!['OPERATOR', 'NOVA', 'SHARED'].includes(taskData.owner)) {
+                console.warn(`[Autonomy] REJECTED: Invalid owner ${taskData.owner}`);
+                continue;
+            }
+
+            const task = await db.createTask(userId, taskData as any);
+            
+            eventService.emitZium(ZiumEvent.TASK_GENERATED, {
+                userId,
+                taskId: task.task_id_str,
+                owner: task.owner,
+                source: 'autonomy_heartbeat'
             });
+
             created++;
         }
 
-        // Fallback for older format without ASSIGNED field
-        if (!content.includes('ASSIGNED:')) {
+        // Fallback for older format without OWNER field
+        if (!content.includes('OWNER:')) {
             const legacyMatches = content.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
             for (const match of legacyMatches) {
                 const [_, name, priority, plan] = match;
                 await db.createTask(userId, {
                     task_name: name.trim().substring(0, 255),
-                    assigned_to: 'ZIUM NOVA',
+                    owner: 'NOVA',
                     priority: (priority.trim().toUpperCase().substring(0, 10) as any) || 'MEDIUM',
                     action_plan: plan.trim(),
                     notes: 'Auto-generated (legacy format).'
@@ -409,7 +436,7 @@ ${improvementContext}
      */
     private async selfAuditTasks(userId: string, learningContext: string) {
         const activeNovaTasks = (await db.getTasks(userId)).filter(t =>
-            (t.assigned_to === 'ZIUM_NOVA' || t.assigned_to === 'ZIUM NOVA') && t.status !== 'COMPLETED'
+            t.owner === 'NOVA' && t.status !== 'COMPLETED'
         );
 
         if (activeNovaTasks.length === 0) return;
@@ -439,7 +466,7 @@ If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', { skipSync: true },
         const progress = await db.getTaskProgress(userId);
 
         for (const stuckTask of progress.stuck) {
-            const escalationNote = `⚠️ ESCALATED: Task stuck for >48h. Originally assigned to ${stuckTask.assigned_to}. Requires manual intervention.`;
+            const escalationNote = `⚠️ ESCALATED: Task stuck for >48h. Originally assigned to ${stuckTask.owner}. Requires manual intervention.`;
             await db.updateTaskStatus(userId, stuckTask.task_id_str, 'BLOCKED', escalationNote);
 
             // Notify operator about stuck task (deduplicated)

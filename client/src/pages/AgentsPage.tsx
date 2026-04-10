@@ -40,6 +40,15 @@ const AgentsPage: React.FC = () => {
         }
     };
 
+    const handleInitiate = async (id: string) => {
+        try {
+            await agentService.initiateAgent(id);
+            alert('Strategic collaboration protocol initiated. Nova is now syncing with this agent.');
+        } catch (error) {
+            console.error('Initiate Agent Error:', error);
+        }
+    };
+
     return (
         <div className="px-4 sm:px-10 md:px-16 py-8 md:py-16 space-y-10 max-w-7xl mx-auto">
             <header className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6">
@@ -161,7 +170,10 @@ const AgentsPage: React.FC = () => {
                                             <span className="text-[9px] lg:text-[8px] font-bold text-nova-text-dim uppercase tracking-tighter">Verified</span>
                                         </div>
                                     </div>
-                                    <button className="px-3 py-1.5 rounded bg-nova-accent/10 text-nova-accent border border-nova-accent/20 text-[9px] lg:text-[8px] font-black uppercase tracking-widest hover:bg-nova-accent hover:text-nova-bg transition-all active:scale-95">
+                                    <button 
+                                        onClick={() => handleInitiate(agent.id)}
+                                        className="px-3 py-1.5 rounded bg-nova-accent/10 text-nova-accent border border-nova-accent/20 text-[9px] lg:text-[8px] font-black uppercase tracking-widest hover:bg-nova-accent hover:text-nova-bg transition-all active:scale-95"
+                                    >
                                         Initiate
                                     </button>
                                 </div>

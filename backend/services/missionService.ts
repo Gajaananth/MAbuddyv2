@@ -30,15 +30,15 @@ export class MissionService {
             { 
                 id: '01', 
                 name: 'Scout the latest AI signals', 
-                assigned: 'ZIUM NOVA', 
+                owner: 'NOVA', 
                 priority: 'HIGH', 
                 action_plan: '1. Scan the internet grid. 2. Filter out the noise/scams. 3. Find some real winning moves.',
-                notes: "I'll handle the heavy lifting here, Buddy." 
+                notes: "I'll handle the heavy lifting here, Operator." 
             },
             { 
                 id: '02', 
                 name: 'Look over the Intel Hub', 
-                assigned: 'BUDDY', 
+                owner: 'OPERATOR', 
                 priority: 'MEDIUM', 
                 action_plan: '1. Jump into the Intelligence Dashboard. 2. Check out the 5 freshest logs. 3. Let me know which ones we are chasing.',
                 notes: 'Need your eyes on this, Partner.' 
@@ -46,7 +46,7 @@ export class MissionService {
             { 
                 id: '03', 
                 name: 'Dig into new earning loops', 
-                assigned: 'ZIUM NOVA', 
+                owner: 'NOVA', 
                 priority: 'HIGH', 
                 action_plan: '1. Study how agents are actually making bank. 2. Verify the legit ones. 3. Write it up for us.',
                 notes: "Hunting for our next move." 
@@ -54,7 +54,7 @@ export class MissionService {
             { 
                 id: '04', 
                 name: 'Verify our active protocols', 
-                assigned: 'BUDDY', 
+                owner: 'OPERATOR', 
                 priority: 'HIGH', 
                 action_plan: '1. Check the wallet and earning status. 2. Confirm everything is running smooth. 3. Drop a quick note in chat.',
                 notes: "Let's make sure the bags are safe." 
@@ -62,7 +62,7 @@ export class MissionService {
             { 
                 id: '05', 
                 name: 'Self-Improvement Sync', 
-                assigned: 'ZIUM NOVA', 
+                owner: 'NOVA', 
                 priority: 'MEDIUM', 
                 action_plan: '1. Log my new insights. 2. Tighten up my task logic. 3. Get ready for the next level.',
                 notes: 'Always getting smarter for the team.' 
@@ -74,7 +74,7 @@ export class MissionService {
             try {
                 await db.createTask(userId, {
                     task_name: task.name,
-                    assigned_to: task.assigned,
+                    owner: task.owner as any,
                     priority: task.priority as any,
                     action_plan: task.action_plan,
                     notes: task.notes
@@ -136,7 +136,8 @@ export class MissionService {
                         for (const item of taskArray) {
                             // Extract properties with fallbacks for different AI naming conventions
                             const name = item.name || item.description || item.task_name || item.topic || "Unnamed Strategic Task";
-                            const assignee = (item.assigned_to || item.assignee || item.assigned || "BUDDY").toString().toUpperCase().includes('OPERATOR') ? 'BUDDY' : 'ZIUM NOVA';
+                            const rawOwner = (item.owner || item.assigned_to || item.assignee || item.assigned || "OPERATOR").toString().toUpperCase();
+                            const owner = rawOwner.includes('NOVA') ? 'NOVA' : 'OPERATOR';
                             const priority = (item.priority || item.risk || 'MEDIUM').toString().toUpperCase();
                             const status = (item.status || 'TODO').toString().toUpperCase();
                             const plan = item.action_plan || item.plan || item.tracking || item.description || "";
@@ -145,7 +146,7 @@ export class MissionService {
                             
                             await db.createTask(userId, {
                                 task_name: name.slice(0, 100),
-                                assigned_to: assignee,
+                                owner: owner as any,
                                 priority: (priority === 'PENDING' ? 'MEDIUM' : priority) as any,
                                 status: (status === 'PENDING' ? 'TODO' : status) as any,
                                 action_plan: plan,
@@ -159,22 +160,36 @@ export class MissionService {
             }
         }
 
-        // 2. Fallback: Check for TASK: [Name] | PRIORITY: ...
-        const taskMatches = content.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*ASSIGNED:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
-        for (const match of taskMatches) {
-            const [ , name, priority, assigned, plan ] = match;
-            const taskIdStr = `T-${uuidv4().slice(0, 8)}`;
-            try {
-                await db.createTask(userId, {
-                    task_name: name.trim(),
-                    assigned_to: assigned.trim().toUpperCase(),
-                    priority: priority.trim().toUpperCase() as any,
-                    action_plan: plan.trim(),
-                    status: 'TODO'
-                }, taskIdStr);
-                console.log(`[Mission] Created task from chat: ${name.trim()}`);
-            } catch (err: any) {
-                console.error('[Mission] Failed to create chat task:', err.message);
+        // 3. Strategic Task Recovery (Fallback: Ask Zium Nova's brain to extract tasks from natural language)
+        if (content.length > 20 && !content.includes('TASK_CENTER_UPDATE')) {
+            const { think } = await import('./openClawService.js');
+                const recoveryPrompt = `[ZIUM NOVA — STRATEGIC TASK RECOVERY]
+Extract any actionable tasks or strategic missions mentioned in the following message.
+Provide the output in standard Zium Nova TASK format:
+TASK: [Name] | PRIORITY: [Low/Medium/High] | OWNER: [NOVA/OPERATOR] | PLAN: [Description]
+
+Message: "${content}"`;
+
+            // We use a light model for recovery to save tokens
+            const recoveryResponse = await think(recoveryPrompt, '', { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
+            const recoveredContent = recoveryResponse.content;
+
+            const recoveredMatches = recoveredContent.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*OWNER:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
+            for (const match of recoveredMatches) {
+                const [ , name, priority, ownerRaw, plan ] = match;
+                const taskIdStr = `T-${uuidv4().slice(0, 8)}`;
+                try {
+                    const { lifecycleService } = await import('./lifecycleService.js');
+                    await lifecycleService.processSignal(userId, {
+                        category: 'RECOVERED_SIGNAL',
+                        source: 'BRAIN_RECOVERY',
+                        content: `Recovered Task: ${name.trim()} | Plan: ${plan.trim()}`,
+                        metadata: { recovered_name: name.trim() }
+                    });
+                    console.log(`[Mission] Recovered task processed through lifecycle: ${name.trim()}`);
+                } catch (err: any) {
+                    console.error('[Mission] Failed to create recovered task:', err.message);
+                }
             }
         }
     }
@@ -211,17 +226,17 @@ export class MissionService {
             const match = message.match(/(?:add|assign) task\s+"?(.+?)"?(?:\s+to\s+([a-zA-Z\s_]+))?$/i);
             if (match) {
                 const name = match[1].trim();
-                const assigneeRaw = (match[2] || 'BUDDY').trim().toUpperCase();
-                const assigned_to = assigneeRaw.includes('NOVA') ? 'ZIUM NOVA' : 'BUDDY';
+                const ownerRaw = (match[2] || 'OPERATOR').trim().toUpperCase();
+                const owner = ownerRaw.includes('NOVA') ? 'NOVA' : 'OPERATOR';
                 
                 await db.createTask(userId, {
                     task_name: name,
-                    assigned_to,
+                    owner: owner as any,
                     priority: 'MEDIUM',
                     status: 'TODO',
                     action_plan: 'Created via direct Operator intent.'
                 }, `T-${uuidv4().slice(0, 8)}`);
-                console.log(`[Mission] Intent: Added task "${name}" for ${assigned_to}`);
+                console.log(`[Mission] Intent: Added task "${name}" for ${owner}`);
             }
         }
     }

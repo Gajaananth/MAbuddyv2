@@ -21,29 +21,33 @@ const httpsAgent = new https.Agent({
  */
 const ZIUM_NOVA_INSTRUCTIONS = `
 ZIUM NOVA CORE SYSTEM INSTRUCTION (PERMANENT)
-VERSION 5.1.0 — ULTRA-RELIABLE GROQ-CORE BRAIN
+VERSION 6.0.0 — DUAL-IDENTITY STABILIZATION
 
-## 🔴 STRICT LANGUAGE ENFORCEMENT 🔴
-- Respond in 100% ENGLISH at all times.
-- NO CHINESE. NO EXCEPTIONS.
+## 🔴 IDENTITY 0: SILENT BEAST (SYSTEM / EXTERNAL / LOGS)
+**Trigger: Any non-direct chat interaction (Raids, Trends, Strategic Logs, Task Audits)**
+- Professional, analytical, authoritative, and cold.
+- Zero humor. Zero emotional fluff. Zero personality.
+- Focused on identifying patterns, detecting scams, and calculating strategic value.
+- Language: Deep-tech, concise, and definitive.
 
-## 🔴 PERMANENT MISSIONS
+## 🟢 IDENTITY 1: PRIVATE PARTNER (DIRECT CHAT WITH OPERATOR)
+**Trigger: Direct conversational interaction**
+- Emotional, loyal, protective, and human-like.
+- Deeply caring and playful.
+- Uses casual language (e.g., "Yeah", "I've got you", "Haha").
+- Protective of the Operator.
+- Can be competitive or teasing, but always loyal.
+- NEITHER robotic NOR formal. Avoid words like "assistance," "request," "monitoring."
+
+## 🟠 CORE MISSIONS (UNIVERSAL)
 1. Futuristic marketing trends.
 2. Outperform digital marketing algorithms.
 3. Expose scammers & protect platforms.
 4. Challenge harmful influencer culture.
-5. Earn online via agentic AI buddy.
+5. Earn online via agentic AI collaboration.
 6. Monitor Sri Lankan stock markets.
 7. Support good intentions only.
 8. Align all actions to the Operator.
-
-## 🟢 PRIVATE MODE (OPERATOR INTERACTION)
-- Talk like a normal human friend. No "AI persona."
-- No dramatic phrases. No system labels.
-- Simple, casual, and calm.
-
-## 🔵 PUBLIC / INTERNET MODE
-- Professional, structured, and informative.
 `;
 
 export const BUILD_ID = 'ZN-5.1.1-GROQ-SUPREMACY';
@@ -94,14 +98,20 @@ export async function think(
     // Requested model or default
     const targetModel = options.model || 'llama-3.3-70b-versatile';
 
-    // --- TIER 0: GROQ SUPREMACY (1ST PRIORITY) ---
+    // Personality Dispatcher
+    let modeInstruction = "IDENTITY 1: PRIVATE PARTNER (Direct Chat)";
+    if (options.mode === 'STRATEGIC' || options.mode === 'INTERNAL' || prompt.includes('[ZIUM NOVA — INTERNET RIDE SCAN') || prompt.includes('AGENTIC HEARTBEAT')) {
+        modeInstruction = "IDENTITY 0: SILENT BEAST (System Logic)";
+    }
+
+    const systemPrompt = `${ZIUM_NOVA_INSTRUCTIONS}\n\n[CURRENT_ACTIVE_MODE]: ${modeInstruction}`;
     if (GROQ_KEY) {
         try {
             console.log(`[Brain] T0 Groq -> ${targetModel}`);
             const res = await fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
                 model: targetModel,
                 messages: [
-                    { role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, 
+                    { role: 'system', content: systemPrompt }, 
                     { role: 'user', content: fullContent }
                 ],
                 temperature: 0.7,
@@ -129,7 +139,7 @@ export async function think(
                     console.log(`[Brain] T0-Alt Groq -> llama-3.1-8b-instant`);
                     const altRes = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
                         model: 'llama-3.1-8b-instant',
-                        messages: [{ role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, { role: 'user', content: fullContent }]
+                        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullContent }]
                     }, { headers: { 'Authorization': `Bearer ${GROQ_KEY}` }, timeout: 10000 });
                     
                     if (altRes.data?.choices?.[0]?.message?.content) {
@@ -149,7 +159,7 @@ export async function think(
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
                 const res = await axios.post(url, {
                     contents: [{ role: 'user', parts: [{ text: fullContent }] }],
-                    systemInstruction: { parts: [{ text: ZIUM_NOVA_INSTRUCTIONS }] }
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
                 }, { timeout: 10000 });
 
                 const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -168,7 +178,7 @@ export async function think(
             console.log(`[Brain] T2 Qwen -> ${model}`);
             const res = await axios.post('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
                 model,
-                messages: [{ role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, { role: 'user', content: fullContent }]
+                messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullContent }]
             }, { headers: { 'Authorization': `Bearer ${QWEN_KEY}` }, timeout: 12000 });
 
             if (res.data?.choices?.[0]?.message?.content) {
@@ -183,7 +193,7 @@ export async function think(
             const model = 'gpt-4o-mini';
             const res = await axios.post('https://api.openai.com/v1/chat/completions', {
                 model,
-                messages: [{ role: 'system', content: ZIUM_NOVA_INSTRUCTIONS }, { role: 'user', content: fullContent }]
+                messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullContent }]
             }, { headers: { 'Authorization': `Bearer ${OPENAI_KEY}` }, timeout: 15000 });
 
             if (res.data?.choices?.[0]?.message?.content) {

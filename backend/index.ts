@@ -22,6 +22,7 @@ import tasksRoutes from './routes/tasks.js';
 import { authenticate } from './middleware/auth.js';
 import { initRaidingSchedule } from './services/raidingService.js';
 import { autonomyService } from './services/autonomyService.js';
+import { monitorService } from './services/monitorService.js';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 
@@ -143,6 +144,7 @@ export default app;
 async function start() {
     await initDatabase();
     initRaidingSchedule();
+    monitorService.initMonitor();
     
     if (!process.env.VERCEL) {
         autonomyService.startHeartbeat(30);
