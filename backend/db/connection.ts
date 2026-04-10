@@ -366,6 +366,13 @@ async function runMigrations(pool: any) {
         created_at TIMESTAMPTZ DEFAULT NOW()
       );
 
+      DO $$ 
+      BEGIN 
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'trend_analyses' AND column_name = 'cluster') THEN
+          ALTER TABLE trend_analyses ADD COLUMN cluster VARCHAR(100) DEFAULT 'CORE';
+        END IF;
+      END $$;
+
       CREATE INDEX IF NOT EXISTS idx_improvement_logs_user ON improvement_logs(user_id);
       CREATE INDEX IF NOT EXISTS idx_notifications_user_title ON notifications(user_id, title, created_at);
       CREATE INDEX IF NOT EXISTS idx_raids_user_category ON intelligence_raids(user_id, category, created_at);
