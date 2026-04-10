@@ -82,7 +82,7 @@ app.get('/api/health', async (_req, res) => {
     res.json({
         status: 'online',
         agent: 'ZIUM NOVA',
-        version: 'v5.1.1',
+        version: 'v5.1.5',
         brain_status: brainStatus,
         last_brain_cycle: brainLevel,
         mode: brainStatus.gemini || brainStatus.qwen || brainStatus.openai ? 'live' : 'MOCK_ONLY_RED_ALERT',
@@ -153,7 +153,7 @@ async function start() {
 
     if (!process.env.VERCEL) {
         app.listen(PORT, () => {
-            console.log('[Zium Nova] Mission Grid v5.1.1 | GRID RECLAMATION PROTOCOL ACTIVE');
+            console.log('[Zium Nova] Mission Grid v5.1.5 | GRID RECLAMATION PROTOCOL ACTIVE');
         });
     }
 }

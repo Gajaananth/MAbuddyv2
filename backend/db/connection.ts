@@ -82,10 +82,9 @@ async function initDatabase(): Promise<void> {
         const dbHost = new URL(process.env.DATABASE_URL!).hostname;
         console.log(`[DB] PostgreSQL Grid: ONLINE | Host: ${dbHost}`);
         
-        // Run migrations in background/separately to avoid Vercel Function Timeout (10s limit)
-        runMigrations(pool).catch(err => {
-            console.error('[DB] Background Migration Error:', err.message);
-        });
+        // Blocking Migration: Ensure schema is synchronized before resolving
+        // This is critical for Serverless (Vercel) persistence.
+        await runMigrations(pool);
       } finally {
         client.release();
       }
