@@ -6,7 +6,7 @@ const userId = '00000000-0000-0000-0000-000000000000'; // System/Default User
 async function trigger() {
     console.log('🚀 Triggering Manual Intelligence Raid...');
     try {
-        await performInternetRaid('manual-diagnostic', userId);
+        await performInternetRaid('mid-week', userId);
         console.log('✅ Raid Completed successfully.');
     } catch (error) {
         console.error('❌ Raid Failed:', error);

@@ -4,6 +4,7 @@ import { getAllUsers } from '../db/authQueries.js';
 import { generateWeeklyReport, generateMidWeekReport } from './intelligenceService.js';
 import { lifecycleService } from './lifecycleService.js';
 import { eventService, ZiumEvent } from './eventService.js';
+import db from '../db/queries.js';
 
 // Track active raids per user for UI progress feedback
 export const activeRaids = new Map<string, {

@@ -46,15 +46,22 @@ export const monitorService = {
             const auditMessage = `[STRATEGIC ALERT] Operation delays detected in: ${overdueNames}. Buddy, should we re-prioritize these?`;
             
             // Log it as an intelligence outcome
-            await db.saveIntelligenceLog(userId, 'TASK_MONITOR', auditMessage, 'MONITOR_SERVICE');
+            await db.saveIntelligenceLog(userId, {
+                category: 'TASK_MONITOR',
+                lesson: auditMessage,
+                source_context: 'MONITOR_SERVICE'
+            });
             
             // Notify Nova to mention it in the next chat interaction (via memory)
-            await db.saveMessage({
-                conversation_id: (await db.getConversations(userId))[0]?.id, // Post to latest conversation
-                role: 'nova',
-                content: auditMessage,
-                metadata: { action_type: 'TASK_ALERT', flags: ['OVERDUE'] }
-            } as any);
+            const latestConv = (await db.getConversations(userId))[0];
+            if (latestConv) {
+                await db.addMessage(
+                    latestConv.id,
+                    'nova',
+                    auditMessage,
+                    { action_type: 'TASK_ALERT', flags: ['OVERDUE'] }
+                );
+            }
         }
     }
 };

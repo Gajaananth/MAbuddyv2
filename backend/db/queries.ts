@@ -1,5 +1,5 @@
 import db from './connection.js';
-import { Conversation, Message, TrendAnalysis, TrendData, Agent } from '../types/index.js';
+import { Conversation, Message, TrendAnalysis, TrendData, Agent, TaskOwner, TaskPriority, TaskDuration, TaskStatus } from '../types/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // ──────────────────────────── Conversations ────────────────────────────
@@ -721,6 +721,7 @@ const queries = {
     getUnreadMessageCount,
     markMessagesRead,
     markAllMessagesRead,
+    getMessagesSince,
     savePushSubscription,
     getPushSubscriptions,
     deletePushSubscription,

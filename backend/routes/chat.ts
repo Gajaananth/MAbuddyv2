@@ -155,8 +155,8 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             /^raid$/i
         ];
 
-        const isRaidCommand = lowerMessage.length < 100 && raidTriggers.some(rgx => rgx.test(lowerMessage.trim()));
-
+        const isRaidCommand = lowerMessage.length < 100 && raidTriggers.some(rgx => (rgx as RegExp).test(lowerMessage.trim()));
+        
         if (isRaidCommand && !lowerMessage.includes('mission')) {
             console.log(`[Chat] Internet Raid trigger detected: "${message}"`);
             const { runManualWeeklyRide } = await import('../services/raidingService.js');

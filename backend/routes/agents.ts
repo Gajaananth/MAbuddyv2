@@ -125,7 +125,7 @@ router.post('/:id/initiate', async (req: Request, res: Response) => {
         
         // Update database collaboration timestamp
         try {
-            await db.updateAgentCollaboration(id);
+            await db.updateAgentCollaboration(id as string);
             await db.logAgentActivity({
                 agent_id: 'NOVA',
                 action_type: 'AGENT_COLLABORATION',

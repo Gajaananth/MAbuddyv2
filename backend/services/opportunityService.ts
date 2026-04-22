@@ -86,7 +86,11 @@ Output JSON format ONLY as an array of objects:
             // Tier 2: Suggest to Operator (Create Notification)
             try {
                 // Implementation for notification/suggestion
-                await db.saveIntelligenceLog(userId, 'OPPORTUNITY_SUGGESTION', `High potential signal detected: ${signal.topic}. Suggested Action: ${signal.recommended_action}`, 'OPPORTUNITY_ENGINE');
+                await db.saveIntelligenceLog(userId, {
+                    category: 'OPPORTUNITY_SUGGESTION',
+                    lesson: `High potential signal detected: ${signal.topic}. Suggested Action: ${signal.recommended_action}`,
+                    source_context: 'OPPORTUNITY_ENGINE'
+                });
                 return 'SUGGESTED';
             } catch (e) {
                 return 'ERROR';
@@ -94,7 +98,11 @@ Output JSON format ONLY as an array of objects:
         }
         
         // Tier 1: Log only (Learning Outcome)
-        await db.saveIntelligenceLog(userId, 'OPPORTUNITY_LOG', `Signal scouted: ${signal.topic} (Score: ${score}). No immediate action required.`, 'OPPORTUNITY_ENGINE');
+        await db.saveIntelligenceLog(userId, {
+            category: 'OPPORTUNITY_LOG',
+            lesson: `Signal scouted: ${signal.topic} (Score: ${score}). No immediate action required.`,
+            source_context: 'OPPORTUNITY_ENGINE'
+        });
         return 'LOGGED';
     },
 
