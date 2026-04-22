@@ -376,17 +376,11 @@ const ChatPage: React.FC = () => {
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500 w-full`}>
                         <div className={`max-w-[92%] sm:max-w-[85%] lg:max-w-[75%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                             
-                            <div className="flex items-center gap-2 mb-2 px-1">
-                                <span className="text-[9px] font-black text-nova-text-dim uppercase tracking-widest opacity-60">
-                                    {msg.role === 'user' ? 'OPERATOR' : 'NOVA CORE'}
-                                </span>
-                                <span className="text-[8px] text-nova-text-dim/30 font-mono">
-                                    {formatTimestamp(msg.created_at)}
-                                </span>
-                                {msg.role === 'user' && !loading && editingIndex === null && (
+                            {msg.role === 'user' && !loading && editingIndex === null && (
+                                <div className="flex items-center gap-2 mb-2 px-1">
                                     <button onClick={() => handleEditStart(i)} className="p-1 hover:text-nova-accent transition-colors opacity-30 hover:opacity-100"><Pencil size={10} /></button>
-                                )}
-                            </div>
+                                </div>
+                            )}
 
                             {msg.role === 'user' && editingIndex === i ? (
                                 <div className="w-full space-y-2 lg:min-w-[400px]">
