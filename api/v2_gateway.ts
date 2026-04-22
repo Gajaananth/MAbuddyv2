@@ -3,7 +3,7 @@ import app from '../backend/index.js';
 export const maxDuration = 60;
 
 /**
- * Zium Nova Gateway v5.1.5 — Build Trigger: 2026.04.11.0202
- * 🦅🛰️ Advanced Stabilization - Serverless Lifecycle Sync
+ * Zium Nova Gateway v6.0.0 — Build Trigger: 2026.04.23.0105
+ * 🦅🛰️ Global Stabilization - Neural Core Sync
  */
 export default app;
