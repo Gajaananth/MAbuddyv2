@@ -24,47 +24,71 @@ router.get('/poll', async (req: AuthRequest, res: Response) => {
             return res.status(400).json({ success: false, error: 'conversation_id is required' });
         }
         
-        if (since && typeof since === 'string') {
-            const messages = await db.getMessagesSince(conversation_id, userId, since);
-            return res.json({
+        if (since && typeof since === 'string' && since.trim() !== '') {
+            try {
+                const messages = await db.getMessagesSince(conversation_id, userId, since);
+                return res.json({
+                    success: true,
+                    data: {
+                        messages: (messages || []).map(m => {
+                            let meta = m.metadata;
+                            if (typeof meta === 'string' && meta.trim() !== '') {
+                                try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta, parse_error: e.message }; }
+                            }
+                            return { ...m, metadata: meta };
+                        })
+                    },
+                    timestamp: new Date().toISOString()
+                });
+            } catch (dbError: any) {
+                console.error('[Chat] DB Poll Error:', dbError);
+                return res.status(500).json({ 
+                    success: false, 
+                    error: 'Database error during polling', 
+                    detail: dbError.message,
+                    stack: dbError.stack
+                });
+            }
+        }
+        
+        // Fallback or Initial Load (No 'since' provided)
+        try {
+            const responseData = await db.getConversationDetail(conversation_id, userId);
+            
+            if (!responseData) {
+                return res.status(404).json({ success: false, error: 'Conversation not found' });
+            }
+
+            res.json({
                 success: true,
                 data: {
-                    messages: messages.map(m => {
+                    messages: (responseData.messages || []).map((m: any) => {
                         let meta = m.metadata;
                         if (typeof meta === 'string' && meta.trim() !== '') {
-                            try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta }; }
+                            try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta, parse_error: e.message }; }
                         }
                         return { ...m, metadata: meta };
                     })
                 },
                 timestamp: new Date().toISOString()
             });
-        }
-        
-        // Fallback or Initial Load (No 'since' provided)
-        const responseData = await db.getConversationDetail(conversation_id, userId);
-        
-        if (!responseData) {
-            return res.status(404).json({ success: false, error: 'Conversation not found' });
+        } catch (detailError: any) {
+            console.error('[Chat] Detail Error:', detailError);
+            return res.status(500).json({ 
+                success: false, 
+                error: 'Failed to retrieve conversation details',
+                detail: detailError.message
+            });
         }
 
-        res.json({
-            success: true,
-            data: {
-                messages: responseData.messages.map((m: any) => {
-                    let meta = m.metadata;
-                    if (typeof meta === 'string' && meta.trim() !== '') {
-                        try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta }; }
-                    }
-                    return { ...m, metadata: meta };
-                })
-            },
-            timestamp: new Date().toISOString()
+    } catch (error: any) {
+        console.error('[Chat] Global Poll Error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: 'Failed to poll messages',
+            detail: error.message,
+            stack: error.stack
         });
-
-    } catch (error) {
-        console.error('[Chat] Poll Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to poll messages' });
     }
 });
 
