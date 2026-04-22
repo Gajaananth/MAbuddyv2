@@ -5,7 +5,6 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { chatService, memoryService } from '../services/api';
 import type { Message } from '../types';
-import { formatTimestamp } from '../utils/formatUtils';
 
 const ChatPage: React.FC = () => {
     const [searchParams] = useSearchParams();
