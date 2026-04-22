@@ -144,8 +144,8 @@ export async function getRecentMemoryContext(userId: string, currentConversation
 
     return messages
         .map(m => {
-            const date = new Date(m.created_at).toLocaleDateString();
-            return `[${date}] ${m.role.toUpperCase()}: ${m.content.slice(0, 500)}${m.content.length > 500 ? '...' : ''}`;
+            const role = m.role === 'user' ? 'OPERATOR' : 'NOVA';
+            return `${role}: ${m.content.slice(0, 500)}${m.content.length > 500 ? '...' : ''}`;
         })
         .join('\n');
 }
