@@ -29,10 +29,13 @@ router.get('/poll', async (req: AuthRequest, res: Response) => {
             return res.json({
                 success: true,
                 data: {
-                    messages: messages.map(m => ({
-                        ...m,
-                        metadata: typeof m.metadata === 'string' ? JSON.parse(m.metadata) : m.metadata
-                    }))
+                    messages: messages.map(m => {
+                        let meta = m.metadata;
+                        if (typeof meta === 'string' && meta.trim() !== '') {
+                            try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta }; }
+                        }
+                        return { ...m, metadata: meta };
+                    })
                 },
                 timestamp: new Date().toISOString()
             });
@@ -48,10 +51,13 @@ router.get('/poll', async (req: AuthRequest, res: Response) => {
         res.json({
             success: true,
             data: {
-                messages: responseData.messages.map(m => ({
-                    ...m,
-                    metadata: typeof m.metadata === 'string' ? JSON.parse(m.metadata) : m.metadata
-                }))
+                messages: responseData.messages.map((m: any) => {
+                    let meta = m.metadata;
+                    if (typeof meta === 'string' && meta.trim() !== '') {
+                        try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta }; }
+                    }
+                    return { ...m, metadata: meta };
+                })
             },
             timestamp: new Date().toISOString()
         });

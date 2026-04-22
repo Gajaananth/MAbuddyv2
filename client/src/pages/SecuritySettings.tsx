@@ -71,7 +71,7 @@ const SecuritySettings: React.FC = () => {
     const fetchAuditLogs = async () => {
         setLogsLoading(true);
         try {
-            const res = await api.get('/api/trends/security-logs');
+            const res = await api.get('/trends/security-logs');
             const logs: AuditLog[] = res.data.data || [];
             setAuditLogs(logs);
             setActiveWarnings(logs.filter(l => l.risk_level === 'MEDIUM' || l.risk_level === 'HIGH').length);

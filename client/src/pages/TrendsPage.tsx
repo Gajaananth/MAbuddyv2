@@ -35,7 +35,7 @@ const TrendsPage: React.FC = () => {
         try {
             const [trendsRes, clustersRes] = await Promise.all([
                 trendService.getTrends(),
-                api.get('/api/trends/aggregation')
+                api.get('/trends/aggregation')
             ]);
             setTrends(trendsRes.data.data || []);
             setClusters(clustersRes.data.data || []);

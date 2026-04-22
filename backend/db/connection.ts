@@ -403,12 +403,31 @@ async function runMigrations(pool: any) {
       INSERT INTO users (id, dob_hash, pin_hash, q1_hash, q2_hash, q3_hash)
       VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT')
       ON CONFLICT (id) DO NOTHING;
+
+      -- ==========================================
+      -- Security Fix: Enable Row Level Security
+      -- ==========================================
+      ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE intelligence_logs ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE improvement_logs ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE devices ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE intelligence_raids ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE weekly_reports ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE agent_network ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE agent_activity_logs ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE security_audit_logs ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE trend_analyses ENABLE ROW LEVEL SECURITY;
     `);
     console.log('[DB] Grid: Schema Synchronized.');
     } finally {
       try {
           if (lockAcquired) {
-              await client.query('SELECT pg_advisory_unlock(1001)');
+              await client.query('SELECT pg_advisory_unlock(1002)');
               console.log('[DB] Grid: Advisory Lock Released.');
           }
       } catch (e) {
