@@ -142,6 +142,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
 
         // Weekly Ride / Internet Raid Command Recognition (CHECK BEFORE THINKING)
         const lowerMessage = message.toLowerCase();
+        // --- Internet Raid Recognition (LOG ONLY, AI HANDLES RESPONSE) ---
         const raidTriggers = [
             /^weekly ride/i,
             /^run weekly ride/i,
@@ -154,28 +155,13 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             /^raid$/i
         ];
 
-        // Only trigger raid if the message is specifically a command and not part of a larger discussion
         const isRaidCommand = lowerMessage.length < 100 && raidTriggers.some(rgx => rgx.test(lowerMessage.trim()));
 
         if (isRaidCommand && !lowerMessage.includes('mission')) {
             console.log(`[Chat] Internet Raid trigger detected: "${message}"`);
             const { runManualWeeklyRide } = await import('../services/raidingService.js');
             runManualWeeklyRide(userId).catch(console.error);
-
-            const response: ApiResponse = {
-                success: true,
-                data: {
-                    conversation_id: convId,
-                    message: {
-                        role: 'nova',
-                        content: '🚨 **Internet Raid Initialized.** \n\nStrategic intelligence gathering is now active. Buddy, I am scanning ecosystems across Moltbook, global signals, and the regional markets. I will identify market shifts, high-leverage opportunities, and structural patterns. Results will be logged and analyzed.',
-                        metadata: { action_type: 'weekly_ride' },
-                    },
-                },
-                timestamp: new Date().toISOString(),
-            };
-            res.json(response);
-            return;
+            // No return here - let the AI think and respond normally
         }
 
         console.log('[Chat] Retrieving memory context...');

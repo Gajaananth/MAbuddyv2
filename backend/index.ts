@@ -82,7 +82,7 @@ app.get('/api/health', async (_req, res) => {
     res.json({
         status: 'online',
         agent: 'ZIUM NOVA',
-        version: 'v5.1.5',
+        version: 'v6.0.0',
         brain_status: brainStatus,
         last_brain_cycle: brainLevel,
         mode: brainStatus.gemini || brainStatus.qwen || brainStatus.openai ? 'live' : 'MOCK_ONLY_RED_ALERT',
