@@ -314,7 +314,7 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             model: model || 'llama-3.3-70b-versatile'
         };
         // Store Nova's response
-        await db.addMessage(convId, 'nova', content, finalMetadata);
+        const savedNovaMessage = await db.addMessage(convId, 'nova', content, finalMetadata);
 
         // Synchronize tasks from response content to the Command Center DB
         missionService.parseAndSaveTasksFromChat(userId, content).catch(e => console.error('[Chat] Task sync failed:', e));
@@ -329,9 +329,8 @@ router.post('/', async (req: AuthRequest, res: Response) => {
             data: {
                 conversation_id: convId,
                 message: {
-                    role: 'nova',
-                    content: content,
-                    metadata,
+                    ...savedNovaMessage,
+                    metadata // Ensure processed metadata is included if it exists
                 },
             },
             timestamp: new Date().toISOString(),

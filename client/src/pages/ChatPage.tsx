@@ -165,13 +165,10 @@ const ChatPage: React.FC = () => {
             const response = await chatService.sendMessage(messageText, conversationId, publishToMoltbook, controller.signal, selectedModel);
             const { data } = response.data;
 
+            // Use the real message object from the database (includes permanent UUID)
             const novaMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                conversation_id: data.conversation_id,
-                role: 'nova',
-                content: data.message.content,
-                metadata: data.message.metadata,
-                created_at: new Date().toISOString(),
+                ...data.message,
+                metadata: typeof data.message.metadata === 'string' ? JSON.parse(data.message.metadata) : data.message.metadata
             };
 
             setConversationId(data.conversation_id);
