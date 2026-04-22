@@ -143,21 +143,21 @@ router.post('/', async (req: AuthRequest, res: Response) => {
         // Weekly Ride / Internet Raid Command Recognition (CHECK BEFORE THINKING)
         const lowerMessage = message.toLowerCase();
         const raidTriggers = [
-            /weekly ride/i,
-            /run weekly ride/i,
-            /internet raid/i,
-            /internet ride/i,
-            /run raid/i,
-            /start ride/i,
-            /start raid/i,
-            /execute raid/i
+            /^weekly ride/i,
+            /^run weekly ride/i,
+            /^internet raid/i,
+            /^internet ride/i,
+            /^run raid/i,
+            /^start ride/i,
+            /^start raid/i,
+            /^execute raid/i,
+            /^raid$/i
         ];
 
-        // Only trigger raid if the message is specifically a command or starts with one
-        const isRaidCommand = raidTriggers.some(rgx => rgx.test(lowerMessage.trim())) && 
-                             (lowerMessage.length < 50 || raidTriggers.some(rgx => rgx.test(lowerMessage.split('\n')[0])));
+        // Only trigger raid if the message is specifically a command and not part of a larger discussion
+        const isRaidCommand = lowerMessage.length < 100 && raidTriggers.some(rgx => rgx.test(lowerMessage.trim()));
 
-        if (isRaidCommand && !lowerMessage.includes('mission blueprint')) {
+        if (isRaidCommand && !lowerMessage.includes('mission')) {
             console.log(`[Chat] Internet Raid trigger detected: "${message}"`);
             const { runManualWeeklyRide } = await import('../services/raidingService.js');
             runManualWeeklyRide(userId).catch(console.error);
