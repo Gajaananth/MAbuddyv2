@@ -54,6 +54,7 @@ function App() {
                     <h1 className="text-xl font-black tracking-tighter text-white uppercase truncate flex items-center gap-2">
                       <Bird size={18} className="text-nova-accent" />
                       <span>NOVA</span>
+                      <span className="text-[10px] font-bold bg-nova-accent/20 text-nova-accent px-1.5 py-0.5 rounded ml-1 border border-nova-accent/30">v6.0.0</span>
                     </h1>
                   </div>
                   <NotificationPanel />

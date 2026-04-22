@@ -8,7 +8,7 @@
         "install:server": "npm install",
         "build:client": "cd client && npm run build",
         "start:server": "tsx backend/index.ts",
-        "build": "cd client && npm install && npm run build"
+        "build": "npm install && cd client && npm install && npm run build"
     },
     "dependencies": {
         "@openrouter/sdk": "^0.9.11",
