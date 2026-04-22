@@ -6,8 +6,9 @@ const getBaseUrl = () => {
     
     if (envUrl) {
         url = envUrl;
-    } else if (typeof window !== 'undefined' && (window.location.hostname.endsWith('.vercel.app') || window.location.hostname === 'ma-buddy.vercel.app')) {
-        url = '/api';
+    } else if (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app')) {
+        // Hard-wire to the master backend project
+        url = 'https://m-abuddyv2.vercel.app/api';
     } else {
         url = 'http://localhost:3001/api';
     }
