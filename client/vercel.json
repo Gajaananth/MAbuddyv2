@@ -11,6 +11,10 @@
     ],
     "rewrites": [
         {
+            "source": "/api/:path*",
+            "destination": "https://m-abuddyv2.vercel.app/api/:path*"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
