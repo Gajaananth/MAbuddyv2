@@ -208,14 +208,20 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                         
                         const metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : (n.metadata || {});
                         
-                        let targetPath = null;
+                        let targetPath = metadata?.path || null;
                         
-                        if (metadata?.report_id) {
-                            targetPath = `/reports?id=${metadata.report_id}`;
-                        } else if (metadata?.raid_id) {
-                            targetPath = `/reports?raidId=${metadata.raid_id}`;
-                        } else if (n.category === 'Mission Update' && metadata?.task_id) {
-                            targetPath = `/?taskId=${metadata.task_id}`;
+                        if (!targetPath) {
+                            if (metadata?.report_id) {
+                                targetPath = `/reports?id=${metadata.report_id}`;
+                            } else if (metadata?.raid_id) {
+                                targetPath = `/reports?raidId=${metadata.raid_id}`;
+                            } else if (n.category === 'Mission Update' && metadata?.task_id) {
+                                targetPath = `/?taskId=${metadata.task_id}`;
+                            } else if (n.priority === 'critical') {
+                                targetPath = '/chat';
+                            } else {
+                                targetPath = '/intelligence';
+                            }
                         }
                         
                         if (targetPath) {
