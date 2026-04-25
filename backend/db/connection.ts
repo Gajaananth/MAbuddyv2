@@ -404,6 +404,21 @@ async function runMigrations(pool: any) {
       VALUES ('00000000-0000-0000-0000-000000000000', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT', 'SYSTEM_ROOT')
       ON CONFLICT (id) DO NOTHING;
 
+      CREATE TABLE IF NOT EXISTS earnings_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        task_id VARCHAR(100) NOT NULL,
+        platform VARCHAR(100) NOT NULL,
+        reward NUMERIC(10, 4) NOT NULL DEFAULT 0,
+        execution_time INTEGER DEFAULT 0,
+        status VARCHAR(50) DEFAULT 'pending',
+        metadata JSONB DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings_log(user_id);
+      CREATE INDEX IF NOT EXISTS idx_earnings_platform ON earnings_log(platform);
+
       -- ==========================================
       -- Security Fix: Enable Row Level Security
       -- ==========================================
@@ -422,6 +437,7 @@ async function runMigrations(pool: any) {
       ALTER TABLE agent_activity_logs ENABLE ROW LEVEL SECURITY;
       ALTER TABLE security_audit_logs ENABLE ROW LEVEL SECURITY;
       ALTER TABLE trend_analyses ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE earnings_log ENABLE ROW LEVEL SECURITY;
     `);
     console.log('[DB] Grid: Schema Synchronized.');
     } finally {
