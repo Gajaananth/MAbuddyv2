@@ -89,7 +89,16 @@ const ChatPage: React.FC = () => {
     }, [conversationId, messages, loading]);
 
     useEffect(() => {
-        scrollToBottom();
+        if (!scrollContainerRef.current) {
+            scrollToBottom();
+            return;
+        }
+        const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+        
+        if (isNearBottom) {
+            scrollToBottom();
+        }
     }, [messages]);
 
     // Load existing conversation if id is in URL
@@ -156,6 +165,7 @@ const ChatPage: React.FC = () => {
         const messageText = input;
         setInput('');
         setLoading(true);
+        setTimeout(scrollToBottom, 50);
 
         const controller = new AbortController();
         abortControllerRef.current = controller;
@@ -207,6 +217,7 @@ const ChatPage: React.FC = () => {
 
         setMessages((prev) => [...prev, userMessage]);
         setLoading(true);
+        setTimeout(scrollToBottom, 50);
 
         const controller = new AbortController();
         abortControllerRef.current = controller;
@@ -272,6 +283,7 @@ const ChatPage: React.FC = () => {
         setEditingIndex(null);
         setEditContent('');
         setLoading(true);
+        setTimeout(scrollToBottom, 50);
 
         const controller = new AbortController();
         abortControllerRef.current = controller;

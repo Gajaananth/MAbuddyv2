@@ -205,25 +205,24 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                     key={n.id}
                     onClick={() => {
                         if (!isRead(n)) handleMarkRead(n.id);
-                        setIsOpen(false);
                         
-                        const metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : n.metadata;
+                        const metadata = typeof n.metadata === 'string' ? JSON.parse(n.metadata) : (n.metadata || {});
                         
-                        // User Rule: Reports/Intelligence always go to /reports for study
-                        let targetPath = '/reports';
+                        let targetPath = null;
                         
                         if (metadata?.report_id) {
                             targetPath = `/reports?id=${metadata.report_id}`;
                         } else if (metadata?.raid_id) {
                             targetPath = `/reports?raidId=${metadata.raid_id}`;
-                        }
-                        
-                        if (n.category === 'Mission Update' && metadata?.task_id) {
+                        } else if (n.category === 'Mission Update' && metadata?.task_id) {
                             targetPath = `/?taskId=${metadata.task_id}`;
                         }
                         
-                        console.log(`[Notification] Routing for Operator Focus: ${targetPath}`);
-                        navigate(targetPath);
+                        if (targetPath) {
+                            setIsOpen(false);
+                            console.log(`[Notification] Routing for Operator Focus: ${targetPath}`);
+                            navigate(targetPath);
+                        }
                     }}
                     className={`
                         group flex items-start gap-2 px-3 py-3.5
