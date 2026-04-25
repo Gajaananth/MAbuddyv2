@@ -3,7 +3,7 @@
  * Handles persistent notifications, priority signal detection, push delivery, and strategic alerts.
  */
 
-import { createNotification, getPushSubscriptions, findRecentDuplicateNotification } from '../db/queries.js';
+import { createNotification, getPushSubscriptions, findRecentDuplicateNotification, saveRaidResult } from '../db/queries.js';
 import webpush from 'web-push';
 import dotenv from 'dotenv';
 
@@ -185,11 +185,32 @@ Operator Action Steps:
 ${data.recommendedActions}
     `.trim();
 
+    // 1. SAVE THE ACTUAL REPORT TO THE DATABASE
+    let savedRaid;
+    try {
+        savedRaid = await saveRaidResult(userId, {
+            category: 'Opportunity Alert',
+            risk_level: data.confidenceLevel >= 90 ? 'Low' : 'Medium',
+            source_platform: data.platform || 'Internet Ride',
+            content: content,
+            summary: `${data.opportunityType} — Earning Potential: ${data.earningPotential}`,
+            tags: ['opportunity', 'alert', data.platform].filter(Boolean),
+            opportunity_score: data.confidenceLevel,
+            ride_type: 'emergency', // High priority standalone ride
+            status: 'active'
+        });
+        console.log(`[Notification] Opportunity saved as Raid: ${savedRaid.id}`);
+    } catch (e) {
+        console.error(`[Notification] Failed to save Opportunity as Raid:`, e);
+    }
+
+    // 2. CREATE NOTIFICATION WITH LINK TO THE REPORT
     const metadata = {
         confidence: data.confidenceLevel,
         is_blinking: true,
         alert_type: 'OPPORTUNITY_ALERT_V2',
-        finding_id: data.findingId
+        finding_id: data.findingId,
+        raid_id: savedRaid?.id // Link to the report we just created!
     };
 
     await evaluateAndNotify(userId, content, `OPPORTUNITY: ${data.opportunityType}`, metadata);
