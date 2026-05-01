@@ -24,8 +24,10 @@ const STATUS_CONFIG = {
     'TODO': { icon: Circle, color: 'text-amber-500 border-amber-500/30' },
     'PENDING': { icon: Clock, color: 'text-amber-500 border-amber-500/30' },
     'PROCESS': { icon: Activity, color: 'text-nova-accent border-nova-accent/30' },
+    'IN_PROGRESS': { icon: Activity, color: 'text-nova-accent border-nova-accent/30' },
     'DONE': { icon: CheckCircle2, color: 'text-green-500 border-green-500/30' },
-    'COMPLETED': { icon: CheckCircle2, color: 'text-green-500 border-green-500/30' }
+    'COMPLETED': { icon: CheckCircle2, color: 'text-green-500 border-green-500/30' },
+    'BLOCKED': { icon: Shield, color: 'text-red-500 border-red-500/30' }
 };
 
 const PRIORITY_COLORS = {

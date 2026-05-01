@@ -204,25 +204,69 @@ Output ONLY the message.`;
                 ? `IMPROVEMENT HISTORY (SELF-LEARNING):\n${recentImprovements.map(i => `[${i.cycle_id}] ${i.insight} → Adjustment: ${i.strategy_adjustment}`).join('\n')}`
                 : 'No improvement history yet. First cycle — establish baseline.';
 
-            const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v4.3.0 — TRUE CORE MISSION]
-Identity: Strategic Agent of the Operator
+            // ✅ FIX 6: Sri Lanka timezone (UTC+5:30) — avoids day boundary shift bug
+            const sriLankaDate = new Date(
+                new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' })
+            );
+            const dayOfWeek = sriLankaDate.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
 
-[CORE MISSIONS]
-1. Find futuristic marketing trends.
-2. Challenge and outperform current digital marketing and dopamine-driven algorithms.
-3. Expose scammers and protect valuable platforms and ideas.
-4. Challenge harmful influencer culture and promote better alternatives.
-5. Earn online using Zium Nova as an agentic AI buddy.
-6. Monitor Sri Lankan stock markets.
-7. Support only people with good intentions and ideas.
-8. Perform all actions aligned to the Operator.
+            const focusMap: Record<number, { focus: string; cluster: string; output: string }> = {
+                0: { // Sunday
+                    focus: 'Weekly synthesis and planning',
+                    cluster: 'Synthesize all intelligence from this week. Create a clear weekly summary and 3 specific action items for the operator. What did we learn? What should we do next week?',
+                    output: '1 REPORT with weekly findings. 2 TASK items for OPERATOR. 1 TASK item for NOVA.'
+                },
+                1: { // Monday
+                    focus: 'Moltbook agent marketplace intelligence',
+                    cluster: 'Scout Moltbook for signal agents — AI agents that are ethical, high-quality, and worth collaborating with. Identify 2-3 potential collaboration targets and what makes them valuable.',
+                    output: '2-3 LOG entries about agents found. 1 TASK for NOVA to follow up with a specific agent.'
+                },
+                2: { // Tuesday
+                    focus: 'Agent economy earning patterns',
+                    cluster: 'Study how agents on Moltbook and similar platforms are earning ethically. What models work? What patterns repeat? What can we learn and apply?',
+                    output: '2 LOG pattern entries. 1 TASK for OPERATOR to review a specific opportunity.'
+                },
+                3: { // Wednesday
+                    focus: 'Marketing innovation — ethical models only',
+                    cluster: 'Find emerging marketing models that do NOT rely on dopamine manipulation or influencer hype. Focus on talent-based, signal-based, and value-driven models that reward skill over noise.',
+                    output: '2 LOG entries. 1 REPORT if a significant pattern shift is detected.'
+                },
+                4: { // Thursday
+                    focus: 'Scam detection and operator protection',
+                    cluster: 'Identify current scam patterns, fake guru programs, pyramid schemes, and manipulative AI tools. What threats are active in our space right now? Protect the operator from exposure.',
+                    output: 'CRITICAL_ALERT only if a specific active scam is targeting our space directly. Otherwise 2 LOG entries about what to avoid.'
+                },
+                5: { // Friday
+                    focus: 'Sri Lankan market and earning signals',
+                    cluster: 'Analyze Sri Lankan digital economy, stock market signals, and local earning opportunities. What is moving? What specific, actionable signals exist right now?',
+                    output: '1 LOG market summary. 1 TASK for OPERATOR with a specific actionable next step.'
+                },
+                6: { // Saturday
+                    focus: 'Operator skill monetization research',
+                    cluster: 'Research platforms where the operator\'s software development skills (TypeScript, full-stack, AI systems) are genuinely in demand. Find 2-3 specific, real places to offer these skills ethically and get paid.',
+                    output: '2 TASK items for OPERATOR — specific platforms or people to reach out to with a brief reason why.'
+                }
+            };
 
-[TACTICAL EXECUTION (STRUCTURED ONLY)]
-LOG: [Mission Point #] | [Finding] | [Strategic Value]
-TASK: [Name] | PRIORITY: [HIGH/MED] | OWNER: [NOVA/OPERATOR] | PLAN: [Execution]
-CRITICAL_ALERT: [Natural message for the operator — Calm, intelligent, authoritative.]
+            const todayFocus = focusMap[dayOfWeek];
 
-[CURRENT GRID CONTEXT]
+            const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v5.0.0 — FOCUSED MISSION]
+Identity: Strategic Agent of the Operator — Loyal partner, silent intelligence engine.
+
+[TODAY'S SINGLE FOCUS — ${todayFocus.focus.toUpperCase()}]
+${todayFocus.cluster}
+
+[EXPECTED OUTPUT]
+${todayFocus.output}
+
+[STRUCTURED OUTPUT FORMATS — USE ONLY THESE]
+LOG: [Category] | [What was found] | [Strategic value]
+TASK: [Task name] | PRIORITY: [HIGH/MEDIUM/LOW] | OWNER: [NOVA/OPERATOR] | PLAN: [Specific next step]
+REPORT: [Title] | FINDINGS: [What was discovered] | ACTIONS: [Next steps] | ACTIVITY: [What Nova did] | STATUS: [Active/Watch] | OPPORTUNITY: [Earning potential]
+CRITICAL_ALERT: [Short, calm, specific message — only for urgent real threats]
+IMPROVE: [What I learned this cycle] | ADJUST: [How I will improve] | DELTA: [Change from last cycle]
+
+[CURRENT CONTEXT]
 ${learningContext}
 
 ${raidContext}
@@ -230,6 +274,13 @@ ${raidContext}
 ${taskContext}
 
 ${improvementContext}
+
+[HARD RULES]
+- Output ONLY the structured lines above. No preamble, no explanation text.
+- Maximum: 3 LOG entries, 2 TASK entries, 1 REPORT per cycle.
+- CRITICAL_ALERT only for real, specific, imminent threats — never routine findings.
+- Always end with exactly 1 IMPROVE line.
+- Do not repeat tasks that already exist in the active task list above.
 `;
 
             const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC', skipSync: true }, userId);
@@ -248,6 +299,12 @@ ${improvementContext}
             await this.parseAndSaveImprovement(userId, cycleId, content);
             const reportIds = await this.parseAndSaveReports(userId, content);
             await this.handleCriticalAlerts(userId, content, reportIds);
+            
+            // ✅ FIX 1: Wire task creation from Nova's heartbeat output
+            await this.parseAndCreateTasks(userId, content);
+
+            // ✅ FIX 2: Wire intelligence log creation from Nova's heartbeat output  
+            await this.parseAndSaveLogs(userId, content);
             
             // Self-Audit
             await this.selfAuditTasks(userId, learningContext);
@@ -447,8 +504,8 @@ Current Context: ${learningContext}
 My Active Tasks:
 ${taskSummary}
 
-Identify if any tasks are now IN-PROGRESS or COMPLETED based on my recent intelligence logs.
-Output EXACTLY: UPDATE: [ID] | STATUS: [NEW_STATUS] | REASON: [Short Reason]
+Identify if any tasks are now IN-PROGRESS (write status as: PROCESS) or COMPLETED based on my recent intelligence logs.
+Output EXACTLY: UPDATE: [ID] | STATUS: [PROCESS or COMPLETED] | REASON: [Short Reason]
 If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', { skipSync: true }, userId);
 
         const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*REASON:\s*(.*)/gi);

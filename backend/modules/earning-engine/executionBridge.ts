@@ -13,7 +13,7 @@ export async function dispatchToCommandCenter(userId: string, scoredTask: Scored
 
     // Assign priority based on final_score
     let priority = 'MEDIUM';
-    if (scoredTask.final_score > 80) priority = 'CRITICAL';
+    if (scoredTask.final_score > 80) priority = 'HIGH';
     else if (scoredTask.final_score > 60) priority = 'HIGH';
     else if (scoredTask.final_score < 30) priority = 'LOW';
 
@@ -26,7 +26,7 @@ export async function dispatchToCommandCenter(userId: string, scoredTask: Scored
     const actionPlan = `Execute earning opportunity on ${scoredTask.platform}.\nURL: ${scoredTask.url}\nExpected Reward: ${scoredTask.reward}\nScore: ${scoredTask.final_score}`;
 
     try {
-        const client = await db.getPool().connect();
+        const client = await db.pool.connect();
         try {
             // 1. Inject into existing Command Center Task system
             await client.query(

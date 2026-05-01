@@ -7,7 +7,7 @@ import { postToMoltbook } from '../services/moltbookService.js';
 import { missionService } from '../services/missionService.js';
 import db from '../db/queries.js';
 import { ApiResponse } from '../types/index.js';
-import { AuthRequest } from '../middleware/auth.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -15,9 +15,10 @@ const router = Router();
  * GET /api/chat/poll
  * Poll for new messages in a specific conversation since a given timestamp.
  */
-router.get('/poll', async (req: AuthRequest, res: Response) => {
+router.get('/poll', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.userId || 'default_user';
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
         const { conversation_id, since } = req.query;
 
         if (!conversation_id || typeof conversation_id !== 'string') {
@@ -30,10 +31,10 @@ router.get('/poll', async (req: AuthRequest, res: Response) => {
                 return res.json({
                     success: true,
                     data: {
-                        messages: (messages || []).map(m => {
+                        messages: (messages || []).map((m: any) => {
                             let meta = m.metadata;
-                            if (typeof meta === 'string' && meta.trim() !== '') {
-                                try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta, parse_error: e.message }; }
+                            if (typeof meta === 'string' && (meta as string).trim() !== '') {
+                                try { meta = JSON.parse(meta); } catch (e: any) { meta = { raw: meta, parse_error: e.message } as any; }
                             }
                             return { ...m, metadata: meta };
                         })
@@ -64,8 +65,8 @@ router.get('/poll', async (req: AuthRequest, res: Response) => {
                 data: {
                     messages: (responseData.messages || []).map((m: any) => {
                         let meta = m.metadata;
-                        if (typeof meta === 'string' && meta.trim() !== '') {
-                            try { meta = JSON.parse(meta); } catch (e) { meta = { raw: meta, parse_error: e.message }; }
+                        if (typeof meta === 'string' && (meta as string).trim() !== '') {
+                            try { meta = JSON.parse(meta); } catch (e: any) { meta = { raw: meta, parse_error: e.message } as any; }
                         }
                         return { ...m, metadata: meta };
                     })
@@ -96,9 +97,10 @@ router.get('/poll', async (req: AuthRequest, res: Response) => {
  * POST /api/chat
  * Send a message to Zium Nova and get a strategic, scored response.
  */
-router.post('/', async (req: AuthRequest, res: Response) => {
+router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const userId = req.user?.userId || 'default_user';
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
         const { message, conversation_id, publish_to_moltbook } = req.body;
 
         if (!message || typeof message !== 'string') {

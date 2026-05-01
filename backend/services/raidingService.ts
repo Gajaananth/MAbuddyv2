@@ -183,24 +183,7 @@ Requirement:
                 const analysis = await think(raidPrompt, '', { skipSync: true }, userId);
                 analysisContent = analysis.content;
 
-                // --- Opportunity Intelligence Engine (V3 Integration) ---
-                const { opportunityService } = await import('./opportunityService.js');
-                const signals = await opportunityService.evaluateSignals(analysisContent, userId);
-                
-                if (signals.length > 0) {
-                    console.log(`[Ride] [${cluster.name}] Opportunity Pulse: Detected ${signals.length} potential signals.`);
-                    
-                    for (const s of signals) {
-                        const automationResult = await opportunityService.handleAutomation(s, userId);
-                        console.log(`[Ride] Automation for ${s.topic}: ${automationResult}`);
-                    }
 
-                    // Attach signals to cluster analysis for storage
-                    analysisContent += '\n\n### 🚀 Opportunity Intelligence signals\n';
-                    signals.forEach(s => {
-                        analysisContent += `- **${s.topic}** (Score: ${s.overall_score}/10) | Demand: ${s.demand} | Competition: ${s.competition}\n  - *Insight*: ${s.strategic_insight}\n  - *Action*: ${s.recommended_action}\n`;
-                    });
-                }
             } catch (err: any) {
                 console.error(`[Ride] [${cluster.name}] Analysis failed:`, err.message);
                 analysisContent = `Analysis unavailable for ${cluster.name}. Error: ${err.message}`;

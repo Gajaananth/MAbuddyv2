@@ -20,6 +20,7 @@ import notificationRoutes from './routes/notifications.js';
 import authRoutes from './routes/auth.js';
 import tasksRoutes from './routes/tasks.js';
 import earningRoutes from './modules/earning-engine/routes.js';
+import learningRoutes from './routes/learning.js';
 import { authenticate } from './middleware/auth.js';
 import { initRaidingSchedule } from './services/raidingService.js';
 import { autonomyService } from './services/autonomyService.js';
@@ -126,6 +127,7 @@ app.use('/api/memory', authenticate, memoryRoutes);
 app.use('/api/intelligence', authenticate, intelligenceRoutes);
 app.use('/api/notifications', authenticate, notificationRoutes);
 app.use('/api/tasks', authenticate, tasksRoutes);
+app.use('/api/learning', learningRoutes);
 app.use('/api/earning', authenticate, earningRoutes);
 
 // ─── Global Error Handler ──────────────────────────────────────

@@ -149,3 +149,9 @@ export const missionService = {
     assignTask: (id: string, owner: string) => api.patch(`/tasks/${id}/assign`, { owner }),
     deleteTask: (id: string) => api.delete(`/tasks/${id}`),
 };
+
+export const learningService = {
+    getLogs: (limit = 50) => api.get(`/learning/logs?limit=${limit}`),
+    getImprovements: (limit = 30) => api.get(`/learning/improvements?limit=${limit}`),
+    getSummary: () => api.get('/learning/summary'),
+};
