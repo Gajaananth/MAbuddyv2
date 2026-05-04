@@ -5,6 +5,7 @@ import { getAllUsers } from '../db/authQueries.js';
 import { missionService } from './missionService.js';
 import { lifecycleService } from './lifecycleService.js';
 import { eventService, ZiumEvent } from './eventService.js';
+import { recordOutcome } from './learningEngine.js';
 
 /**
  * Zium Nova Autonomy Service v4.0.0
@@ -294,6 +295,9 @@ ${improvementContext}
                 content: content,
                 metadata: { cycle_id: cycleId }
             });
+
+            // Log the outcome in the Learning Engine
+            await recordOutcome(userId, 'AUTONOMOUS_CYCLE', 'SUCCESS', 10, 'Heartbeat cycle completed successfully.', { cycle_id: cycleId }).catch(e => console.error('[Autonomy] Learning Engine error:', e));
 
             // Special Autonomy steps (Improvement logic & Critical Alerts)
             await this.parseAndSaveImprovement(userId, cycleId, content);

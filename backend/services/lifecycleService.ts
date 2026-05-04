@@ -2,6 +2,7 @@ import db from '../db/queries.js';
 import { opportunityService, OpportunitySignal } from './opportunityService.js';
 import { taskService } from './taskService.js';
 import { eventService, ZiumEvent } from './eventService.js';
+import { evaluateDecision } from './decisionEngine.js';
 
 /**
  * Zium Nova Lifecycle Service v5.0.0
@@ -73,6 +74,18 @@ export class LifecycleService {
     }
 
     private determineDecision(signal: OpportunitySignal): 'AUTO_TASK' | 'SUGGEST' | 'LOG' {
+        const decisionResult = evaluateDecision([
+            { id: 'auto_task', description: 'AUTO_TASK', strategic_value: signal.overall_score, estimated_reward: 10, estimated_effort: 5, urgency: 5, risk_level: 2, operator_alignment: 8, confidence_score: 9 },
+            { id: 'suggest', description: 'SUGGEST', strategic_value: signal.overall_score * 0.8, estimated_reward: 5, estimated_effort: 2, urgency: 2, risk_level: 1, operator_alignment: 7, confidence_score: 8 },
+            { id: 'log', description: 'LOG', strategic_value: signal.overall_score * 0.5, estimated_reward: 1, estimated_effort: 1, urgency: 1, risk_level: 1, operator_alignment: 5, confidence_score: 5 }
+        ], {});
+
+        const result = decisionResult.recommended_action as 'AUTO_TASK' | 'SUGGEST' | 'LOG';
+        if (result === 'AUTO_TASK' || result === 'SUGGEST' || result === 'LOG') {
+            if (signal.overall_score >= 7.5 && result !== 'AUTO_TASK') return 'AUTO_TASK';
+            return result;
+        }
+
         const score = signal.overall_score;
         if (score >= 7.5) return 'AUTO_TASK';
         if (score >= 6.0) return 'SUGGEST';

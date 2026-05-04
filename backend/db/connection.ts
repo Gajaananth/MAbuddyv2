@@ -419,6 +419,71 @@ async function runMigrations(pool: any) {
       CREATE INDEX IF NOT EXISTS idx_earnings_user ON earnings_log(user_id);
       CREATE INDEX IF NOT EXISTS idx_earnings_platform ON earnings_log(platform);
 
+      CREATE TABLE IF NOT EXISTS learning_events (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        action_type VARCHAR(100) NOT NULL,
+        context JSONB DEFAULT NULL,
+        outcome VARCHAR(50) NOT NULL,
+        score NUMERIC(10, 4) DEFAULT 0,
+        notes TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_learning_events_user ON learning_events(user_id);
+
+      CREATE TABLE IF NOT EXISTS opportunities (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        source VARCHAR(255),
+        score NUMERIC(10, 4) DEFAULT 0,
+        estimated_reward NUMERIC(10, 4) DEFAULT 0,
+        estimated_effort VARCHAR(50),
+        status VARCHAR(50) DEFAULT 'NEW',
+        recommended_action TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_opportunities_user ON opportunities(user_id);
+
+      CREATE TABLE IF NOT EXISTS automation_runs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        goal TEXT NOT NULL,
+        status VARCHAR(50) DEFAULT 'PENDING',
+        current_step INTEGER DEFAULT 0,
+        metadata JSONB DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_automation_runs_user ON automation_runs(user_id);
+
+      CREATE TABLE IF NOT EXISTS execution_sessions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        type TEXT NOT NULL,
+        status TEXT DEFAULT 'ACTIVE',
+        metadata JSONB,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_execution_sessions_user ON execution_sessions(user_id);
+
+      CREATE TABLE IF NOT EXISTS execution_logs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL,
+        session_id UUID,
+        action_type TEXT,
+        action_data JSONB,
+        result TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_execution_logs_user ON execution_logs(user_id);
+
       -- ==========================================
       -- Security Fix: Enable Row Level Security
       -- ==========================================
@@ -438,6 +503,11 @@ async function runMigrations(pool: any) {
       ALTER TABLE security_audit_logs ENABLE ROW LEVEL SECURITY;
       ALTER TABLE trend_analyses ENABLE ROW LEVEL SECURITY;
       ALTER TABLE earnings_log ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE learning_events ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE automation_runs ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE execution_sessions ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE execution_logs ENABLE ROW LEVEL SECURITY;
     `);
     console.log('[DB] Grid: Schema Synchronized.');
     } finally {

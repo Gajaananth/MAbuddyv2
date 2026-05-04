@@ -91,6 +91,35 @@ const ReportsPage: React.FC = () => {
                 )}
             </header>
 
+            {/* Nova Performance Dashboard Widgets */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
+                <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Opportunity Pipeline</span>
+                    <span className="text-xl font-black text-white mt-2">12 Active</span>
+                    <span className="text-[10px] text-green-400 mt-1">+3 this week</span>
+                </div>
+                <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Earnings Insights</span>
+                    <span className="text-xl font-black text-white mt-2">$2,450</span>
+                    <span className="text-[10px] text-green-400 mt-1">Estimated +15%</span>
+                </div>
+                <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Learning Trends</span>
+                    <span className="text-xl font-black text-white mt-2">8 Patterns</span>
+                    <span className="text-[10px] text-nova-accent mt-1">High Accuracy</span>
+                </div>
+                <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Decision Confidence</span>
+                    <span className="text-xl font-black text-white mt-2">94%</span>
+                    <span className="text-[10px] text-nova-accent mt-1">Based on 50+ actions</span>
+                </div>
+                <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Resource Allocation</span>
+                    <span className="text-xl font-black text-white mt-2">Optimized</span>
+                    <span className="text-[10px] text-nova-text-dim mt-1">4h Focus Saved</span>
+                </div>
+            </div>
+
             {/* Tab Navigation */}
             <div className="flex gap-4 sm:gap-8 border-b border-nova-border mb-8 sm:mb-10 overflow-x-auto">
                 <button
