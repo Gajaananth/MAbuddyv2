@@ -1,4 +1,4 @@
-import { pool } from '../db/connection';
+import { pool } from '../db/connection.js';
 
 export const recordOutcome = async (
     userId: string,

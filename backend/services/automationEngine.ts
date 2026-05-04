@@ -1,4 +1,4 @@
-import { pool } from '../db/connection';
+import { pool } from '../db/connection.js';
 
 export const runWorkflow = async (userId: string, goal: string, metadata: any = {}) => {
     const query = `

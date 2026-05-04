@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { executeCommand } from './terminalExecutionService';
+import { executeCommand } from './terminalExecutionService.js';
 
 export const cloneRepo = async (userId: string, url: string, targetPath: string) => {
     return await executeCommand(userId, `git clone ${url} ${targetPath}`, './');

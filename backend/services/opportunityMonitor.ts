@@ -1,4 +1,4 @@
-import { pool } from '../db/connection';
+import { pool } from '../db/connection.js';
 
 export const scanSignals = async (source: string) => {
     // Mock fetching external signals

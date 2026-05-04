@@ -1,5 +1,5 @@
-import { requestApproval } from './actionApprovalService';
-import { pool } from '../db/connection';
+import { requestApproval } from './actionApprovalService.js';
+import { pool } from '../db/connection.js';
 
 interface BrowserSession {
     id: string;

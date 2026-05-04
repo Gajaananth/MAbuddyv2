@@ -1,6 +1,6 @@
-import { requestApproval, approveAction } from './actionApprovalService';
-import { recordOutcome } from './learningEngine';
-import { pool } from '../db/connection';
+import { requestApproval, approveAction } from './actionApprovalService.js';
+import { recordOutcome } from './learningEngine.js';
+import { pool } from '../db/connection.js';
 
 export const executeRevenueTask = async (userId: string, taskId: string, taskType: string, payload: any) => {
     // 1. Validation
