@@ -77,6 +77,7 @@ const ChatPage: React.FC = () => {
                             // Merge ensuring no duplicates
                             const existingIds = new Set(prev.map(m => m.id));
                             const newMsgs = res.data.data.messages.filter((m: any) => !existingIds.has(m.id));
+                            if (newMsgs.length === 0) return prev;
                             return [...prev, ...newMsgs];
                         });
                     }
