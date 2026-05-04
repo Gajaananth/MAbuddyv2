@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Terminal, Globe, Shield, PlayCircle, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { Terminal, Globe, Shield, PlayCircle } from 'lucide-react';
 
 const ExecutionCenterPage: React.FC = () => {
-    const [activeSessions, setActiveSessions] = useState([
+    const [activeSessions] = useState([
         { id: '1', type: 'BROWSER', target: 'Moltbook Market', status: 'ACTIVE', time: '10m ago' },
         { id: '2', type: 'TERMINAL', target: 'Git Sync', status: 'COMPLETED', time: '1h ago' }
     ]);
 
-    const [pendingApprovals, setPendingApprovals] = useState([
+    const [pendingApprovals] = useState([
         { id: 'A1', action: 'Deploy Production', risk: 'HIGH', time: '5m ago' }
     ]);
 
