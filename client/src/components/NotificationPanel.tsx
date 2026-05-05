@@ -133,8 +133,18 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
     const handleMarkAllRead = async () => {
         try {
             if (!notifications.length) return;
+            if (!window.confirm('Archive all notifications?')) return;
             await notificationService.clearAll();
             setNotifications([]);
+            await fetchUnreadCount();
+        } catch { /* silent */ }
+    };
+
+    const handleMarkAllReadOnly = async () => {
+        try {
+            if (!unreadCount) return;
+            await notificationService.markAllRead();
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
             await fetchUnreadCount();
         } catch { /* silent */ }
     };
@@ -166,13 +176,23 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                 )}
             </div>
             <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                {unreadCount > 0 && (
-                    <button
-                        onClick={handleMarkAllRead}
-                        className="text-[9px] font-black text-nova-accent hover:text-white border border-nova-accent/30 px-2 py-1 rounded-lg hover:bg-nova-accent/10 transition-all uppercase tracking-wider whitespace-nowrap"
-                    >
-                        Clear all
-                    </button>
+                {notifications.length > 0 && (
+                    <div className="flex gap-1">
+                        {unreadCount > 0 && (
+                            <button
+                                onClick={handleMarkAllReadOnly}
+                                className="text-[9px] font-black text-nova-accent hover:text-white border border-nova-accent/30 px-2 py-1 rounded-lg hover:bg-nova-accent/10 transition-all uppercase tracking-wider whitespace-nowrap"
+                            >
+                                Read all
+                            </button>
+                        )}
+                        <button
+                            onClick={handleMarkAllRead}
+                            className="text-[9px] font-black text-nova-text-dim hover:text-white border border-white/10 px-2 py-1 rounded-lg hover:bg-white/10 transition-all uppercase tracking-wider whitespace-nowrap"
+                        >
+                            Clear
+                        </button>
+                    </div>
                 )}
                 <button
                     onClick={() => setIsOpen(false)}

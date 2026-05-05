@@ -485,29 +485,40 @@ async function runMigrations(pool: any) {
       CREATE INDEX IF NOT EXISTS idx_execution_logs_user ON execution_logs(user_id);
 
       -- ==========================================
-      -- Security Fix: Enable Row Level Security
+      // Raid Status Table for Persistent Progress
       -- ==========================================
-      ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE intelligence_logs ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE improvement_logs ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE devices ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE intelligence_raids ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE weekly_reports ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE agent_network ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE agent_activity_logs ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE security_audit_logs ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE trend_analyses ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE earnings_log ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE learning_events ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE automation_runs ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE execution_sessions ENABLE ROW LEVEL SECURITY;
-      ALTER TABLE execution_logs ENABLE ROW LEVEL SECURITY;
+      CREATE TABLE IF NOT EXISTS raid_status (
+        user_id UUID PRIMARY KEY,
+        status VARCHAR(20) DEFAULT 'idle',
+        current_cluster TEXT DEFAULT '',
+        clusters_completed INT DEFAULT 0,
+        total_clusters INT DEFAULT 5,
+        last_started TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+
+      -- ✅ RLS: Disabled for single-user private app (no policies needed)
+      ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE intelligence_logs DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE improvement_logs DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE devices DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE push_subscriptions DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE intelligence_raids DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE weekly_reports DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE agent_network DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE agent_activity_logs DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE security_audit_logs DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE trend_analyses DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE earnings_log DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE learning_events DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE opportunities DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE automation_runs DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE execution_sessions DISABLE ROW LEVEL SECURITY;
+      ALTER TABLE execution_logs DISABLE ROW LEVEL SECURITY;
     `);
     console.log('[DB] Grid: Schema Synchronized.');
     } finally {

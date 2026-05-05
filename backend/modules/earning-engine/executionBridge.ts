@@ -26,7 +26,9 @@ export async function dispatchToCommandCenter(userId: string, scoredTask: Scored
     const actionPlan = `Execute earning opportunity on ${scoredTask.platform}.\nURL: ${scoredTask.url}\nExpected Reward: ${scoredTask.reward}\nScore: ${scoredTask.final_score}`;
 
     try {
-        const client = await db.pool.connect();
+        const poolInstance = db.getPool();
+        if (!poolInstance) throw new Error('[DB] Grid Offline: Pool not initialized');
+        const client = await poolInstance.connect();
         try {
             // 1. Inject into existing Command Center Task system
             await client.query(

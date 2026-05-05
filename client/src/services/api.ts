@@ -136,6 +136,8 @@ export const notificationService = {
         api.get('/notifications/unread-count'),
     markRead: (id: string) =>
         api.patch(`/notifications/${id}/read`),
+    markAllRead: () =>
+        api.patch('/notifications/read-all'),
     archive: (id: string) =>
         api.delete(`/notifications/${id}`),
     clearAll: () =>

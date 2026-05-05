@@ -44,9 +44,9 @@ const IntelligenceDashboard: React.FC = () => {
     const [expandedReports, setExpandedReports] = useState<string[]>([]);
     const [rideStatus, setRideStatus] = useState<{
         status: string;
-        currentCluster: string;
-        clustersCompleted: number;
-        totalClusters: number;
+        current_cluster: string;
+        clusters_completed: number;
+        total_clusters: number;
     } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -76,9 +76,9 @@ const IntelligenceDashboard: React.FC = () => {
                     setRideStatus(data);
 
                     // Reload data when a new cluster finishes
-                    if (data.clustersCompleted > prevClustersCompleted) {
+                    if (data.clusters_completed > prevClustersCompleted) {
                         loadData();
-                        prevClustersCompleted = data.clustersCompleted;
+                        prevClustersCompleted = data.clusters_completed;
                     }
 
                     if (data.status === 'completed' || data.status === 'failed') {
@@ -167,7 +167,7 @@ const IntelligenceDashboard: React.FC = () => {
         if (triggerLoading) return;
         setTriggerLoading(true);
         try {
-            await intelligenceService.triggerRide('end-of-week');
+            await intelligenceService.triggerRide('mid-week');
             // Status effect will take over polling
         } catch (error: any) {
             console.error('[Intelligence] Trigger Error:', error);
@@ -336,14 +336,14 @@ const IntelligenceDashboard: React.FC = () => {
                                 Active Strategem Scan
                             </h3>
                             <p className="text-[10px] text-nova-text-dim font-bold uppercase tracking-[0.2em]">
-                                TARGET: <span className="text-nova-accent">{rideStatus?.currentCluster}</span>
+                                TARGET: <span className="text-nova-accent">{rideStatus?.current_cluster}</span>
                                 <span className="mx-2 opacity-20">|</span>
-                                PHASE {(rideStatus?.clustersCompleted || 0) + 1}/{rideStatus?.totalClusters}
+                                PHASE {(rideStatus?.clusters_completed || 0) + 1}/{rideStatus?.total_clusters}
                             </p>
                         </div>
-                        <div className="text-right self-end sm:self-auto">
+                            <div className="text-right self-end sm:self-auto">
                             <span className="text-3xl font-black text-nova-accent tabular-nums tracking-tighter">
-                                {Math.round(((rideStatus?.clustersCompleted || 0) / (rideStatus?.totalClusters || 1)) * 100)}%
+                                {Math.round(((rideStatus?.clusters_completed || 0) / (rideStatus?.total_clusters || 1)) * 100)}%
                             </span>
                         </div>
                     </div>
@@ -351,7 +351,7 @@ const IntelligenceDashboard: React.FC = () => {
                     <div className="relative h-3 bg-white/5 rounded-full overflow-hidden border border-white/10 p-0.5">
                         <div
                             className="h-full bg-nova-accent rounded-full transition-all duration-1000 shadow-[0_0_20px_rgba(0,242,255,0.6)] relative"
-                            style={{ width: `${((rideStatus?.clustersCompleted || 0) / (rideStatus?.totalClusters || 1)) * 100}%` }}
+                            style={{ width: `${((rideStatus?.clusters_completed || 0) / (rideStatus?.total_clusters || 1)) * 100}%` }}
                         >
                             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer"></div>
                         </div>

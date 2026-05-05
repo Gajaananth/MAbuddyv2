@@ -6,14 +6,13 @@ import { lifecycleService } from './lifecycleService.js';
 import { eventService, ZiumEvent } from './eventService.js';
 import db from '../db/queries.js';
 
-// Track active raids per user for UI progress feedback
-export const activeRaids = new Map<string, {
-    status: 'starting' | 'scanning' | 'analyzing' | 'completed' | 'failed';
-    currentCluster: string;
-    clustersCompleted: number;
-    totalClusters: number;
-    lastStarted: string;
-}>();
+// ✅ Fix C2: activeRaids Map replaced with DB-backed status for Vercel serverless compatibility.
+// In-memory Maps are lost between serverless function invocations.
+// DB status survives across all instances and requests.
+import { upsertRaidStatus, getRaidStatus } from '../db/queries.js';
+
+// Keep a lightweight in-memory guard ONLY to prevent double-starts within the same process instance
+const raidInProgress = new Set<string>();
 
 // Each cluster defines what to analyze and what risk category it maps to
 const RAID_CLUSTERS: Array<{
@@ -131,31 +130,38 @@ function parseToTrendData(content: string, category: string): any {
 export async function performInternetRaid(type: 'mid-week' | 'end-of-week', userId: string): Promise<void> {
     console.log(`[Ride] [${new Date().toISOString()}] Starting ${type} Internet Ride for user ${userId}...`);
 
-    if (activeRaids.has(userId)) {
-        const current = activeRaids.get(userId)!;
-        if (current.status !== 'completed' && current.status !== 'failed') {
-            console.warn(`[Ride] Internet Ride already running for user ${userId}, skipping.`);
+    // ✅ In-process guard (prevents double-start within same serverless instance)
+    if (raidInProgress.has(userId)) {
+        console.warn(`[Ride] Internet Ride already running for user ${userId}, skipping.`);
+        return;
+    }
+    // DB guard (prevents double-start across serverless instances)
+    const existingStatus = await getRaidStatus(userId);
+    if (existingStatus && existingStatus.status !== 'completed' && existingStatus.status !== 'failed') {
+        const lastStarted = new Date(existingStatus.last_started).getTime();
+        if (Date.now() - lastStarted < 20 * 60 * 1000) { // 20 minute grace window
+            console.warn(`[Ride] Raid already active in DB for user ${userId}, skipping.`);
             return;
         }
     }
-
-    activeRaids.set(userId, {
+    
+    raidInProgress.add(userId);
+    await upsertRaidStatus(userId, {
         status: 'starting',
-        currentCluster: 'Initializing...',
-        clustersCompleted: 0,
-        totalClusters: RAID_CLUSTERS.length,
-        lastStarted: new Date().toISOString(),
+        current_cluster: 'Initializing...',
+        clusters_completed: 0,
+        total_clusters: RAID_CLUSTERS.length
     });
 
     let completed = 0;
 
     try {
         for (const cluster of RAID_CLUSTERS) {
-            activeRaids.set(userId, {
-                ...activeRaids.get(userId)!,
+            await upsertRaidStatus(userId, {
                 status: 'scanning',
-                currentCluster: cluster.name,
-                clustersCompleted: completed,
+                current_cluster: cluster.name,
+                clusters_completed: completed,
+                total_clusters: RAID_CLUSTERS.length,
             });
 
             console.log(`[Ride] [${cluster.name}] Analyzing...`);
@@ -179,7 +185,12 @@ Requirement:
   4. APPLICATION: [How we use this right now]
 - Ensure 100% alignment with Operator's ethical mission.`;
 
-                activeRaids.set(userId, { ...activeRaids.get(userId)!, status: 'analyzing' });
+                await upsertRaidStatus(userId, {
+                    status: 'analyzing',
+                    current_cluster: cluster.name,
+                    clusters_completed: completed,
+                    total_clusters: RAID_CLUSTERS.length,
+                });
                 const analysis = await think(raidPrompt, '', { skipSync: true }, userId);
                 analysisContent = analysis.content;
 
@@ -239,28 +250,37 @@ Requirement:
             }
 
             completed++;
-            activeRaids.set(userId, {
-                ...activeRaids.get(userId)!,
+            await upsertRaidStatus(userId, {
                 status: 'scanning',
-                clustersCompleted: completed,
+                current_cluster: cluster.name,
+                clusters_completed: completed,
+                total_clusters: RAID_CLUSTERS.length,
             });
 
             await new Promise(res => setTimeout(res, 500));
         }
 
-        activeRaids.set(userId, {
-            ...activeRaids.get(userId)!,
+        raidInProgress.delete(userId);
+        await upsertRaidStatus(userId, {
             status: 'completed',
-            clustersCompleted: RAID_CLUSTERS.length,
+            current_cluster: 'All clusters complete',
+            clusters_completed: RAID_CLUSTERS.length,
+            total_clusters: RAID_CLUSTERS.length,
         });
 
         console.log(`[Ride] ${type} Internet Ride complete for ${userId}.`);
-        setTimeout(() => activeRaids.delete(userId), 60_000);
+        // Status remains in DB — auto-clears after 30min stale check in getRaidStatus()
 
     } catch (error: any) {
         console.error(`[Ride] Fatal error for ${userId}:`, error.message);
-        activeRaids.set(userId, { ...activeRaids.get(userId)!, status: 'failed' });
-        setTimeout(() => activeRaids.delete(userId), 15_000);
+        raidInProgress.delete(userId);
+        await upsertRaidStatus(userId, {
+            status: 'failed',
+            current_cluster: 'Error',
+            clusters_completed: 0,
+            total_clusters: RAID_CLUSTERS.length,
+        });
+        // Status remains in DB as 'failed' — auto-clears on next getRaidStatus() call
     }
 }
 

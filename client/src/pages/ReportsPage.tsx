@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import api from '../services/api';
-import { Terminal, ScrollText, Database, Loader2 } from 'lucide-react';
+import api, { intelligenceService } from '../services/api';
+import { Terminal, ScrollText, Database, Loader2, Clock } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { formatTimestamp } from '../utils/formatUtils';
 
@@ -23,7 +22,6 @@ interface Raid {
     monetization_potential: string;
     created_at: string;
 }
-import { intelligenceService } from '../services/api';
 
 const ReportsPage: React.FC = () => {
     const [reports, setReports] = useState<Report[]>([]);
@@ -47,12 +45,8 @@ const ReportsPage: React.FC = () => {
                 let allReports = reportsRes.data.data || [];
                 let allRaids = raidsRes.data.data || [];
 
-                // Filter if highlight ID is present
-                if (highlightId) {
-                    allReports = allReports.filter((r: Report) => r.id === highlightId);
-                }
+                // No longer filtering. Instead, we highlight and scroll.
                 if (highlightRaidId) {
-                    allRaids = allRaids.filter((r: Raid) => r.id === highlightRaidId);
                     setActiveTab('raids');
                 }
 
@@ -66,6 +60,24 @@ const ReportsPage: React.FC = () => {
         };
         fetchData();
     }, [highlightId, highlightRaidId]);
+
+        if (!loading) {
+            const targetId = highlightId || highlightRaidId;
+            if (targetId) {
+                setTimeout(() => {
+                    const el = document.getElementById(`item-${targetId}`);
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        el.classList.add('ring-2', 'ring-nova-accent', 'ring-offset-2');
+                        setTimeout(() => el.classList.remove('ring-2', 'ring-nova-accent', 'ring-offset-2'), 4000);
+                    }
+                }, 600);
+            }
+        }
+    }, [loading, activeTab, highlightId, highlightRaidId]);
+
+    const isHighlightMissing = (highlightId && !reports.some(r => r.id === highlightId)) || 
+                              (highlightRaidId && !raids.some(r => r.id === highlightRaidId));
 
     const handleExport = (id: string, format: string, type: 'reports' | 'raids') => {
         intelligenceService.downloadReport(id, format as any, type);
@@ -137,21 +149,36 @@ const ReportsPage: React.FC = () => {
                     Internet Raids ({raids.length})
                 </button>
             </div>
+ 
+            {!loading && reports.length === 0 && raids.length === 0 && (
+                <div className="text-center py-20">
+                    <p className="text-nova-text-dim text-sm font-bold">No intelligence data yet.</p>
+                    <p className="text-nova-text-dim/50 text-xs mt-2">Trigger a Network Ride to start generating reports.</p>
+                </div>
+            )}
 
             {loading ? (
                 <div className="p-20 text-center text-nova-text-dim">
                     <Loader2 className="animate-spin mx-auto mb-4 text-nova-accent" size={32} />
                     <span className="text-[10px] uppercase tracking-[0.3em] font-black">Decrypting Archive...</span>
                 </div>
-            ) : activeTab === 'reports' ? (
-                reports.length === 0 ? (
-                    <div className="glass p-16 rounded-3xl border-2 border-dashed border-nova-border text-center text-nova-text-dim font-black uppercase tracking-[0.2em] text-sm">
-                        No Reports Found
-                    </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                        {isHighlightMissing && activeTab === 'reports' && (
+                            <div className="glass p-6 rounded-2xl border border-nova-accent/30 bg-nova-accent/5 mb-4 animate-pulse">
+                                <p className="text-nova-accent text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                    <Clock size={14} />
+                                    This intelligence finding may still be processing. Here are the latest findings:
+                                </p>
+                            </div>
+                        )}
+                        {reports.length === 0 && (
+                            <div className="glass p-16 rounded-3xl border-2 border-dashed border-nova-border text-center text-nova-text-dim font-black uppercase tracking-[0.2em] text-sm">
+                                No Reports Found
+                            </div>
+                        )}
                         {reports.map((report) => (
-                            <div key={report.id} className={`card-intelligence glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all relative overflow-hidden group ${highlightId === report.id ? 'border-nova-accent bg-nova-accent/[0.03] shadow-[0_0_40px_rgba(0,242,255,0.15)] ring-1 ring-nova-accent' : 'border-nova-border/50'}`}>
+                            <div key={report.id} id={`item-${report.id}`} className={`card-intelligence glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all relative overflow-hidden group ${highlightId === report.id ? 'border-nova-accent bg-nova-accent/[0.03] shadow-[0_0_40px_rgba(0,242,255,0.15)] ring-1 ring-nova-accent' : 'border-nova-border/50'}`}>
                                 <div className={`absolute top-0 left-0 w-1.5 h-full opacity-60 ${highlightId === report.id ? 'bg-nova-accent' : 'bg-nova-accent/30'}`}></div>
                                 
                                 <div className="space-y-5">
@@ -195,14 +222,24 @@ const ReportsPage: React.FC = () => {
                         ))}
                     </div>
                 )
-            ) : raids.length === 0 ? (
-                <div className="glass p-16 rounded-3xl border-2 border-dashed border-nova-border text-center text-nova-text-dim font-black uppercase tracking-[0.2em] text-sm">
-                    No Internet Raid Data
-                </div>
+                )
             ) : (
                 <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                    {isHighlightMissing && activeTab === 'raids' && (
+                        <div className="glass p-6 rounded-2xl border border-red-500/30 bg-red-500/5 mb-4 animate-pulse">
+                            <p className="text-red-400 text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                <Clock size={14} />
+                                This intelligence finding may still be processing. Here are the latest findings:
+                            </p>
+                        </div>
+                    )}
+                    {raids.length === 0 && (
+                        <div className="glass p-16 rounded-3xl border-2 border-dashed border-nova-border text-center text-nova-text-dim font-black uppercase tracking-[0.2em] text-sm">
+                            No Internet Raid Data
+                        </div>
+                    )}
                     {raids.map((raid) => (
-                        <div key={raid.id} className="card-intelligence glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all relative overflow-hidden group border-nova-border/50">
+                        <div key={raid.id} id={`item-${raid.id}`} className={`card-intelligence glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all relative overflow-hidden group ${highlightRaidId === raid.id ? 'border-red-500 bg-red-500/[0.03] shadow-[0_0_40px_rgba(239,68,68,0.15)] ring-1 ring-red-500' : 'border-nova-border/50'}`}>
                             <div className="absolute top-0 left-0 w-1.5 h-full opacity-60 bg-red-500/30"></div>
                             
                             <div className="space-y-5">

@@ -672,14 +672,15 @@ export async function getTaskProgress(userId: string): Promise<{
     };
 }
 
-async function archiveAllNotifications(userId: string): Promise<void> {
-    const query = `
-        UPDATE notifications 
-        SET status = 'archived' 
-        WHERE user_id = $1 AND status != 'archived'
-    `;
-    await db.pool.query(query, [userId]);
+export async function archiveAllNotifications(userId: string): Promise<void> {
+    await db.pool.query('UPDATE notifications SET is_archived = TRUE WHERE user_id = $1 AND is_archived = FALSE', [userId]);
 }
+
+export async function markAllNotificationsRead(userId: string): Promise<void> {
+    await db.pool.query('UPDATE notifications SET is_read = TRUE WHERE user_id = $1 AND is_read = FALSE', [userId]);
+}
+
+
 
 const queries = {
     getConversationDetail,
@@ -743,8 +744,67 @@ const queries = {
     getTaskProgress,
     getTrendAggregation,
     logSecurityEvent,
-    getSecurityLogs
+    getSecurityLogs,
+    upsertRaidStatus,
+    getRaidStatus,
+    markAllNotificationsRead
 };
+
+/**
+ * Update raid status in DB (replaces in-memory Map for serverless compatibility)
+ */
+export async function upsertRaidStatus(userId: string, status: {
+    status: string;
+    current_cluster: string;
+    clusters_completed: number;
+    total_clusters: number;
+}): Promise<void> {
+    const pool = db.pool; // Use db.pool as seen in other functions
+    if (!pool) return;
+    await pool.query(`
+        INSERT INTO raid_status (user_id, status, current_cluster, clusters_completed, total_clusters, last_started, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+        ON CONFLICT (user_id) DO UPDATE SET
+            status = EXCLUDED.status,
+            current_cluster = EXCLUDED.current_cluster,
+            clusters_completed = EXCLUDED.clusters_completed,
+            total_clusters = EXCLUDED.total_clusters,
+            updated_at = NOW()
+    `, [userId, status.status, status.current_cluster, status.clusters_completed, status.total_clusters]);
+}
+
+/**
+ * Get current raid status from DB
+ */
+export async function getRaidStatus(userId: string): Promise<{
+    status: string;
+    current_cluster: string;
+    clusters_completed: number;
+    total_clusters: number;
+    last_started: string;
+} | null> {
+    const pool = db.pool;
+    if (!pool) return null;
+    const result = await pool.query(
+        'SELECT * FROM raid_status WHERE user_id = $1',
+        [userId]
+    );
+    if (result.rows.length === 0) return null;
+    const row = result.rows[0];
+    // Auto-clear stale statuses (older than 30 minutes = must have failed)
+    const updatedAt = new Date(row.updated_at).getTime();
+    if (Date.now() - updatedAt > 30 * 60 * 1000 && row.status !== 'idle' && row.status !== 'completed') {
+        await pool.query("UPDATE raid_status SET status = 'idle' WHERE user_id = $1", [userId]);
+        return null;
+    }
+    return {
+        status: row.status,
+        current_cluster: row.current_cluster,
+        clusters_completed: row.clusters_completed,
+        total_clusters: row.total_clusters,
+        last_started: row.last_started,
+    };
+}
 
 export default queries;
 

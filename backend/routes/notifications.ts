@@ -68,6 +68,24 @@ router.patch('/:id/read', authenticate, async (req: AuthRequest, res: Response) 
 });
 
 /**
+ * PATCH /api/notifications/read-all
+ * Mark all notifications as read for the authenticated user.
+ */
+router.patch('/read-all', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        await db.markAllNotificationsRead(userId);
+
+        res.json({ success: true, message: 'All notifications marked as read' });
+    } catch (error) {
+        console.error('[Notifications] Read All Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to mark all notifications' });
+    }
+});
+
+/**
  * DELETE /api/notifications/:id
  * Archive a notification.
  */

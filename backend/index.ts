@@ -127,7 +127,7 @@ app.use('/api/memory', authenticate, memoryRoutes);
 app.use('/api/intelligence', authenticate, intelligenceRoutes);
 app.use('/api/notifications', authenticate, notificationRoutes);
 app.use('/api/tasks', authenticate, tasksRoutes);
-app.use('/api/learning', learningRoutes);
+app.use('/api/learning', authenticate, learningRoutes);
 app.use('/api/earning', authenticate, earningRoutes);
 
 // ─── Global Error Handler ──────────────────────────────────────

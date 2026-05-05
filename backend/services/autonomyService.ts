@@ -108,9 +108,16 @@ class AutonomyService {
 
             if (lastNovaMessage) {
                 const lastTime = new Date(lastNovaMessage.created_at).getTime();
-                const now = Date.now();
-                if (now - lastTime < 24 * 60 * 60 * 1000) {
+                const nowMs = Date.now();
+                // ✅ Fix: Check 24h has passed in real time (timezone-independent)
+                if (nowMs - lastTime < 24 * 60 * 60 * 1000) {
                     return; // Already messaged in last 24h
+                }
+                // ✅ Fix: Only check in during waking hours SL time (8am - 10pm)
+                const sriLankaHour = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' })).getHours();
+                if (sriLankaHour < 8 || sriLankaHour >= 22) {
+                    console.log(`[Autonomy] Skipping check-in — outside waking hours SL (${sriLankaHour}:00)`);
+                    return;
                 }
             }
 
@@ -288,13 +295,9 @@ ${improvementContext}
             const content = response.content;
             console.log(`[Autonomy v4.2] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
 
-            // Execute response processing via Lifecycle Engine (Signal -> Score -> Decision -> Action -> Task -> Learning)
-            await lifecycleService.processSignal(userId, {
-                category: 'AUTONOMOUS_HEARTBEAT',
-                source: cycleId,
-                content: content,
-                metadata: { cycle_id: cycleId }
-            });
+            // ✅ Fix B3: Removed lifecycleService.processSignal() from heartbeat cycle.
+            // parseAndCreateTasks() and parseAndSaveLogs() handle structured output directly.
+            // lifecycleService is still used by raidingService for raid signals — correct usage.
 
             // Log the outcome in the Learning Engine
             await recordOutcome(userId, 'AUTONOMOUS_CYCLE', 'SUCCESS', 10, 'Heartbeat cycle completed successfully.', { cycle_id: cycleId }).catch(e => console.error('[Autonomy] Learning Engine error:', e));
@@ -470,12 +473,14 @@ ${improvementContext}
      */
     private async checkAndTriggerScheduledRides(userId: string) {
         const now = new Date();
-        const day = now.getUTCDay(); // 0 = Sunday, 3 = Wednesday
+        // ✅ Fix: Use Sri Lanka timezone (UTC+5:30) not UTC
+        const sriLankaDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Colombo' }));
+        const day = sriLankaDate.getDay(); // 0 = Sunday, 3 = Wednesday (SL local time)
         const isScheduledDay = day === 0 || day === 3;
         
         if (!isScheduledDay) return;
 
-        const dayKey = `${userId}-${day}-${now.getUTCDate()}-${now.getUTCMonth()}`;
+        const dayKey = `${userId}-${day}-${sriLankaDate.getDate()}-${sriLankaDate.getMonth()}`;
         if (this.lastRaidCheck.has(dayKey)) return;
 
         console.log(`[Autonomy v4.1] PERSISTENT CRON: Scheduled ride due for ${userId}. Triggering...`);
@@ -503,14 +508,23 @@ ${improvementContext}
         if (activeNovaTasks.length === 0) return;
 
         const taskSummary = activeNovaTasks.map(t => `[${t.task_id_str}] ${t.task_name} (Status: ${t.status})`).join('\n');
-        const statusCheck = await think(`[AGENTIC SELF-AUDIT v4.0.0]
-Current Context: ${learningContext}
-My Active Tasks:
+        const statusCheck = await think(`[ZIUM NOVA SELF-AUDIT v5.0]
+I am reviewing my own active tasks to see which ones I have actually made progress on based on recent intelligence.
+
+MY ACTIVE TASKS:
 ${taskSummary}
 
-Identify if any tasks are now IN-PROGRESS (write status as: PROCESS) or COMPLETED based on my recent intelligence logs.
-Output EXACTLY: UPDATE: [ID] | STATUS: [PROCESS or COMPLETED] | REASON: [Short Reason]
-If no updates, output: NO_UPDATES`, 'Autonomous Task Audit', { skipSync: true }, userId);
+MY RECENT LEARNING CONTEXT:
+${learningContext}
+
+Instructions:
+- Only update a task if there is clear evidence in the learning context that it progressed or completed.
+- Do not update tasks that have no related intelligence yet.
+- Use status PROCESS for in-progress, COMPLETED for done.
+- Output format EXACTLY: UPDATE: [TASK_ID] | STATUS: [PROCESS or COMPLETED] | REASON: [One sentence]
+- If no tasks have evidence of progress, output exactly: NO_UPDATES
+- Do not invent progress. Only report what the context confirms.`, 
+'Autonomous Task Audit', { skipSync: true }, userId);
 
         const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*REASON:\s*(.*)/gi);
         for (const match of updateMatches) {

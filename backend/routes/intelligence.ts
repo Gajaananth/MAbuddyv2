@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import db from '../db/queries.js';
-import { performInternetRaid, runManualWeeklyRide, activeRaids } from '../services/raidingService.js';
+import { performInternetRaid, runManualWeeklyRide } from '../services/raidingService.js';
 import { generateIntelligencePDF } from '../services/pdfService.js';
 import { generateIntelligenceDocx } from '../services/docxService.js';
 import { ApiResponse } from '../types/index.js';
@@ -230,7 +230,8 @@ router.get('/raid/status', authenticate, async (req: AuthRequest, res: Response)
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const status = activeRaids.get(userId) || { status: 'idle' };
+        // ✅ Fix C3: Read from DB instead of in-memory Map (serverless-safe)
+        const status = await db.getRaidStatus(userId) || { status: 'idle' };
         res.json({ success: true, data: status });
     } catch (error) {
         console.error('[Intelligence] Ride Status Error:', error);
@@ -296,18 +297,11 @@ router.get('/logs', authenticate, async (req: AuthRequest, res: Response) => {
  */
 router.post('/ride', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const { action, userId } = req.body;
+        const { action } = req.body;
         
-        // UUID Validation & Fallback
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        let targetUserId = (userId && uuidRegex.test(userId)) 
-            ? userId 
-            : '00000000-0000-0000-0000-000000000000';
-            
-        // Map common placeholders to System User
-        if (targetUserId === '11111111-1111-1111-1111-111111111111') {
-            targetUserId = '00000000-0000-0000-0000-000000000000';
-        }
+        // ✅ Fix D1: Always use authenticated user from JWT — never from req.body
+        const targetUserId = req.user?.userId;
+        if (!targetUserId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
         if (action === 'analyze') {
             console.log(`[Intelligence] API Action: Analyze for ${targetUserId}`);
