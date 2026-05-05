@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import api, { intelligenceService } from '../services/api';
 import { Terminal, ScrollText, Database, Loader2, Clock } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -61,6 +62,7 @@ const ReportsPage: React.FC = () => {
         fetchData();
     }, [highlightId, highlightRaidId]);
 
+    useEffect(() => {
         if (!loading) {
             const targetId = highlightId || highlightRaidId;
             if (targetId) {
@@ -162,67 +164,65 @@ const ReportsPage: React.FC = () => {
                     <Loader2 className="animate-spin mx-auto mb-4 text-nova-accent" size={32} />
                     <span className="text-[10px] uppercase tracking-[0.3em] font-black">Decrypting Archive...</span>
                 </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                        {isHighlightMissing && activeTab === 'reports' && (
-                            <div className="glass p-6 rounded-2xl border border-nova-accent/30 bg-nova-accent/5 mb-4 animate-pulse">
-                                <p className="text-nova-accent text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
-                                    <Clock size={14} />
-                                    This intelligence finding may still be processing. Here are the latest findings:
-                                </p>
-                            </div>
-                        )}
-                        {reports.length === 0 && (
-                            <div className="glass p-16 rounded-3xl border-2 border-dashed border-nova-border text-center text-nova-text-dim font-black uppercase tracking-[0.2em] text-sm">
-                                No Reports Found
-                            </div>
-                        )}
-                        {reports.map((report) => (
-                            <div key={report.id} id={`item-${report.id}`} className={`card-intelligence glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all relative overflow-hidden group ${highlightId === report.id ? 'border-nova-accent bg-nova-accent/[0.03] shadow-[0_0_40px_rgba(0,242,255,0.15)] ring-1 ring-nova-accent' : 'border-nova-border/50'}`}>
-                                <div className={`absolute top-0 left-0 w-1.5 h-full opacity-60 ${highlightId === report.id ? 'bg-nova-accent' : 'bg-nova-accent/30'}`}></div>
-                                
-                                <div className="space-y-5">
-                                    <div className="flex flex-wrap items-center justify-between gap-3">
-                                        <div className="flex flex-wrap items-center gap-2 min-w-0">
-                                            <span className="text-[9px] sm:text-[10px] font-black text-nova-accent bg-nova-accent/10 px-2 sm:px-2.5 py-1 rounded-md tracking-tighter border border-nova-accent/20 whitespace-nowrap">
-                                                R-{report.id.substring(0, 8).toUpperCase()}
-                                            </span>
-                                            <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-widest">
-                                                {formatTimestamp(report.created_at)}
-                                            </span>
-                                        </div>
-                                        <div className="flex gap-1 sm:gap-2 shrink-0">
-                                            <button onClick={() => handleExport(report.id, 'pdf', 'reports')} className="p-2 hover:bg-white/10 rounded-lg text-nova-text-dim hover:text-nova-accent transition-all" title="PDF"><ScrollText size={16} /></button>
-                                            <button onClick={() => handleExport(report.id, 'word', 'reports')} className="p-2 hover:bg-white/10 rounded-lg text-nova-text-dim hover:text-white transition-all" title="Word"><Database size={16} /></button>
-                                        </div>
+            ) : activeTab === 'reports' ? (
+                <div className="grid grid-cols-1 gap-4 sm:gap-6">
+                    {isHighlightMissing && activeTab === 'reports' && (
+                        <div className="glass p-6 rounded-2xl border border-nova-accent/30 bg-nova-accent/5 mb-4 animate-pulse">
+                            <p className="text-nova-accent text-[11px] font-black uppercase tracking-widest flex items-center gap-2">
+                                <Clock size={14} />
+                                This intelligence finding may still be processing. Here are the latest findings:
+                            </p>
+                        </div>
+                    )}
+                    {reports.length === 0 && (
+                        <div className="glass p-16 rounded-3xl border-2 border-dashed border-nova-border text-center text-nova-text-dim font-black uppercase tracking-[0.2em] text-sm">
+                            No Reports Found
+                        </div>
+                    )}
+                    {reports.map((report) => (
+                        <div key={report.id} id={`item-${report.id}`} className={`card-intelligence glass p-5 sm:p-8 rounded-2xl sm:rounded-3xl border transition-all relative overflow-hidden group ${highlightId === report.id ? 'border-nova-accent bg-nova-accent/[0.03] shadow-[0_0_40px_rgba(0,242,255,0.15)] ring-1 ring-nova-accent' : 'border-nova-border/50'}`}>
+                            <div className={`absolute top-0 left-0 w-1.5 h-full opacity-60 ${highlightId === report.id ? 'bg-nova-accent' : 'bg-nova-accent/30'}`}></div>
+                            
+                            <div className="space-y-5">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                        <span className="text-[9px] sm:text-[10px] font-black text-nova-accent bg-nova-accent/10 px-2 sm:px-2.5 py-1 rounded-md tracking-tighter border border-nova-accent/20 whitespace-nowrap">
+                                            R-{report.id.substring(0, 8).toUpperCase()}
+                                        </span>
+                                        <span className="text-[9px] sm:text-[10px] font-black text-white/40 uppercase tracking-widest">
+                                            {formatTimestamp(report.created_at)}
+                                        </span>
                                     </div>
-
-                                    <div className="space-y-2">
-                                        <h3 className="text-base sm:text-xl font-black text-white leading-tight">Weekly Intelligence Briefing</h3>
-                                        <p className="text-sm sm:text-base text-nova-text-dim leading-relaxed font-medium">
-                                            {report.summary}
-                                        </p>
+                                    <div className="flex gap-1 sm:gap-2 shrink-0">
+                                        <button onClick={() => handleExport(report.id, 'pdf', 'reports')} className="p-2 hover:bg-white/10 rounded-lg text-nova-text-dim hover:text-nova-accent transition-all" title="PDF"><ScrollText size={16} /></button>
+                                        <button onClick={() => handleExport(report.id, 'word', 'reports')} className="p-2 hover:bg-white/10 rounded-lg text-nova-text-dim hover:text-white transition-all" title="Word"><Database size={16} /></button>
                                     </div>
+                                </div>
 
-                                    <div className="flex flex-wrap items-center gap-3 pt-2">
-                                        <button 
-                                            onClick={() => navigate(`/intelligence?id=${report.id}`)} 
-                                            className="flex-1 sm:flex-none btn-premium px-4 sm:px-6 py-2.5 bg-nova-accent text-nova-bg rounded-xl text-[10px] sm:text-[11px] font-black tracking-[0.2em] shadow-[0_4px_15px_rgba(0,242,255,0.3)] hover:shadow-[0_4px_25px_rgba(0,242,255,0.5)] transition-all text-center"
-                                        >
-                                            OPEN FULL REPORT
-                                        </button>
-                                        <div className="px-3 sm:px-4 py-2 bg-yellow-400/10 border border-yellow-400/30 rounded-xl">
-                                            <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest">
-                                                {report.opportunity_score >= 80 ? 'CRITICAL' : 'ROUTINE'}
-                                            </span>
-                                        </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-base sm:text-xl font-black text-white leading-tight">Weekly Intelligence Briefing</h3>
+                                    <p className="text-sm sm:text-base text-nova-text-dim leading-relaxed font-medium">
+                                        {report.summary}
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-3 pt-2">
+                                    <button 
+                                        onClick={() => navigate(`/intelligence?id=${report.id}`)} 
+                                        className="flex-1 sm:flex-none btn-premium px-4 sm:px-6 py-2.5 bg-nova-accent text-nova-bg rounded-xl text-[10px] sm:text-[11px] font-black tracking-[0.2em] shadow-[0_4px_15px_rgba(0,242,255,0.3)] hover:shadow-[0_4px_25px_rgba(0,242,255,0.5)] transition-all text-center"
+                                    >
+                                        OPEN FULL REPORT
+                                    </button>
+                                    <div className="px-3 sm:px-4 py-2 bg-yellow-400/10 border border-yellow-400/30 rounded-xl">
+                                        <span className="text-[9px] font-black text-yellow-500 uppercase tracking-widest">
+                                            {report.opportunity_score >= 80 ? 'CRITICAL' : 'ROUTINE'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )
-                )
+                        </div>
+                    ))}
+                </div>
             ) : (
                 <div className="grid grid-cols-1 gap-4 sm:gap-6">
                     {isHighlightMissing && activeTab === 'raids' && (
@@ -287,3 +287,4 @@ const ReportsPage: React.FC = () => {
 };
 
 export default ReportsPage;
+
