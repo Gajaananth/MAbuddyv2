@@ -28,13 +28,13 @@ function getPool() {
   
   const dbConfig: any = {
     connectionString,
-    max: isVercel ? 2 : 20, // Low pool size for serverless to prevent exhaustion
-    idleTimeoutMillis: isVercel ? 1000 : 30000, // Drop connections quickly on Vercel
+    max: isVercel ? 10 : 20, // Increased pool size for serverless resilience
+    idleTimeoutMillis: isVercel ? 5000 : 30000, // Keep connections alive slightly longer on Vercel
     connectionTimeoutMillis: 10000,
   };
 
   // Explicitly force SSL for Supabase if URL contains it or if not on Vercel
-  if (connectionString.includes('supabase.com') || !process.env.VERCEL) {
+  if (connectionString.includes('supabase.com') || connectionString.includes('supabase.co') || !process.env.VERCEL) {
     dbConfig.ssl = {
       rejectUnauthorized: false
     };
@@ -485,7 +485,7 @@ async function runMigrations(pool: any) {
       CREATE INDEX IF NOT EXISTS idx_execution_logs_user ON execution_logs(user_id);
 
       -- ==========================================
-      // Raid Status Table for Persistent Progress
+      -- Raid Status Table for Persistent Progress
       -- ==========================================
       CREATE TABLE IF NOT EXISTS raid_status (
         user_id UUID PRIMARY KEY,
@@ -497,28 +497,73 @@ async function runMigrations(pool: any) {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
 
-      -- ✅ RLS: Disabled for single-user private app (no policies needed)
-      ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE users DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE intelligence_logs DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE improvement_logs DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE devices DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE push_subscriptions DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE intelligence_raids DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE weekly_reports DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE agent_network DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE agent_activity_logs DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE security_audit_logs DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE trend_analyses DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE earnings_log DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE learning_events DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE opportunities DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE automation_runs DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE execution_sessions DISABLE ROW LEVEL SECURITY;
-      ALTER TABLE execution_logs DISABLE ROW LEVEL SECURITY;
+      -- ✅ RLS: Only disable if currently enabled to prevent unnecessary locks
+      DO $rls$ 
+      BEGIN 
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'tasks' AND rowsecurity = true) THEN
+          ALTER TABLE tasks DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'users' AND rowsecurity = true) THEN
+          ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'conversations' AND rowsecurity = true) THEN
+          ALTER TABLE conversations DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'messages' AND rowsecurity = true) THEN
+          ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'notifications' AND rowsecurity = true) THEN
+          ALTER TABLE notifications DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'intelligence_logs' AND rowsecurity = true) THEN
+          ALTER TABLE intelligence_logs DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'improvement_logs' AND rowsecurity = true) THEN
+          ALTER TABLE improvement_logs DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'devices' AND rowsecurity = true) THEN
+          ALTER TABLE devices DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'push_subscriptions' AND rowsecurity = true) THEN
+          ALTER TABLE push_subscriptions DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'intelligence_raids' AND rowsecurity = true) THEN
+          ALTER TABLE intelligence_raids DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'weekly_reports' AND rowsecurity = true) THEN
+          ALTER TABLE weekly_reports DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'agent_network' AND rowsecurity = true) THEN
+          ALTER TABLE agent_network DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'agent_activity_logs' AND rowsecurity = true) THEN
+          ALTER TABLE agent_activity_logs DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'security_audit_logs' AND rowsecurity = true) THEN
+          ALTER TABLE security_audit_logs DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'trend_analyses' AND rowsecurity = true) THEN
+          ALTER TABLE trend_analyses DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'earnings_log' AND rowsecurity = true) THEN
+          ALTER TABLE earnings_log DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'learning_events' AND rowsecurity = true) THEN
+          ALTER TABLE learning_events DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'opportunities' AND rowsecurity = true) THEN
+          ALTER TABLE opportunities DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'automation_runs' AND rowsecurity = true) THEN
+          ALTER TABLE automation_runs DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'execution_sessions' AND rowsecurity = true) THEN
+          ALTER TABLE execution_sessions DISABLE ROW LEVEL SECURITY;
+        END IF;
+        IF EXISTS (SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'execution_logs' AND rowsecurity = true) THEN
+          ALTER TABLE execution_logs DISABLE ROW LEVEL SECURITY;
+        END IF;
+      END $rls$;
     `);
     console.log('[DB] Grid: Schema Synchronized.');
     } finally {

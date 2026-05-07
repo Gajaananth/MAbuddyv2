@@ -103,11 +103,23 @@ export class LifecycleService {
                     action_plan: signal.recommended_action,
                     notes: `Strategic Rationale: ${signal.strategic_insight}\nSource Finding: ${metadata?.finding_id || 'Direct Scan'}`
                 });
+
+                // ✅ NEW: Alert the operator that an autonomous task has been dispatched
+                await db.createNotification(userId, {
+                    title: `🤖 Autonomous Task Dispatched: ${signal.topic}`,
+                    category: 'AUTONOMY',
+                    risk_level: 'Low',
+                    monetization_potential: signal.monetization_potential,
+                    content: `I've analyzed the signal and dispatched an autonomous task to my execution grid. Plan: ${signal.recommended_action}`,
+                    priority: 'high',
+                    metadata: { task_id: task.task_id_str, score: signal.overall_score }
+                });
+
                 return `TASK_CREATED:${task.task_id_str}`;
 
             case 'SUGGEST':
                 await db.createNotification(userId, {
-                    title: `Opportunity Suggestion: ${signal.topic}`,
+                    title: `💡 Opportunity Suggestion: ${signal.topic}`,
                     category: 'OPPORTUNITY',
                     risk_level: 'Low',
                     monetization_potential: signal.monetization_potential,
@@ -116,6 +128,7 @@ export class LifecycleService {
                     metadata: { score: signal.overall_score, insight: signal.strategic_insight }
                 });
                 return 'NOTIFICATION_SENT';
+
 
             case 'LOG':
             default:

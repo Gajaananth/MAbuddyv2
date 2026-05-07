@@ -251,6 +251,60 @@ export async function sendPushToUser(
     }
 }
 
+/**
+ * Standardized bridge for storing strategic notifications from background services.
+ * This ensures consistency across Internet Rides, Heartbeats, and Task Dispatches.
+ */
+export async function storeStrategicNotification(
+    userId: string,
+    title: string,
+    content: string,
+    metadata: any = {}
+): Promise<void> {
+    console.log(`[Notification] Strategic signal received for user ${userId}: ${title}`);
+    
+    // Always assess the content for priority if not provided
+    const isPriority = metadata?.priority === 'critical' || detectPrioritySignal(content) || title.toLowerCase().includes('🚨') || title.toLowerCase().includes('⚠️');
+    const priority = isPriority ? 'critical' : (metadata?.priority || 'high');
+    
+    const category = metadata?.category || classifyCategory(content);
+    const risk = metadata?.risk || assessRisk(content);
+    const monetization = metadata?.monetization || assessMonetization(content);
+
+    try {
+        const metadataWithDefaults = {
+            ...metadata,
+            is_blinking: metadata?.is_blinking || priority === 'critical',
+            path: metadata?.path ||
+                (metadata?.raid_id   ? `/reports?raidId=${metadata.raid_id}` :
+                 metadata?.report_id ? `/reports?id=${metadata.report_id}` :
+                 priority === 'critical' ? '/chat' : '/intelligence')
+        };
+
+        await createNotification(userId, {
+            title,
+            category,
+            risk_level: risk,
+            monetization_potential: monetization,
+            content: content.length > 1000 ? content.slice(0, 997) + '...' : content,
+            priority: priority as 'normal' | 'high' | 'critical',
+            metadata: metadataWithDefaults,
+        });
+
+        // Trigger push for critical only
+        if (priority === 'critical') {
+            await sendPushToUser(userId, {
+                title,
+                body: content.slice(0, 200),
+                tag: `zn-${category.toLowerCase().replace(/\s+/g, '-')}`,
+                data: { url: metadataWithDefaults.path },
+            });
+        }
+    } catch (err) {
+        console.error('[Notification] Store Strategic failed:', err);
+    }
+}
+
 // ──────────────────────────── Notification Creation ────────────────────────────
 
 /**
@@ -266,8 +320,8 @@ export async function evaluateAndNotify(
     const isStrategic = detectStrategicBreach(content);
     const isPriority = detectPrioritySignal(content);
 
-    // Only notify for significant findings
-    if (!isStrategic && !isPriority) return;
+    // Hardened: Always notify if it's a high-value signal, even if keywords missed
+    if (!isStrategic && !isPriority && !content.toLowerCase().includes('earning') && !content.toLowerCase().includes('scam')) return;
 
     const category = classifyCategory(content);
     const monetization = assessMonetization(content);
@@ -289,7 +343,11 @@ export async function evaluateAndNotify(
         const metadataWithDefaults = {
             ...metadata,
             is_blinking: metadata?.is_blinking || priority === 'critical',
-            path: metadata?.path || (metadata?.finding_id ? '/intelligence' : (priority === 'critical' ? '/chat' : '/intelligence'))
+            path: metadata?.path ||
+                (metadata?.raid_id   ? `/reports?raidId=${metadata.raid_id}` :
+                 metadata?.report_id ? `/reports?id=${metadata.report_id}` :
+                 metadata?.finding_id ? '/intelligence' :
+                 priority === 'critical' ? '/chat' : '/intelligence')
         };
 
         await createNotification(userId, {

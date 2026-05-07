@@ -48,7 +48,7 @@ Provide a structured analysis with:
 Be brutally honest. No hype. Data-driven. Expose manipulation.`;
 
         const openClawResponse = await think(prompt, '', { mode: 'STRATEGIC' }, userId);
-        const filterResult = await applyFilter(openClawResponse.content, userId);
+        const filterResult = await applyFilter(openClawResponse.content, userId, { skipStrategicAudit: true });
 
         const trendData: TrendData = {
             summary: filterResult.filtered_content,

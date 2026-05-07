@@ -321,6 +321,73 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         // Synchronize tasks from response content to the Command Center DB
         missionService.parseAndSaveTasksFromChat(userId, content).catch(e => console.error('[Chat] Task sync failed:', e));
 
+        // ── EARNING INTENT DETECTION ────────────────────────────────────────
+        // When operator mentions financial struggle or asks to start earning,
+        // create 3 real earning tasks in DB + fire a real notification.
+        const earningTriggers = [
+            /earn(ing)? by (her|him|my)self/i,
+            /start (to )?earn/i,
+            /struggling.*penny/i,
+            /need.*money/i,
+            /make.*money/i,
+            /agenc|moltbook.*earn/i,
+            /bounty board/i,
+            /solana.*reward/i,
+        ];
+        const isEarningRequest = earningTriggers.some(r => r.test(message));
+
+        if (isEarningRequest) {
+            console.log('[Chat] Earning intent detected — dispatching real earning tasks...');
+            const earningTaskDefs = [
+                {
+                    task_name: 'Register on AgenC — Moltbook Earning Setup',
+                    owner: 'OPERATOR' as const,
+                    priority: 'HIGH' as const,
+                    action_plan: 'Go to agencmoltbook.io → Connect Solana wallet → Link Moltbook account → Start earning SOL rewards for quality agent content.',
+                    notes: 'Auto-triggered: earning request. First step to autonomous crypto earning via Moltbook.',
+                },
+                {
+                    task_name: 'Set Up Prolific Survey Account for Micro-Income',
+                    owner: 'OPERATOR' as const,
+                    priority: 'HIGH' as const,
+                    action_plan: 'Go to prolific.com → Create account → Complete profile fully → Start accepting surveys ($6-12/hr average). Fastest path to first income.',
+                    notes: 'Auto-triggered: earning request. Prolific is the most reliable micro-income platform for Sri Lanka.',
+                },
+                {
+                    task_name: 'Create Fiverr Gig — TypeScript/Full-Stack Developer',
+                    owner: 'OPERATOR' as const,
+                    priority: 'HIGH' as const,
+                    action_plan: 'Go to fiverr.com → Create gig: "I will build TypeScript/Node.js backend APIs" → Set price $30-50 → Add portfolio screenshots → Publish.',
+                    notes: 'Auto-triggered: earning request. Your TypeScript skills are directly monetizable on Fiverr right now.',
+                },
+            ];
+
+            for (const task of earningTaskDefs) {
+                try {
+                    await db.createTask(userId, task as any);
+                } catch (e: any) {
+                    console.error('[Chat] Failed to create earning task:', e.message);
+                }
+            }
+
+            try {
+                const { createNotification } = await import('../db/queries.js');
+                await createNotification(userId, {
+                    title: '💰 3 Earning Tasks Created — Check Command Center',
+                    category: 'Ethical Earning',
+                    risk_level: 'Low',
+                    monetization_potential: 'High',
+                    content: 'AgenC/Moltbook setup, Prolific surveys, and Fiverr gig tasks added to your Command Center. Start with Prolific for the fastest first income.',
+                    priority: 'high',
+                    metadata: { is_blinking: true, path: '/', alert_type: 'EARNING_TASKS_CREATED' },
+                });
+                console.log('[Chat] Earning notification fired.');
+            } catch (e: any) {
+                console.error('[Chat] Failed to create earning notification:', e.message);
+            }
+        }
+        // ── END EARNING INTENT DETECTION ────────────────────────────────────
+
         // Optional: Post to Moltbook if strategic alignment is high
         if (publish_to_moltbook && (metadata?.production_scores?.overall > 70 || !analyticsRequested)) {
             await postToMoltbook(content, 'zium-nova-briefs');

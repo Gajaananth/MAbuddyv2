@@ -16,7 +16,7 @@ interface Report {
 
 interface Raid {
     id: string;
-    source_platform?: string; // Unified naming
+    source_platform?: string;
     category: string;
     summary: string;
     risk_level: string;
@@ -24,10 +24,19 @@ interface Raid {
     created_at: string;
 }
 
+interface EarningsStats {
+    total_earnings: number;
+    earnings_count: number;
+    pending_tasks: number;
+    learning_patterns: number;
+    decision_confidence: number;
+}
+
 const ReportsPage: React.FC = () => {
     const [reports, setReports] = useState<Report[]>([]);
     const [raids, setRaids] = useState<Raid[]>([]);
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState<EarningsStats | null>(null);
     const [activeTab, setActiveTab] = useState<'reports' | 'raids'>('reports');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -38,21 +47,20 @@ const ReportsPage: React.FC = () => {
         const fetchData = async () => {
             setLoading(true);
             try {
-                const [reportsRes, raidsRes] = await Promise.all([
+                const [reportsRes, raidsRes, statsRes] = await Promise.all([
                     api.get('/intelligence/reports'),
-                    api.get('/intelligence/raids')
+                    api.get('/intelligence/raids'),
+                    api.get('/intelligence/earnings-stats').catch(() => ({ data: { data: null } })),
                 ]);
-                
+
                 let allReports = reportsRes.data.data || [];
                 let allRaids = raidsRes.data.data || [];
 
-                // No longer filtering. Instead, we highlight and scroll.
-                if (highlightRaidId) {
-                    setActiveTab('raids');
-                }
+                if (highlightRaidId) setActiveTab('raids');
 
                 setReports(allReports);
                 setRaids(allRaids);
+                if (statsRes.data?.data) setStats(statsRes.data.data);
             } catch (err) {
                 console.error('Failed to fetch data', err);
             } finally {
@@ -78,12 +86,15 @@ const ReportsPage: React.FC = () => {
         }
     }, [loading, activeTab, highlightId, highlightRaidId]);
 
-    const isHighlightMissing = (highlightId && !reports.some(r => r.id === highlightId)) || 
+    const isHighlightMissing = (highlightId && !reports.some(r => r.id === highlightId)) ||
                               (highlightRaidId && !raids.some(r => r.id === highlightRaidId));
 
     const handleExport = (id: string, format: string, type: 'reports' | 'raids') => {
         intelligenceService.downloadReport(id, format as any, type);
     };
+
+    const fmt$ = (n: number) => n > 0 ? `$${n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—';
+    const fmtN = (n: number | undefined) => (n === undefined || n === null) ? '—' : n.toString();
 
     return (
         <div className="w-full max-w-6xl mx-auto pb-24">
@@ -105,32 +116,32 @@ const ReportsPage: React.FC = () => {
                 )}
             </header>
 
-            {/* Nova Performance Dashboard Widgets */}
+            {/* Nova Performance Dashboard Widgets — Real Data */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
                 <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
                     <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Opportunity Pipeline</span>
-                    <span className="text-xl font-black text-white mt-2">12 Active</span>
-                    <span className="text-[10px] text-green-400 mt-1">+3 this week</span>
+                    <span className="text-xl font-black text-white mt-2">{loading ? '…' : fmtN(stats?.pending_tasks)} Active</span>
+                    <span className="text-[10px] text-green-400 mt-1">From DB — live</span>
                 </div>
                 <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
-                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Earnings Insights</span>
-                    <span className="text-xl font-black text-white mt-2">$2,450</span>
-                    <span className="text-[10px] text-green-400 mt-1">Estimated +15%</span>
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Earnings Tracked</span>
+                    <span className="text-xl font-black text-white mt-2">{loading ? '…' : fmt$(stats?.total_earnings ?? 0)}</span>
+                    <span className="text-[10px] text-green-400 mt-1">{loading ? '' : `${fmtN(stats?.earnings_count)} completed`}</span>
                 </div>
                 <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
-                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Learning Trends</span>
-                    <span className="text-xl font-black text-white mt-2">8 Patterns</span>
-                    <span className="text-[10px] text-nova-accent mt-1">High Accuracy</span>
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Learning Patterns</span>
+                    <span className="text-xl font-black text-white mt-2">{loading ? '…' : fmtN(stats?.learning_patterns)}</span>
+                    <span className="text-[10px] text-nova-accent mt-1">From improvement logs</span>
                 </div>
                 <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
                     <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Decision Confidence</span>
-                    <span className="text-xl font-black text-white mt-2">94%</span>
-                    <span className="text-[10px] text-nova-accent mt-1">Based on 50+ actions</span>
+                    <span className="text-xl font-black text-white mt-2">{loading ? '…' : stats ? `${stats.decision_confidence}%` : '—'}</span>
+                    <span className="text-[10px] text-nova-accent mt-1">Tasks completed ratio</span>
                 </div>
                 <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
-                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Resource Allocation</span>
-                    <span className="text-xl font-black text-white mt-2">Optimized</span>
-                    <span className="text-[10px] text-nova-text-dim mt-1">4h Focus Saved</span>
+                    <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Reports Archived</span>
+                    <span className="text-xl font-black text-white mt-2">{loading ? '…' : reports.length + raids.length}</span>
+                    <span className="text-[10px] text-nova-text-dim mt-1">{loading ? '' : `${reports.length} weekly · ${raids.length} raids`}</span>
                 </div>
             </div>
 

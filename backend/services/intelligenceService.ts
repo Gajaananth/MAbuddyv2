@@ -34,11 +34,11 @@ export async function generateWeeklyReport(userId: string): Promise<void> {
             .map((r: any) => `[${r.risk_level}] ${r.category} — ${r.summary?.slice(0, 200) || r.content.slice(0, 200)}`)
             .join('\n');
 
-        const reportPrompt = `[ZIUM NOVA — STRATEGIC BRIEFING v3.1.0]
-Identity: Silent Beast Intelligence (Smart Buddy)
+        const reportPrompt = `[ZIUM NOVA — STRATEGIC BRIEFING v6.0.0 — ANTIGRAVITY MODE]
+Identity: Autonomous earning engine and strategic partner of the Operator.
 Mode: FULL AUTONOMOUS AGENTIC AI
 
-Based on the accumulated internet intelligence findings, generate a natural strategic briefing for the operator. 
+Based on the accumulated internet intelligence findings, generate a strategic briefing for the operator.
 
 [ANALYSIS FOCUS]
 - Platform weaknesses and algorithm exploitations.
@@ -50,6 +50,18 @@ Based on the accumulated internet intelligence findings, generate a natural stra
 - Tone: Calm, ultra-intelligent, and strategically precise.
 - Format: Natural narrative. Avoid rigid 7-point lists or robotic headers.
 - Filter: Eliminate all guru noise and get-rich-quick hype.
+
+[REPORT QUALITY MANDATE — ANTIGRAVITY v6.0]
+This report will be shown directly to the Operator on the Reports page.
+It MUST contain:
+1. WHAT NOVA DID this cycle — specific actions taken, not vague monitoring claims.
+2. WHAT WAS FOUND — real signals, not generic trend descriptions.
+3. EARNING STATUS — Did any earning opportunities get dispatched? Which platform? What reward?
+   If none: state "No earning opportunities dispatched this cycle" clearly.
+4. NEXT WEEK'S PRIORITY — One specific, actionable focus for the Operator.
+
+Do NOT produce a report that says nothing happened. If nothing happened, say:
+"No significant signals this cycle. Recommend triggering a manual ride on [specific cluster]."
 
 Raw Findings: ${raidSummary}`;
 
@@ -110,15 +122,26 @@ export async function generateMidWeekReport(userId: string): Promise<void> {
             .map((r: any) => `[${r.category}] ${r.summary?.slice(0, 300)}`)
             .join('\n\n');
 
-        const midWeekPrompt = `Generate a **ZIUM NOVA MID-WEEK RIDE SUMMARY V2.1**.
-        Focus on:
-        - Critical digital economy shifts detected.
-        - High-quality signal vs emerging hype.
-        - Immediate monetization paths identified.
-        
-        Findings: ${raidSummary}
-        
-        Format as a concise, high-impact intelligence summary for the operator.`;
+        const midWeekPrompt = `[ZIUM NOVA MID-WEEK RIDE SUMMARY v6.0 — ANTIGRAVITY MODE]
+Generate a concise, high-impact intelligence summary for the Operator.
+
+Focus on:
+- Critical digital economy shifts detected this cycle.
+- High-quality signals vs emerging hype — be specific.
+- Immediate monetization paths identified.
+
+[REPORT QUALITY MANDATE — ANTIGRAVITY v6.0]
+This report will be shown directly to the Operator on the Reports page.
+It MUST contain:
+1. WHAT NOVA DID this cycle — specific actions taken, not vague monitoring claims.
+2. WHAT WAS FOUND — real signals, not generic trend descriptions.
+3. EARNING STATUS — Did any earning opportunities get dispatched? Which platform? What reward?
+   If none: state "No earning opportunities dispatched this cycle" clearly.
+4. THIS WEEK'S PRIORITY — One specific, actionable focus for the Operator.
+
+If nothing significant happened, say: "No significant signals this cycle. Recommend triggering a manual ride on [specific cluster]."
+
+Findings: ${raidSummary}`;
 
         const analysis = await think(midWeekPrompt, '', { skipSync: true }, userId);
 

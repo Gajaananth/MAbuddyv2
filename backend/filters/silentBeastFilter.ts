@@ -37,7 +37,7 @@ const ETHICAL_KEYWORDS = [
 /**
  * Apply Silent Beast / Truth Exposer filter to AI output.
  */
-export async function applyFilter(rawContent: string, userId: string = '00000000-0000-0000-0000-000000000000'): Promise<FilterResult> {
+export async function applyFilter(rawContent: string, userId: string = '00000000-0000-0000-0000-000000000000', options: { skipStrategicAudit?: boolean } = {}): Promise<FilterResult> {
     const lowerContent = rawContent.toLowerCase();
 
     // 1. Calculate base scores (Keyword-based fallback)
@@ -47,7 +47,7 @@ export async function applyFilter(rawContent: string, userId: string = '00000000
     let flags = detectFlags(lowerContent);
 
     // 3. Strategic Audit (V2: AI-Powered Pattern Analysis)
-    if (scores.overall < 85 || flags.length > 0) {
+    if (!options.skipStrategicAudit && (scores.overall < 85 || flags.length > 0)) {
         try {
             const { think } = await import('../services/openClawService.js');
             const auditPrompt = `[ZIUM NOVA — SILENT BEAST STRATEGIC AUDIT]

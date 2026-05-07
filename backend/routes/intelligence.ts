@@ -1,5 +1,6 @@
 import { Router, Response } from 'express';
 import db from '../db/queries.js';
+import { pool } from '../db/connection.js';
 import { performInternetRaid, runManualWeeklyRide } from '../services/raidingService.js';
 import { generateIntelligencePDF } from '../services/pdfService.js';
 import { generateIntelligenceDocx } from '../services/docxService.js';
@@ -36,241 +37,257 @@ router.get('/raids', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 /**
- * DELETE /api/intelligence/raids/:id
- */
-router.delete('/raids/:id', authenticate, async (req: AuthRequest, res: Response) => {
-    try {
-        const userId = req.user?.userId;
-        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
-
-        await db.deleteRaidResult(req.params.id as string, userId);
-        res.json({ success: true, message: 'Internet Ride finding deleted' });
-    } catch (error) {
-        console.error('[Intelligence] Delete Internet Ride Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to delete Internet Ride finding' });
-    }
-});
-
-/**
- * POST /api/intelligence/raids/bulk-delete
- */
-router.post('/raids/bulk-delete', authenticate, async (req: AuthRequest, res: Response) => {
-    try {
-        const userId = req.user?.userId;
-        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
-
-        const { ids } = req.body;
-        if (!Array.isArray(ids)) {
-            return res.status(400).json({ success: false, error: 'Invalid IDs' });
-        }
-        await db.bulkDeleteRaidResults(ids, userId);
-        res.json({ success: true, message: `${ids.length} Internet Ride findings deleted` });
-    } catch (error) {
-        console.error('[Intelligence] Bulk Delete Internet Rides Error:', error);
-        res.status(500).json({ success: false, error: 'Bulk delete failed' });
-    }
-});
-
-/**
  * GET /api/intelligence/reports
- * Retrieve weekly intelligence reports for the authenticated user.
+ * Retrieve Weekly Reports for the authenticated user.
  */
 router.get('/reports', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const limit = parseInt((req.query.limit as string) || '10', 10);
-        const results = await db.getWeeklyReports(userId, limit);
+        const limit = parseInt((req.query.limit as string) || '20', 10);
+        const reports = await db.getWeeklyReports(userId, limit);
 
         const response: ApiResponse = {
             success: true,
-            data: results,
+            data: reports,
             timestamp: new Date().toISOString(),
         };
 
         res.json(response);
     } catch (error) {
-        console.error('[Intelligence] Reports Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to retrieve reports' });
+        console.error('[Intelligence] Weekly Reports Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to retrieve Weekly Reports' });
+    }
+});
+
+/**
+ * GET /api/intelligence/reports/filter
+ * Filter Weekly Reports based on criteria.
+ */
+router.get('/reports/filter', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const filters = {
+            topic: req.query.topic as string,
+            risk_level: req.query.risk_level as string,
+            min_score: req.query.min_score ? parseInt(req.query.min_score as string, 10) : undefined,
+            ride_type: req.query.ride_type as string,
+            date_start: req.query.date_start as string,
+            date_end: req.query.date_end as string,
+            status: req.query.status as string,
+        };
+
+        const reports = await db.filterReports(userId, filters);
+
+        res.json({
+            success: true,
+            data: reports,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        console.error('[Intelligence] Filter Reports Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to filter Weekly Reports' });
+    }
+});
+
+/**
+ * GET /api/intelligence/reports/:id/download
+ * Download a specific report in PDF or DOCX format.
+ */
+router.get('/reports/:id/download', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const reportId = req.params.id as string;
+        const format = ((req.query.format as string) || 'pdf').toLowerCase();
+        const type = ((req.query.type as string) || 'reports').toLowerCase();
+
+        // Retrieve data
+        let data: any;
+        if (type === 'raids') {
+            const results = await db.getRaidResults(userId, 100);
+            data = results.find((r: any) => r.id === reportId);
+        } else {
+            const reports = await db.getWeeklyReports(userId, 100);
+            data = reports.find((r: any) => r.id === reportId);
+        }
+
+        if (!data) {
+            return res.status(404).json({ success: false, error: 'Report not found' });
+        }
+
+        let filePath: string;
+        let fileName: string;
+
+        if (format === 'pdf') {
+            filePath = await generateIntelligencePDF(data);
+            fileName = `Nova_Intelligence_${reportId}.pdf`;
+        } else if (format === 'docx') {
+            filePath = await generateIntelligenceDocx(data);
+            fileName = `Nova_Intelligence_${reportId}.docx`;
+        } else {
+            return res.status(400).json({ success: false, error: 'Invalid format requested' });
+        }
+
+        res.download(filePath, fileName, (err) => {
+            if (err) {
+                console.error('[Intelligence] Download Error:', err);
+            }
+            // Cleanup temp file
+            if (fs.existsSync(filePath)) {
+                try { fs.unlinkSync(filePath); } catch (e) {}
+            }
+        });
+    } catch (error) {
+        console.error('[Intelligence] Download Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to generate download' });
     }
 });
 
 /**
  * DELETE /api/intelligence/reports/:id
+ * Delete a specific weekly report.
  */
 router.delete('/reports/:id', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        await db.permanentDeleteReport(req.params.id as string, userId);
-        res.json({ success: true, message: 'Weekly report deleted' });
+        const reportId = req.params.id as string;
+        const permanent = req.query.permanent === 'true';
+
+        if (permanent) {
+            await db.permanentDeleteReport(reportId, userId);
+        } else {
+            await db.softDeleteReport(reportId, userId);
+        }
+
+        res.json({
+            success: true,
+            message: permanent ? 'Report deleted permanently' : 'Report moved to archive',
+            timestamp: new Date().toISOString(),
+        });
     } catch (error) {
         console.error('[Intelligence] Delete Report Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to delete weekly report' });
+        res.status(500).json({ success: false, error: 'Failed to delete report' });
     }
 });
 
 /**
- * POST /api/intelligence/reports/bulk-delete
+ * DELETE /api/intelligence/raids/:id
+ * Delete a specific raid result.
  */
-router.post('/reports/bulk-delete', authenticate, async (req: AuthRequest, res: Response) => {
+router.delete('/raids/:id', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const { ids } = req.body;
-        if (!Array.isArray(ids)) {
-            return res.status(400).json({ success: false, error: 'Invalid IDs' });
-        }
-        await db.bulkDeleteReports(ids, userId);
-        res.json({ success: true, message: `${ids.length} reports deleted` });
+        const raidId = req.params.id as string;
+        await db.deleteRaidResult(raidId, userId);
+
+        res.json({
+            success: true,
+            message: 'Raid result deleted',
+            timestamp: new Date().toISOString(),
+        });
     } catch (error) {
-        console.error('[Intelligence] Bulk Delete Reports Error:', error);
-        res.status(500).json({ success: false, error: 'Bulk delete failed' });
+        console.error('[Intelligence] Delete Raid Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete raid result' });
     }
 });
 
 /**
- * GET /api/intelligence/reports/:id/export
- * Export a weekly report as JSON, PDF, or Word.
+ * POST /api/intelligence/raid/trigger
+ * Trigger a manual internet ride.
  */
-router.get('/reports/:id/export', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const reports = await db.getWeeklyReports(userId, 100);
-        const report = reports.find((r: any) => r.id === req.params.id);
+        const { type } = req.body;
 
-        if (!report) {
-            return res.status(404).json({ success: false, error: 'Report not found' });
-        }
+        // Reset status for manual trigger
+        const { upsertRaidStatus, performInternetRaid } = await import('../services/raidingService.js');
+        await upsertRaidStatus(userId, {
+            status: 'starting',
+            current_cluster: 'INIT',
+            clusters_completed: 0,
+            total_clusters: 5
+        });
 
-        const format = req.query.format || 'json';
+        // Non-blocking call
+        performInternetRaid(type === 'end-of-week' ? 'end-of-week' : 'mid-week', userId).catch(err => {
+            console.error('[Intelligence] Manual Raid Async Error:', err);
+        });
 
-        if (format === 'json') {
-            res.setHeader('Content-Disposition', `attachment; filename="intelligence_report_${report.id}.json"`);
-            res.setHeader('Content-Type', 'application/json');
-            return res.send(JSON.stringify(report, null, 2));
-        }
-
-        // Pass full report object for metadata (id, created_at, etc)
-        if (format === 'pdf') {
-            const filePath = await generateIntelligencePDF(report);
-            res.download(filePath, (err) => {
-                if (err) console.error('[Intelligence] PDF Download Error:', err);
-            });
-            return;
-        }
-
-        if (format === 'word' || format === 'docx') {
-            const filePath = await generateIntelligenceDocx(report);
-            res.download(filePath, (err) => {
-                if (err) console.error('[Intelligence] Docx Download Error:', err);
-            });
-            return;
-        }
-
-        res.status(400).json({ success: false, error: 'Invalid format' });
+        res.json({
+            success: true,
+            message: 'Internet ride initiated in the background',
+            timestamp: new Date().toISOString(),
+        });
     } catch (error) {
-        console.error('[Intelligence] Export Error:', error);
-        res.status(500).json({ success: false, error: 'Export failed' });
-    }
-});
-
-/**
- * GET /api/intelligence/raids/:id/export
- * Export an individual Internet Ride finding.
- */
-router.get('/raids/:id/export', authenticate, async (req: AuthRequest, res: Response) => {
-    try {
-        const userId = req.user?.userId;
-        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
-
-        const raids = await db.getRaidResults(userId, 1000);
-        const raid = raids.find((r: any) => r.id === req.params.id);
-
-        if (!raid) {
-            return res.status(404).json({ success: false, error: 'Finding not found' });
-        }
-
-        const format = req.query.format || 'pdf';
-
-        if (format === 'pdf') {
-            // Transform raid to match report-like structure for the PDF service
-            const exportData = {
-                ...raid,
-                executive_summary: raid.summary || raid.content,
-                id: raid.id,
-                created_at: raid.created_at,
-                source: 'Internet Ride Protocol'
-            };
-            const filePath = await generateIntelligencePDF(exportData);
-            res.download(filePath, (err) => {
-                if (err) console.error('[Intelligence] Raid PDF Download Error:', err);
-            });
-            return;
-        }
-
-        res.status(400).json({ success: false, error: 'Invalid format for individual findings' });
-    } catch (error) {
-        console.error('[Intelligence] Internet Ride Export Error:', error);
-        res.status(500).json({ success: false, error: 'Export failed' });
+        console.error('[Intelligence] Manual Raid Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to initiate internet ride' });
     }
 });
 
 /**
  * GET /api/intelligence/raid/status
- * Check if an Internet Ride is currently active for the user.
+ * Get the current status of an ongoing internet ride.
  */
 router.get('/raid/status', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        // ✅ Fix C3: Read from DB instead of in-memory Map (serverless-safe)
-        const status = await db.getRaidStatus(userId) || { status: 'idle' };
-        res.json({ success: true, data: status });
+        const { getRaidStatus } = await import('../services/raidingService.js');
+        const status = await getRaidStatus(userId);
+
+        res.json({
+            success: true,
+            data: status || { status: 'idle', current_cluster: '', clusters_completed: 0, total_clusters: 0 },
+            timestamp: new Date().toISOString(),
+        });
     } catch (error) {
-        console.error('[Intelligence] Ride Status Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to get Internet Ride status' });
+        console.error('[Intelligence] Status Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to get status' });
     }
 });
 
 /**
- * POST /api/intelligence/raid/trigger
- * Manually trigger a regional/global intelligence scan.
+ * POST /api/intelligence/report/trigger
+ * Trigger a manual weekly report generation.
  */
-router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/report/trigger', authenticate, async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
-        console.log(`[Intelligence] DEBUG: RAID_TRIGGER_HIT. User: ${userId}`);
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const { type } = req.body;
-        console.log(`[Intelligence] Manually triggering ${type || 'standard'} Internet Ride for ${userId}`);
-        
-        // Use performInternetRaid for standard scans
-        performInternetRaid(type || 'mid-week', userId).catch(err => {
-            console.error('[Intelligence] Background Raid Error:', err);
+        const { runManualWeeklyRide } = await import('../services/raidingService.js');
+        // This is non-blocking
+        runManualWeeklyRide(userId).catch(err => {
+            console.error('[Intelligence] Manual Report Async Error:', err);
         });
 
         res.json({
             success: true,
-            message: 'Internet Ride protocol triggered successfully in background.',
-            timestamp: new Date().toISOString()
+            message: 'Intelligence report generation initiated in the background',
+            timestamp: new Date().toISOString(),
         });
     } catch (error) {
-        console.error('[Intelligence] Trigger Error:', error);
-        res.status(500).json({ success: false, error: 'Internal server error while triggering ride' });
+        console.error('[Intelligence] Manual Report Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to initiate report generation' });
     }
 });
 
 /**
  * GET /api/intelligence/logs
- * Retrieve internal intelligence logs (Continuous Learning Protocol).
+ * Get intelligence logs (lessons learned).
  */
 router.get('/logs', authenticate, async (req: AuthRequest, res: Response) => {
     try {
@@ -283,7 +300,7 @@ router.get('/logs', authenticate, async (req: AuthRequest, res: Response) => {
         res.json({
             success: true,
             data: logs,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         });
     } catch (error) {
         console.error('[Intelligence] Logs Error:', error);
@@ -292,41 +309,66 @@ router.get('/logs', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 /**
- * POST /api/intelligence/ride
- * Unified endpoint for Internet Ride actions (analyze, report).
+ * GET /api/intelligence/earnings-stats
+ * Returns real stats for the Reports page dashboard widgets.
+ * Reads from earnings_log, improvement_logs, and tasks tables.
  */
-router.post('/ride', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/earnings-stats', authenticate, async (req: AuthRequest, res: Response) => {
     try {
-        const { action } = req.body;
-        
-        // ✅ Fix D1: Always use authenticated user from JWT — never from req.body
-        const targetUserId = req.user?.userId;
-        if (!targetUserId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        if (action === 'analyze') {
-            console.log(`[Intelligence] API Action: Analyze for ${targetUserId}`);
-            const result = await runManualWeeklyRide(targetUserId);
-            return res.json({
-                success: true,
-                message: result.message,
-                timestamp: new Date().toISOString(),
-            });
+        if (!pool) {
+            return res.status(500).json({ success: false, error: 'Database pool not initialized' });
         }
 
-        if (action === 'report') {
-            console.log(`[Intelligence] API Action: Report for ${targetUserId}`);
-            const results = await db.getRaidResults(targetUserId, 50);
-            return res.json({
-                success: true,
-                data: results,
-                timestamp: new Date().toISOString(),
-            });
-        }
+        // Total earnings from earnings_log
+        const earningsResult = await pool.query(
+            `SELECT COALESCE(SUM(reward), 0) as total, COUNT(*) as count 
+             FROM earnings_log WHERE user_id = $1 AND status = 'completed'`,
+            [userId]
+        ).catch(() => ({ rows: [{ total: 0, count: 0 }] }));
 
-        res.status(400).json({ success: false, error: 'Invalid action. Use "analyze" or "report".' });
+        // Pending tasks count (Opportunity Pipeline)
+        const tasksResult = await pool.query(
+            `SELECT COUNT(*) as pending FROM tasks 
+             WHERE user_id = $1 AND is_archived = FALSE AND status NOT IN ('COMPLETED', 'DONE', 'ARCHIVED')`,
+            [userId]
+        ).catch(() => ({ rows: [{ pending: 0 }] }));
+
+        // Learning patterns count
+        const logsResult = await pool.query(
+            `SELECT COUNT(*) as patterns FROM improvement_logs WHERE user_id = $1`,
+            [userId]
+        ).catch(() => ({ rows: [{ patterns: 0 }] }));
+
+        // Decision confidence: ratio of completed to total tasks
+        const confResult = await pool.query(
+            `SELECT 
+               COUNT(*) FILTER (WHERE status IN ('COMPLETED', 'DONE')) as done,
+               COUNT(*) as total
+             FROM tasks WHERE user_id = $1`,
+            [userId]
+        ).catch(() => ({ rows: [{ done: 0, total: 1 }] }));
+
+        const done = parseInt(confResult.rows[0].done) || 0;
+        const total = parseInt(confResult.rows[0].total) || 1;
+        const confidence = total > 0 ? Math.round((done / total) * 100) : 0;
+
+        res.json({
+            success: true,
+            data: {
+                total_earnings: parseFloat(earningsResult.rows[0].total) || 0,
+                earnings_count: parseInt(earningsResult.rows[0].count) || 0,
+                pending_tasks: parseInt(tasksResult.rows[0].pending) || 0,
+                learning_patterns: parseInt(logsResult.rows[0].patterns) || 0,
+                decision_confidence: confidence,
+            },
+            timestamp: new Date().toISOString(),
+        });
     } catch (error) {
-        console.error('[Intelligence] Ride API Error:', error);
-        res.status(500).json({ success: false, error: 'Internal server error in Ride API' });
+        console.error('[Intelligence] Earnings Stats Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to retrieve earnings stats' });
     }
 });
 

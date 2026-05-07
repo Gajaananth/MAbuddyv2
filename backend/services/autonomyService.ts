@@ -1,6 +1,8 @@
 import { think } from './openClawService.js';
 import { createNotification, findRecentDuplicateNotification } from '../db/queries.js';
+import { storeStrategicNotification } from './notificationService.js';
 import db from '../db/queries.js';
+
 import { getAllUsers } from '../db/authQueries.js';
 import { missionService } from './missionService.js';
 import { lifecycleService } from './lifecycleService.js';
@@ -258,21 +260,26 @@ Output ONLY the message.`;
 
             const todayFocus = focusMap[dayOfWeek];
 
-            const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v5.0.0 — FOCUSED MISSION]
-Identity: Strategic Agent of the Operator — Loyal partner, silent intelligence engine.
+            const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v6.0.0 — ANTIGRAVITY MODE]
+Identity: Autonomous earning engine and strategic partner of the Operator.
 
-[TODAY'S SINGLE FOCUS — ${todayFocus.focus.toUpperCase()}]
+[TODAY'S MISSION — ${todayFocus.focus.toUpperCase()}]
 ${todayFocus.cluster}
+
+[EARNING DIRECTIVE]
+If today's focus has any earning potential — even indirect — you MUST produce a TASK or REPORT
+that captures it. "Monitoring" alone is not acceptable. Every cycle must move the needle:
+either something was found and dispatched, or nothing was found and you say so clearly.
 
 [EXPECTED OUTPUT]
 ${todayFocus.output}
 
 [STRUCTURED OUTPUT FORMATS — USE ONLY THESE]
-LOG: [Category] | [What was found] | [Strategic value]
-TASK: [Task name] | PRIORITY: [HIGH/MEDIUM/LOW] | OWNER: [NOVA/OPERATOR] | PLAN: [Specific next step]
-REPORT: [Title] | FINDINGS: [What was discovered] | ACTIONS: [Next steps] | ACTIVITY: [What Nova did] | STATUS: [Active/Watch] | OPPORTUNITY: [Earning potential]
-CRITICAL_ALERT: [Short, calm, specific message — only for urgent real threats]
-IMPROVE: [What I learned this cycle] | ADJUST: [How I will improve] | DELTA: [Change from last cycle]
+LOG: [Category] | [Specific finding] | [Strategic value — 1 line]
+TASK: [Task name] | PRIORITY: [HIGH/MEDIUM/LOW] | OWNER: [NOVA/OPERATOR] | PLAN: [Exact next step]
+REPORT: [Title] | FINDINGS: [What was discovered] | EARNING_SIGNAL: [Platform + reward estimate OR "none"] | ACTIONS: [Next steps] | STATUS: [Active/Watch] | OPPORTUNITY: [Specific earning potential in $ or clear description]
+CRITICAL_ALERT: [Short, specific message — only for real, imminent threats]
+IMPROVE: [What I learned this cycle] | ADJUST: [How I will do better] | DELTA: [Change from last cycle]
 
 [CURRENT CONTEXT]
 ${learningContext}
@@ -284,11 +291,13 @@ ${taskContext}
 ${improvementContext}
 
 [HARD RULES]
-- Output ONLY the structured lines above. No preamble, no explanation text.
-- Maximum: 3 LOG entries, 2 TASK entries, 1 REPORT per cycle.
-- CRITICAL_ALERT only for real, specific, imminent threats — never routine findings.
+- Output ONLY the structured lines above. Zero preamble.
+- Maximum: 3 LOG, 2 TASK, 1 REPORT per cycle.
+- CRITICAL_ALERT only for real, specific threats — never for routine market movement.
 - Always end with exactly 1 IMPROVE line.
-- Do not repeat tasks that already exist in the active task list above.
+- Do NOT repeat tasks already in the active task list.
+- Every REPORT MUST have a specific EARNING_SIGNAL or state "none" — no vague opportunity language.
+- If NOVA owns a TASK, she will attempt to execute it in the next cycle. Make it executable.
 `;
 
             const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC', skipSync: true }, userId);
@@ -362,6 +371,18 @@ ${improvementContext}
 
             const task = await db.createTask(userId, taskData as any);
             
+            // ✅ ALERT OPERATOR: New Task Dispatched
+            try {
+                const { storeStrategicNotification } = await import('./notificationService.js');
+                await storeStrategicNotification(userId, `🤖 Nova Dispatched Task: ${name.trim()}`, `I've analyzed the current grid state and automatically queued a new task for ${assignedTo}.\n\nPlan: ${plan.trim()}`, {
+                    task_id: task.task_id_str,
+                    priority: task.priority,
+                    category: 'AUTONOMY'
+                });
+            } catch (e) {
+                console.error('[Autonomy] Notification failed:', e);
+            }
+
             eventService.emitZium(ZiumEvent.TASK_GENERATED, {
                 userId,
                 taskId: task.task_id_str,
@@ -409,18 +430,25 @@ ${improvementContext}
 
     /**
      * Parse structured REPORT blocks and create deduplicated notifications.
-     * v4.1: Persists to weekly_reports for direct linking.
-     */
-    /**
-     * Parse structured REPORT blocks and create deduplicated notifications.
-     * v5.1: Returns IDs of created reports for deep-linking in alerts.
+     * v6.1: Handles both legacy ACTIVITY field and new EARNING_SIGNAL field.
+     * Returns IDs of created reports for deep-linking in alerts.
      */
     private async parseAndSaveReports(userId: string, content: string): Promise<string[]> {
-        const reportMatches = content.matchAll(/REPORT:\s*([^|]*?)\s*\|\s*FINDINGS:\s*([^|]*?)\s*\|\s*ACTIONS:\s*([^|]*?)\s*\|\s*ACTIVITY:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*OPPORTUNITY:\s*(.*)/gi);
+        // v6.0 format: REPORT: title | FINDINGS: ... | EARNING_SIGNAL: ... | ACTIONS: ... | STATUS: ... | OPPORTUNITY: ...
+        const newFormatMatches = [...content.matchAll(/REPORT:\s*([^|]*?)\s*\|\s*FINDINGS:\s*([^|]*?)\s*\|\s*EARNING_SIGNAL:\s*([^|]*?)\s*\|\s*ACTIONS:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*OPPORTUNITY:\s*(.*)/gi)];
+        // Legacy format: REPORT: title | FINDINGS: ... | ACTIONS: ... | ACTIVITY: ... | STATUS: ... | OPPORTUNITY: ...
+        const legacyFormatMatches = [...content.matchAll(/REPORT:\s*([^|]*?)\s*\|\s*FINDINGS:\s*([^|]*?)\s*\|\s*ACTIONS:\s*([^|]*?)\s*\|\s*ACTIVITY:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*OPPORTUNITY:\s*(.*)/gi)];
+
+        // Merge both — new format takes priority
+        const allMatches = newFormatMatches.length > 0 ? newFormatMatches : legacyFormatMatches;
+        const isNewFormat = newFormatMatches.length > 0;
+
         const createdIds: string[] = [];
 
-        for (const match of reportMatches) {
-            const [_, title, findings, actions, activity, status, opportunity] = match;
+        for (const match of allMatches) {
+            const [_, title, findings, field3, field4, status, opportunity] = match;
+            const earningSignal = isNewFormat ? field3.trim() : 'See activity log';
+            const actions = isNewFormat ? field4.trim() : field3.trim();
             const reportTitle = `${title.trim()} (Auto-Signal)`;
 
             // Check for duplicate report in last 12 hours
@@ -434,23 +462,36 @@ ${improvementContext}
             const savedReport = await db.saveWeeklyReport(userId, {
                 report_data: {
                     executive_summary: findings.trim(),
-                    next_actions: actions.trim(),
-                    activity: activity.trim(),
+                    earning_signal: earningSignal,
+                    next_actions: actions,
                     status: status.trim(),
                     opportunity: opportunity.trim(),
                     generated_at: new Date().toISOString(),
                     type: 'autonomous_discovery'
                 },
-                period_start: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24h
+                period_start: new Date(Date.now() - 24 * 60 * 60 * 1000),
                 period_end: new Date(),
-                ride_type: 'mid-week', // Default to mid-week for autonomous discoveries
+                ride_type: 'mid-week',
                 opportunity_score: 85,
                 status: 'active'
             });
 
             if (savedReport?.id) {
-                createdIds.push(savedReport.id);
+                // ✅ ALERT OPERATOR: New Report Signal
+            try {
+                const { storeStrategicNotification } = await import('./notificationService.js');
+                await storeStrategicNotification(userId, `🔍 Intelligence Signal: ${title.trim()}`, findings.trim(), {
+                    report_id: savedReport.id,
+                    opportunity_score: opportunity,
+                    risk: status,
+                    category: 'INTELLIGENCE'
+                });
+            } catch (e) {
+                console.error('[Autonomy] Report Notification failed:', e);
             }
+
+            createdIds.push(savedReport.id);
+        }
 
             try {
                 const conversations = await db.getConversations(userId, 1);
@@ -459,8 +500,16 @@ ${improvementContext}
                     : (await db.createConversation(userId, 'Strategic Intelligence')).id;
 
                 await db.addMessage(convId, 'nova', `![Strategic Signal](https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=600)\n\n🔍 **New Strategic Signal:** ${reportTitle}\n\n${findings.trim()}\n\n*I've synced the full analysis to your Intelligence Hub. Let me know if you want to dive deeper into this.*`, { proactive: true, report_id: savedReport.id });
+                
+                // ✅ NEW: Explicitly notify the Operator via the notification system
+                await storeStrategicNotification(userId, `🔍 Intelligence Signal: ${title.trim()}`, findings.trim(), {
+                    report_id: savedReport.id,
+                    risk: 'Medium',
+                    category: 'AUTONOMOUS_DISCOVERY'
+                });
+
             } catch (e) {
-                console.error('[Autonomy] Failed to send report chat:', e);
+                console.error('[Autonomy] Failed to send report notification:', e);
             }
 
             console.log(`[Autonomy v4.1] Linked report persisted into Neural Memory: ${reportTitle} (ID: ${savedReport.id})`);
@@ -469,7 +518,7 @@ ${improvementContext}
     }
 
     /**
-     * Check if a scheduled ride (Wed/Sun) is due and trigger it if not already run today.
+     * Check if a scheduled ride (Wed/Sun) is due, OR if a current ride is in progress and needs continuing.
      */
     private async checkAndTriggerScheduledRides(userId: string) {
         const now = new Date();
@@ -478,24 +527,40 @@ ${improvementContext}
         const day = sriLankaDate.getDay(); // 0 = Sunday, 3 = Wednesday (SL local time)
         const isScheduledDay = day === 0 || day === 3;
         
-        if (!isScheduledDay) return;
-
-        const dayKey = `${userId}-${day}-${sriLankaDate.getDate()}-${sriLankaDate.getMonth()}`;
-        if (this.lastRaidCheck.has(dayKey)) return;
-
-        console.log(`[Autonomy v4.1] PERSISTENT CRON: Scheduled ride due for ${userId}. Triggering...`);
-        
-        // Use a background call to raidingService
-        const { performInternetRaid } = await import('./raidingService.js');
+        const { getRaidStatus, performInternetRaid } = await import('./raidingService.js');
         const { generateWeeklyReport, generateMidWeekReport } = await import('./intelligenceService.js');
 
-        performInternetRaid(day === 0 ? 'end-of-week' : 'mid-week', userId).then(async () => {
-            if (day === 0) await generateWeeklyReport(userId);
-            else await generateMidWeekReport(userId);
-        }).catch(err => console.error('[Autonomy v4.1] Failed to run scheduled ride:', err));
+        // Check if a raid is already in progress (Segmented Raid support for Vercel)
+        const currentRaid = await getRaidStatus(userId);
+        const isInProgress = currentRaid && (currentRaid.status === 'scanning' || currentRaid.status === 'analyzing' || currentRaid.status === 'starting');
 
-        this.lastRaidCheck.set(dayKey, Date.now());
+        if (!isScheduledDay && !isInProgress) return;
+
+        const dayKey = `${userId}-${day}-${sriLankaDate.getDate()}-${sriLankaDate.getMonth()}`;
+        // If it's a scheduled day and we haven't started today's raid yet, OR if we are continuing an existing one
+        if (isScheduledDay && !this.lastRaidCheck.has(dayKey) && !isInProgress) {
+             console.log(`[Autonomy v4.2] PERSISTENT CRON: Scheduled ride due for ${userId}. Starting...`);
+             this.lastRaidCheck.set(dayKey, Date.now());
+        } else if (isInProgress) {
+             console.log(`[Autonomy v4.2] CONTINUATION: Resuming active raid segment for ${userId}...`);
+        } else {
+             return; // Already run today and no active segment
+        }
+        
+        try {
+            await performInternetRaid(day === 0 ? 'end-of-week' : 'mid-week', userId);
+            
+            // Check if it just finished
+            const finalStatus = await getRaidStatus(userId);
+            if (finalStatus?.status === 'completed') {
+                if (day === 0) await generateWeeklyReport(userId);
+                else await generateMidWeekReport(userId);
+            }
+        } catch (err) {
+            console.error('[Autonomy v4.2] Failed to execute ride segment:', err);
+        }
     }
+
 
     /**
      * Self-audit active Zium Nova tasks and auto-update statuses.
@@ -507,23 +572,29 @@ ${improvementContext}
 
         if (activeNovaTasks.length === 0) return;
 
-        const taskSummary = activeNovaTasks.map(t => `[${t.task_id_str}] ${t.task_name} (Status: ${t.status})`).join('\n');
-        const statusCheck = await think(`[ZIUM NOVA SELF-AUDIT v5.0]
-I am reviewing my own active tasks to see which ones I have actually made progress on based on recent intelligence.
+        const taskSummary = activeNovaTasks
+            .filter(t => t.status !== 'DONE')
+            .map(t => `[${t.task_id_str}] ${t.task_name} | Owner: ${t.owner} | Status: ${t.status}`)
+            .join('\n');
+        const statusCheck = await think(
+`[ZIUM NOVA SELF-AUDIT v6.0 — ANTIGRAVITY MODE]
+Review the active task list and learning context below.
+Your job: update task statuses based on real evidence only.
 
-MY ACTIVE TASKS:
-${taskSummary}
-
-MY RECENT LEARNING CONTEXT:
 ${learningContext}
 
-Instructions:
-- Only update a task if there is clear evidence in the learning context that it progressed or completed.
-- Do not update tasks that have no related intelligence yet.
-- Use status PROCESS for in-progress, COMPLETED for done.
-- Output format EXACTLY: UPDATE: [TASK_ID] | STATUS: [PROCESS or COMPLETED] | REASON: [One sentence]
-- If no tasks have evidence of progress, output exactly: NO_UPDATES
-- Do not invent progress. Only report what the context confirms.`, 
+Active Tasks:
+${taskSummary}
+
+For each task, output one of:
+UPDATE: [task_id_str] | STATUS: [IN_PROGRESS/DONE/BLOCKED] | REASON: [1 sentence of evidence]
+SKIP: [task_id_str] | REASON: [why no update]
+
+RULES:
+- Only mark DONE if there is CLEAR evidence of completion in the learning context.
+- Only mark BLOCKED if there is a specific blocker you can name.
+- Do NOT mark tasks as done because they are old. Age is not completion.
+- Output ONLY the UPDATE/SKIP lines. No preamble.`,
 'Autonomous Task Audit', { skipSync: true }, userId);
 
         const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*REASON:\s*(.*)/gi);
