@@ -201,10 +201,10 @@ router.delete('/raids/:id', authenticate, async (req: AuthRequest, res: Response
 });
 
 /**
- * POST /api/intelligence/raid/trigger
+ * POST /api/intelligence/raid/trigger (Alias: /raids/trigger)
  * Trigger a manual internet ride.
  */
-router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Response) => {
+router.post(['/raid/trigger', '/raids/trigger'], async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -237,10 +237,10 @@ router.post('/raid/trigger', authenticate, async (req: AuthRequest, res: Respons
 });
 
 /**
- * GET /api/intelligence/raid/status
+ * GET /api/intelligence/raid/status (Alias: /raids/status)
  * Get the current status of an ongoing internet ride.
  */
-router.get('/raid/status', authenticate, async (req: AuthRequest, res: Response) => {
+router.get(['/raid/status', '/raids/status'], async (req: AuthRequest, res: Response) => {
     try {
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });

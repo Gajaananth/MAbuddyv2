@@ -124,7 +124,7 @@ app.use('/api/chat', authenticate, chatRoutes);
 app.use('/api/trends', authenticate, trendsRoutes);
 app.use('/api/agents', authenticate, agentsRoutes);
 app.use('/api/memory', authenticate, memoryRoutes);
-app.use('/api/intelligence', authenticate, intelligenceRoutes);
+app.use(['/api/intelligence', '/api/intel'], authenticate, intelligenceRoutes);
 app.use('/api/notifications', authenticate, notificationRoutes);
 app.use('/api/tasks', authenticate, tasksRoutes);
 app.use('/api/learning', authenticate, learningRoutes);
