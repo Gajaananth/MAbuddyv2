@@ -212,7 +212,8 @@ router.post(['/raid/trigger', '/raids/trigger'], async (req: AuthRequest, res: R
         const { type } = req.body;
 
         // Reset status for manual trigger
-        const { upsertRaidStatus, performInternetRaid } = await import('../services/raidingService.js');
+        const { performInternetRaid } = await import('../services/raidingService.js');
+        const { upsertRaidStatus } = await import('../db/queries.js');
         await upsertRaidStatus(userId, {
             status: 'starting',
             current_cluster: 'INIT',
@@ -245,7 +246,7 @@ router.get(['/raid/status', '/raids/status'], async (req: AuthRequest, res: Resp
         const userId = req.user?.userId;
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
-        const { getRaidStatus } = await import('../services/raidingService.js');
+        const { getRaidStatus } = await import('../db/queries.js');
         const status = await getRaidStatus(userId);
 
         res.json({
