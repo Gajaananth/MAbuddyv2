@@ -221,19 +221,18 @@ router.post(['/raid/trigger', '/raids/trigger'], async (req: AuthRequest, res: R
             total_clusters: 5
         });
 
-        // Non-blocking call
-        performInternetRaid(type === 'end-of-week' ? 'end-of-week' : 'mid-week', userId).catch(err => {
-            console.error('[Intelligence] Manual Raid Async Error:', err);
-        });
+        // For Vercel, we MUST await the first segment or the process will be killed
+        // performInternetRaid handles segmented execution internally
+        await performInternetRaid(type === 'end-of-week' ? 'end-of-week' : 'mid-week', userId);
 
         res.json({
             success: true,
-            message: 'Internet ride initiated in the background',
+            message: 'Internet ride segment processed successfully',
             timestamp: new Date().toISOString(),
         });
     } catch (error) {
         console.error('[Intelligence] Manual Raid Error:', error);
-        res.status(500).json({ success: false, error: 'Failed to initiate internet ride' });
+        res.status(500).json({ success: false, error: 'Failed to process internet ride segment' });
     }
 });
 

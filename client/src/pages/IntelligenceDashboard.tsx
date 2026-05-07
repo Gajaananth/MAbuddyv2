@@ -65,7 +65,8 @@ const IntelligenceDashboard: React.FC = () => {
     // before the server has had time to register the ride as started.
     useEffect(() => {
         let interval: ReturnType<typeof setInterval>;
-        let prevClustersCompleted = 0;
+        let prevClustersCompleted = -1;
+        let staleCount = 0;
 
         const checkStatus = async () => {
             try {
@@ -77,8 +78,21 @@ const IntelligenceDashboard: React.FC = () => {
 
                     // Reload data when a new cluster finishes
                     if (data.clusters_completed > prevClustersCompleted) {
-                        loadData();
+                        if (prevClustersCompleted !== -1) {
+                            loadData();
+                        }
                         prevClustersCompleted = data.clusters_completed;
+                        staleCount = 0;
+                    } else if (data.status === 'analyzing') {
+                        staleCount++;
+                        // If Vercel segmented the execution, it might stall in 'analyzing'
+                        // If it stalls for ~15 seconds (6 polls), push it forward
+                        if (staleCount >= 6) {
+                            console.log('[Intelligence] Ride segment stalled. Auto-resuming...');
+                            staleCount = 0;
+                            // Re-trigger the same ride type to resume from DB state
+                            intelligenceService.triggerRide().catch(console.error);
+                        }
                     }
 
                     if (data.status === 'completed' || data.status === 'failed') {
