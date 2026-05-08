@@ -160,6 +160,29 @@ export class MissionService {
             }
         }
 
+        // 2. Completion & Deletion Commands (Autonomous Update)
+        const completeMatches = content.matchAll(/COMPLETE TASK:\s*([a-zA-Z0-9-_\s]+)/gi);
+        for (const match of completeMatches) {
+            const identifier = match[1].trim();
+            const tasks = await db.getTasks(userId);
+            const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            if (target) {
+                await db.updateTaskStatus(userId, target.task_id_str, 'COMPLETED', 'Automatically resolved by Zium Nova Autonomous Protocol.');
+                console.log(`[Mission] Autonomous: Completed task ${target.task_id_str}`);
+            }
+        }
+
+        const deleteMatches = content.matchAll(/DELETE TASK:\s*([a-zA-Z0-9-_\s]+)/gi);
+        for (const match of deleteMatches) {
+            const identifier = match[1].trim();
+            const tasks = await db.getTasks(userId);
+            const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            if (target) {
+                await db.deleteTask(target.task_id_str, userId);
+                console.log(`[Mission] Autonomous: Deleted task ${target.task_id_str}`);
+            }
+        }
+
         // 3. Strategic Task Recovery (Fallback: Ask Zium Nova's brain to extract tasks from natural language)
         if (content.length > 20 && !content.includes('TASK_CENTER_UPDATE')) {
             const { think } = await import('./openClawService.js');

@@ -168,6 +168,7 @@ const CommandCenterPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'active' | 'archived'>('active');
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
     const loadData = async () => {
         try {
@@ -230,6 +231,7 @@ const CommandCenterPage: React.FC = () => {
 
     const filteredTasks = tasks.filter((t: any) => 
         (activeTab === 'active' ? !t.is_archived : t.is_archived) &&
+        (statusFilter ? t.status === statusFilter : true) &&
         (t.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
          t.task_id_str.toLowerCase().includes(searchQuery.toLowerCase()))
     );
@@ -262,6 +264,25 @@ const CommandCenterPage: React.FC = () => {
                     />
                 </div>
             </header>
+
+            {/* Status Sub-Filters */}
+            <div className="flex flex-wrap gap-2 mb-8">
+                <button 
+                    onClick={() => setStatusFilter(null)}
+                    className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${statusFilter === null ? 'bg-white/10 border-white/20 text-white' : 'border-white/5 text-nova-text-dim hover:text-white'}`}
+                >
+                    ALL OBJECTIVES
+                </button>
+                {Object.keys(STATUS_CONFIG).map(status => (
+                    <button 
+                        key={status}
+                        onClick={() => setStatusFilter(status === statusFilter ? null : status)}
+                        className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${statusFilter === status ? 'bg-nova-accent/20 border-nova-accent/50 text-nova-accent' : 'border-white/5 text-nova-text-dim hover:text-white'}`}
+                    >
+                        {status}
+                    </button>
+                ))}
+            </div>
 
             {loading ? (
                 <div className="flex-1 flex items-center justify-center py-20">
