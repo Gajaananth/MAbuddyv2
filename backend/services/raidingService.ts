@@ -9,9 +9,6 @@ import db from '../db/queries.js';
 // ✅ Fix C2: activeRaids Map replaced with DB-backed status for Vercel serverless compatibility.
 import { upsertRaidStatus, getRaidStatus } from '../db/queries.js';
 
-// Keep a lightweight in-memory guard ONLY to prevent double-starts within the same process instance
-const raidInProgress = new Set<string>();
-
 // Each cluster defines what to analyze and what risk category it maps to
 const RAID_CLUSTERS: Array<{
     name: string;
@@ -104,15 +101,20 @@ export function initRaidingSchedule() {
 export async function performInternetRaid(type: 'mid-week' | 'end-of-week', userId: string): Promise<void> {
     console.log(`[Ride] [${new Date().toISOString()}] Processing ${type} segment for user ${userId}...`);
 
-    if (raidInProgress.has(userId)) {
-        console.warn(`[Ride] Internet Ride already running in-process for user ${userId}, skipping.`);
-        return;
-    }
-
     const existingStatus = await getRaidStatus(userId);
+    
+    // DB-level Lock: If recently updated and in-progress, skip to avoid race conditions
+    if (existingStatus && (['starting', 'analyzing', 'scanning'].includes(existingStatus.status))) {
+        const lastUpdated = new Date(existingStatus.updated_at || existingStatus.last_started).getTime();
+        // If it was updated less than 3 minutes ago, it's likely still being processed by another Lambda
+        if (Date.now() - lastUpdated < 3 * 60 * 1000) {
+            console.log(`[Ride] Raid for user ${userId} is currently locked (active in another process). Skipping.`);
+            return;
+        }
+    }
     let completed = 0;
 
-    if (existingStatus && (existingStatus.status === 'scanning' || existingStatus.status === 'analyzing')) {
+    if (existingStatus && (['scanning', 'analyzing', 'starting'].includes(existingStatus.status))) {
         const lastStarted = new Date(existingStatus.last_started).getTime();
         // If it's been > 4 hours, assume it failed and restart
         if (Date.now() - lastStarted > 240 * 60 * 1000) {
@@ -129,16 +131,11 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
         return;
     }
 
-    if (completed === 0) {
-        await upsertRaidStatus(userId, {
-            status: 'starting',
-            current_cluster: 'Initializing...',
-            clusters_completed: 0,
-            total_clusters: RAID_CLUSTERS.length
-        });
-    }
-
-    raidInProgress.add(userId);
+    // Update heartbeat to lock the raid
+    await upsertRaidStatus(userId, {
+        status: completed === 0 ? 'starting' : 'analyzing',
+        clusters_completed: completed,
+    });
 
     try {
         for (let i = completed; i < RAID_CLUSTERS.length; i++) {
@@ -272,7 +269,7 @@ RULES:
             total_clusters: RAID_CLUSTERS.length
         });
     } finally {
-        raidInProgress.delete(userId);
+        // Heartbeat cleanup not needed due to DB-lock
     }
 }
 
