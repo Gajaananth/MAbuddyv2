@@ -172,6 +172,17 @@ export class MissionService {
             }
         }
 
+        const processMatches = content.matchAll(/PROCESS TASK:\s*([a-zA-Z0-9-_\s]+)/gi);
+        for (const match of processMatches) {
+            const identifier = match[1].trim();
+            const tasks = await db.getTasks(userId);
+            const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            if (target) {
+                await db.updateTaskStatus(userId, target.task_id_str, 'PROCESS', 'Status updated to PROCESSING by Zium Nova Autonomous Protocol.');
+                console.log(`[Mission] Autonomous: Processing task ${target.task_id_str}`);
+            }
+        }
+
         const deleteMatches = content.matchAll(/DELETE TASK:\s*([a-zA-Z0-9-_\s]+)/gi);
         for (const match of deleteMatches) {
             const identifier = match[1].trim();
