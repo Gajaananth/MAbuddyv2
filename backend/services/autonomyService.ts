@@ -527,7 +527,8 @@ ${improvementContext}
         const day = sriLankaDate.getDay(); // 0 = Sunday, 3 = Wednesday (SL local time)
         const isScheduledDay = day === 0 || day === 3;
         
-        const { getRaidStatus, performInternetRaid } = await import('./raidingService.js');
+        const { performInternetRaid } = await import('./raidingService.js');
+        const { getRaidStatus } = await import('../db/queries.js');
         const { generateWeeklyReport, generateMidWeekReport } = await import('./intelligenceService.js');
 
         // Check if a raid is already in progress (Segmented Raid support for Vercel)

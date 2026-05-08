@@ -221,13 +221,20 @@ router.post(['/raid/trigger', '/raids/trigger'], async (req: AuthRequest, res: R
             total_clusters: 5
         });
 
-        // For Vercel, we MUST await the first segment or the process will be killed
-        // performInternetRaid handles segmented execution internally
-        await performInternetRaid(type === 'end-of-week' ? 'end-of-week' : 'mid-week', userId);
+        // For Vercel/Serverless: We start the process in the background and return immediately.
+        // The first segment will run, and the client will poll for status.
+        setImmediate(async () => {
+            try {
+                const { performInternetRaid } = await import('../services/raidingService.js');
+                await performInternetRaid(type === 'end-of-week' ? 'end-of-week' : 'mid-week', userId);
+            } catch (err) {
+                console.error('[Intelligence] Background Raid Error:', err);
+            }
+        });
 
         res.json({
             success: true,
-            message: 'Internet ride segment processed successfully',
+            message: 'Internet ride initiated in the background',
             timestamp: new Date().toISOString(),
         });
     } catch (error) {

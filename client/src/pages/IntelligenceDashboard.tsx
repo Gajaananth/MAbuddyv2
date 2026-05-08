@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bird, Search, AlertTriangle, Clock, Radio, ChevronDown, Zap, Trash2, FileText, Check } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { intelligenceService } from '../services/api';
+import { useIntelligence } from '../context/IntelligenceContext';
 import { useLiveTime } from '../hooks/useLiveTime';
 import { formatTimestamp } from '../utils/formatUtils';
 
@@ -39,15 +40,9 @@ const IntelligenceDashboard: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'rides' | 'reports'>('rides');
     const [loading, setLoading] = useState(true);
-    const [triggerLoading, setTriggerLoading] = useState(false);
+    const { rideStatus, isTriggering: triggerLoading, triggerManualRide } = useIntelligence();
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [expandedReports, setExpandedReports] = useState<string[]>([]);
-    const [rideStatus, setRideStatus] = useState<{
-        status: string;
-        current_cluster: string;
-        clusters_completed: number;
-        total_clusters: number;
-    } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const [highlightedId, setHighlightedId] = useState<string | null>(null);
     const liveTime = useLiveTime();
@@ -60,60 +55,12 @@ const IntelligenceDashboard: React.FC = () => {
         setSelectedIds([]);
     }, [activeTab]);
 
-    // Polling for Ride Status
-    // We always poll while triggerLoading=true so we don't stop
-    // before the server has had time to register the ride as started.
+    // Polling for UI updates when raid status changes
     useEffect(() => {
-        let interval: ReturnType<typeof setInterval>;
-        let prevClustersCompleted = -1;
-        let staleCount = 0;
-
-        const checkStatus = async () => {
-            try {
-                const res = await intelligenceService.getRideStatus();
-                const data = res.data.data;
-
-                if (data.status && data.status !== 'idle') {
-                    setRideStatus(data);
-
-                    // Reload data when a new cluster finishes
-                    if (data.clusters_completed > prevClustersCompleted) {
-                        if (prevClustersCompleted !== -1) {
-                            loadData();
-                        }
-                        prevClustersCompleted = data.clusters_completed;
-                        staleCount = 0;
-                    } else if (data.status === 'analyzing') {
-                        staleCount++;
-                        // If Vercel segmented the execution, it might stall in 'analyzing'
-                        // If it stalls for ~15 seconds (6 polls), push it forward
-                        if (staleCount >= 6) {
-                            console.log('[Intelligence] Ride segment stalled. Auto-resuming...');
-                            staleCount = 0;
-                            // Re-trigger the same ride type to resume from DB state
-                            intelligenceService.triggerRide().catch(console.error);
-                        }
-                    }
-
-                    if (data.status === 'completed' || data.status === 'failed') {
-                        setTriggerLoading(false);
-                        setRideStatus(null);
-                        loadData();
-                    }
-                }
-                // If idle while triggerLoading is true, keep waiting —
-                // the background raid may not have started yet.
-            } catch (error) {
-                console.error('[Intelligence] Status Poll Error:', error);
-            }
-        };
-
-        if (triggerLoading || rideStatus) {
-            interval = setInterval(checkStatus, 2500);
+        if (rideStatus?.status === 'completed') {
+            loadData();
         }
-
-        return () => clearInterval(interval);
-    }, [triggerLoading, rideStatus]);
+    }, [rideStatus?.status]);
 
     const loadData = async () => {
         setLoading(true);
@@ -178,15 +125,7 @@ const IntelligenceDashboard: React.FC = () => {
     }, [highlightedId, loading]);
 
     const handleTriggerRide = async () => {
-        if (triggerLoading) return;
-        setTriggerLoading(true);
-        try {
-            await intelligenceService.triggerRide('mid-week');
-            // Status effect will take over polling
-        } catch (error: any) {
-            console.error('[Intelligence] Trigger Error:', error);
-            setTriggerLoading(false);
-        }
+        await triggerManualRide('mid-week');
     };
 
     const handleExport = async (reportId: string, format: 'json' | 'pdf' | 'word' = 'json') => {
