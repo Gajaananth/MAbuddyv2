@@ -211,15 +211,18 @@ router.post(['/raid/trigger', '/raids/trigger'], async (req: AuthRequest, res: R
 
         const { type } = req.body;
 
-        // Reset status for manual trigger
-        const { performInternetRaid } = await import('../services/raidingService.js');
-        const { upsertRaidStatus } = await import('../db/queries.js');
-        await upsertRaidStatus(userId, {
-            status: 'starting',
-            current_cluster: 'INIT',
-            clusters_completed: 0,
-            total_clusters: 5
-        });
+        // Only reset status if not already in progress
+        const { getRaidStatus, upsertRaidStatus } = await import('../db/queries.js');
+        const currentStatus = await getRaidStatus(userId);
+        
+        if (!currentStatus || ['idle', 'completed', 'failed'].includes(currentStatus.status)) {
+            await upsertRaidStatus(userId, {
+                status: 'starting',
+                current_cluster: 'INIT',
+                clusters_completed: 0,
+                total_clusters: 5
+            });
+        }
 
         // For Vercel/Serverless: We start the process in the background and return immediately.
         // The first segment will run, and the client will poll for status.

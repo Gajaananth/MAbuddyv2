@@ -12,16 +12,40 @@ interface RideStatus {
 interface IntelligenceContextType {
     rideStatus: RideStatus | null;
     isTriggering: boolean;
+    rides: any[];
+    reports: any[];
+    loadingData: boolean;
     triggerManualRide: (type?: 'mid-week' | 'end-of-week') => Promise<void>;
+    refreshData: () => Promise<void>;
 }
 
 const IntelligenceContext = createContext<IntelligenceContextType | undefined>(undefined);
 
 export const IntelligenceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [rideStatus, setRideStatus] = useState<RideStatus | null>(null);
+    const [rides, setRides] = useState<any[]>([]);
+    const [reports, setReports] = useState<any[]>([]);
+    const [loadingData, setLoadingData] = useState(false);
     const [isTriggering, setIsTriggering] = useState(false);
     const [, setStaleCount] = useState(0);
     const { isAuthenticated } = useAuth();
+
+    const refreshData = useCallback(async () => {
+        if (!isAuthenticated) return;
+        setLoadingData(true);
+        try {
+            const [ridesRes, reportsRes] = await Promise.all([
+                intelligenceService.getRides(),
+                intelligenceService.getReports(),
+            ]);
+            setRides(ridesRes.data.data || []);
+            setReports(reportsRes.data.data || []);
+        } catch (error) {
+            console.error('[IntelligenceContext] Refresh Error:', error);
+        } finally {
+            setLoadingData(false);
+        }
+    }, [isAuthenticated]);
 
     const checkStatus = useCallback(async () => {
         try {
@@ -35,6 +59,7 @@ export const IntelligenceProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     setRideStatus(null);
                     setIsTriggering(false);
                     setStaleCount(0);
+                    refreshData(); // Refresh results when a ride completes
                 } else if (data.status === 'analyzing' || data.status === 'starting') {
                     // If it hasn't moved clusters in several polls, it might have timed out on the server
                     // We re-trigger to resume the next segment
@@ -95,7 +120,7 @@ export const IntelligenceProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }, [isTriggering, rideStatus, checkStatus, isAuthenticated]);
 
     return (
-        <IntelligenceContext.Provider value={{ rideStatus, isTriggering, triggerManualRide }}>
+        <IntelligenceContext.Provider value={{ rideStatus, isTriggering, rides, reports, loadingData, triggerManualRide, refreshData }}>
             {children}
         </IntelligenceContext.Provider>
     );

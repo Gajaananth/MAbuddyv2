@@ -34,13 +34,17 @@ const riskColors: Record<string, string> = {
     Low: 'bg-green-500/10 text-green-400 border-green-500/30',
 };
 
-const IntelligenceDashboard: React.FC = () => {
-    const [rides, setRides] = useState<RideResult[]>([]);
-    const [reports, setReports] = useState<WeeklyReport[]>([]);
+    const { 
+        rideStatus, 
+        isTriggering: triggerLoading, 
+        triggerManualRide, 
+        rides, 
+        reports, 
+        loadingData: loading,
+        refreshData
+    } = useIntelligence();
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState<'rides' | 'reports'>('rides');
-    const [loading, setLoading] = useState(true);
-    const { rideStatus, isTriggering: triggerLoading, triggerManualRide } = useIntelligence();
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [expandedReports, setExpandedReports] = useState<string[]>([]);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -63,47 +67,28 @@ const IntelligenceDashboard: React.FC = () => {
     }, [rideStatus?.status]);
 
     const loadData = async () => {
-        setLoading(true);
-        try {
-            const [ridesRes, reportsRes] = await Promise.all([
-                intelligenceService.getRides(),
-                intelligenceService.getReports(),
-            ]);
-            const fetchedRides = ridesRes.data.data || [];
-            const fetchedReports = reportsRes.data.data || [];
-            setRides(fetchedRides);
-            setReports(fetchedReports);
+        await refreshData();
+        
+        // Handle URL parameters for highlighting
+        const reportId = searchParams.get('reportId');
+        const findingId = searchParams.get('findingId');
+        const targetId = reportId || findingId || searchParams.get('id');
 
-            // Check for highlighted ID from search params
-            const reportId = searchParams.get('reportId');
-            const findingId = searchParams.get('findingId');
-            const targetId = reportId || findingId || searchParams.get('id');
-
-            if (targetId) {
-                setHighlightedId(targetId);
-                
-                // Determine if it's a ride or report
-                const isRide = fetchedRides.some((r: RideResult) => r.id === targetId) || !!findingId;
-                const isReport = fetchedReports.some((r: WeeklyReport) => r.id === targetId) || !!reportId;
-
-                if (isReport) {
-                    setActiveTab('reports');
-                    if (reportId) setExpandedReports(prev => [...new Set([...prev, reportId])]);
-                } else if (isRide) {
-                    setActiveTab('rides');
-                }
-
-                // Clear search params to avoid persistent highlighting
-                const newParams = new URLSearchParams(searchParams);
-                newParams.delete('id');
-                newParams.delete('reportId');
-                newParams.delete('findingId');
-                setSearchParams(newParams, { replace: true });
+        if (targetId) {
+            setHighlightedId(targetId);
+            const isRide = rides.some((r: RideResult) => r.id === targetId) || !!findingId;
+            const isReport = reports.some((r: WeeklyReport) => r.id === targetId) || !!reportId;
+            if (isReport) {
+                setActiveTab('reports');
+                if (reportId) setExpandedReports(prev => [...new Set([...prev, reportId])]);
+            } else if (isRide) {
+                setActiveTab('rides');
             }
-        } catch (error) {
-            console.error('[Intelligence] Load Error:', error);
-        } finally {
-            setLoading(false);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('id');
+            newParams.delete('reportId');
+            newParams.delete('findingId');
+            setSearchParams(newParams, { replace: true });
         }
     };
 
