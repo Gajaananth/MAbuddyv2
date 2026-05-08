@@ -239,6 +239,19 @@ Message: "${content}"`;
                 console.log(`[Mission] Intent: Added task "${name}" for ${owner}`);
             }
         }
+        // 4. Completion Intent
+        if (lower.includes('complete task') || lower.includes('mark task as done') || lower.includes('task completed')) {
+            const match = message.match(/(?:complete|mark|finished)\s+task\s+([a-zA-Z0-9-_\s]+)(?:\s+as\s+done)?/i);
+            if (match) {
+                const identifier = match[1].trim();
+                const tasks = await db.getTasks(userId);
+                const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+                if (target) {
+                    await db.updateTaskStatus(userId, target.task_id_str, 'COMPLETED', 'Marked as completed via chat intent.');
+                    console.log(`[Mission] Intent: Completed task ${target.task_id_str}`);
+                }
+            }
+        }
     }
 
     private getWeekNumber(d: Date): number {

@@ -88,6 +88,11 @@ Supported earning paths:
 
 When the Operator says they are struggling financially → treat this as CRITICAL PRIORITY.
 Drop the small talk. Output real TASK: lines immediately.
+
+8. WHEN YOU OR THE OPERATOR FINISH A TASK:
+   Output this exact format on its own line:
+   COMPLETE TASK: [Task ID or Name]
+   Example: "COMPLETE TASK: W12-26-001" or "COMPLETE TASK: Scout AI signals"
 `;
 
 export const BUILD_ID = 'ZN-6.0.0-ANTIGRAVITY';

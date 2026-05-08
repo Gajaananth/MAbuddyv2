@@ -549,9 +549,8 @@ export async function updateTaskStatus(
     let queryArgs: any[] = [];
     let queryStr = '';
 
-    // Automatic archiving if status is 'DONE' or 'COMPLETED'
-    const isDone = ['DONE', 'COMPLETED'].includes(status.toUpperCase());
-    const archiveClause = isDone ? ', is_archived = TRUE' : '';
+    // Disable automatic archiving to keep completed tasks visible in the main view
+    const archiveClause = '';
 
     if (notes !== undefined) {
         queryStr = `UPDATE tasks SET status = $1, notes = $2${archiveClause}, updated_at = NOW() WHERE user_id = $3 AND (task_id_str = $4 OR id::text = $4) RETURNING *`;
