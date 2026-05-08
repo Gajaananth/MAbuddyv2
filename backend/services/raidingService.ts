@@ -134,7 +134,9 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
     // Update heartbeat to lock the raid
     await upsertRaidStatus(userId, {
         status: completed === 0 ? 'starting' : 'analyzing',
+        current_cluster: completed === 0 ? 'Booting Intel Mesh...' : existingStatus?.current_cluster,
         clusters_completed: completed,
+        total_clusters: RAID_CLUSTERS.length
     });
 
     try {

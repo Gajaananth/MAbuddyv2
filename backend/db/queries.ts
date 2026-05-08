@@ -754,23 +754,23 @@ const queries = {
  * Update raid status in DB (replaces in-memory Map for serverless compatibility)
  */
 export async function upsertRaidStatus(userId: string, status: {
-    status: string;
-    current_cluster: string;
-    clusters_completed: number;
-    total_clusters: number;
+    status?: string;
+    current_cluster?: string;
+    clusters_completed?: number;
+    total_clusters?: number;
 }): Promise<void> {
-    const pool = db.pool; // Use db.pool as seen in other functions
+    const pool = db.pool;
     if (!pool) return;
     await pool.query(`
         INSERT INTO raid_status (user_id, status, current_cluster, clusters_completed, total_clusters, last_started, updated_at)
         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
         ON CONFLICT (user_id) DO UPDATE SET
-            status = EXCLUDED.status,
-            current_cluster = EXCLUDED.current_cluster,
-            clusters_completed = EXCLUDED.clusters_completed,
-            total_clusters = EXCLUDED.total_clusters,
+            status = COALESCE(EXCLUDED.status, raid_status.status),
+            current_cluster = COALESCE(EXCLUDED.current_cluster, raid_status.current_cluster),
+            clusters_completed = COALESCE(EXCLUDED.clusters_completed, raid_status.clusters_completed),
+            total_clusters = COALESCE(EXCLUDED.total_clusters, raid_status.total_clusters),
             updated_at = NOW()
-    `, [userId, status.status, status.current_cluster, status.clusters_completed, status.total_clusters]);
+    `, [userId, status.status || null, status.current_cluster || null, status.clusters_completed ?? null, status.total_clusters ?? null]);
 }
 
 /**
@@ -782,6 +782,7 @@ export async function getRaidStatus(userId: string): Promise<{
     clusters_completed: number;
     total_clusters: number;
     last_started: string;
+    updated_at: string;
 } | null> {
     const pool = db.pool;
     if (!pool) return null;
@@ -803,6 +804,7 @@ export async function getRaidStatus(userId: string): Promise<{
         clusters_completed: row.clusters_completed,
         total_clusters: row.total_clusters,
         last_started: row.last_started,
+        updated_at: row.updated_at,
     };
 }
 
