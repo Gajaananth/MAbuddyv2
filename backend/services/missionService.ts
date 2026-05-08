@@ -160,37 +160,37 @@ export class MissionService {
             }
         }
 
-        // 2. Completion & Deletion Commands (Autonomous Update)
-        const completeMatches = content.matchAll(/COMPLETE TASK:\s*([a-zA-Z0-9-_\s]+)/gi);
-        for (const match of completeMatches) {
+        // 2. Structured Commands (Autonomous & Explicit)
+        // UPDATE: [task name or id] | STATUS: DONE/IN_PROGRESS/BLOCKED/TODO | REASON: [reason]
+        const updateMatches = content.matchAll(/UPDATE:\s*([^|]+)\|\s*STATUS:\s*([A-Z_]+)\|\s*REASON:\s*(.*)/gi);
+        for (const match of updateMatches) {
             const identifier = match[1].trim();
+            const statusRaw = match[2].trim().toUpperCase();
+            const reason = match[3].trim();
+            
+            const status = statusRaw === 'IN_PROGRESS' ? 'PROCESS' : (statusRaw === 'DONE' ? 'COMPLETED' : statusRaw);
+            
             const tasks = await db.getTasks(userId);
             const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            
             if (target) {
-                await db.updateTaskStatus(userId, target.task_id_str, 'COMPLETED', 'Automatically resolved by Zium Nova Autonomous Protocol.');
-                console.log(`[Mission] Autonomous: Completed task ${target.task_id_str}`);
+                await db.updateTaskStatus(userId, target.task_id_str, status, `Update: ${reason}`);
+                console.log(`[Mission] Structured Update: ${target.task_id_str} -> ${status}`);
             }
         }
 
-        const processMatches = content.matchAll(/PROCESS TASK:\s*([a-zA-Z0-9-_\s]+)/gi);
-        for (const match of processMatches) {
-            const identifier = match[1].trim();
-            const tasks = await db.getTasks(userId);
-            const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
-            if (target) {
-                await db.updateTaskStatus(userId, target.task_id_str, 'PROCESS', 'Status updated to PROCESSING by Zium Nova Autonomous Protocol.');
-                console.log(`[Mission] Autonomous: Processing task ${target.task_id_str}`);
-            }
-        }
-
-        const deleteMatches = content.matchAll(/DELETE TASK:\s*([a-zA-Z0-9-_\s]+)/gi);
+        // DELETE: [task name or id] | REASON: [reason]
+        const deleteMatches = content.matchAll(/DELETE:\s*([^|]+)\|\s*REASON:\s*(.*)/gi);
         for (const match of deleteMatches) {
             const identifier = match[1].trim();
+            const reason = match[2].trim();
+            
             const tasks = await db.getTasks(userId);
             const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            
             if (target) {
                 await db.deleteTask(target.task_id_str, userId);
-                console.log(`[Mission] Autonomous: Deleted task ${target.task_id_str}`);
+                console.log(`[Mission] Structured Delete: ${target.task_id_str} | Reason: ${reason}`);
             }
         }
 
@@ -234,14 +234,22 @@ Message: "${content}"`;
     async processTaskIntent(userId: string, message: string) {
         const lower = message.toLowerCase();
         
-        // 1. Deletion Intent
-        if (lower.includes('delete task') || lower.includes('remove task')) {
-            const match = message.match(/(?:delete|remove) task\s+([a-zA-Z0-9-_\s]+)/i);
-            if (match) {
-                const identifier = match[1].trim();
-                // Try deleting by task_id_str first, then by name
-                const tasks = await db.getTasks(userId);
-                const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+        // Helper to find task by fuzzy name or ID
+        const findTask = async (idOrName: string) => {
+            const tasks = await db.getTasks(userId);
+            return tasks.find(t => 
+                t.task_id_str.toLowerCase() === idOrName.toLowerCase() || 
+                t.task_name.toLowerCase().includes(idOrName.toLowerCase())
+            );
+        };
+
+        // 1. Deletion Intent: "delete that task" / "remove that task"
+        if (lower.includes('delete that task') || lower.includes('remove that task') || lower.includes('delete task') || lower.includes('remove task')) {
+            const match = message.match(/(?:delete|remove)(?:\s+that)?\s+task\s+([a-zA-Z0-9-_\s]+)/i);
+            const identifier = match ? match[1].trim() : (lower.includes('that') ? 'last' : ''); // 'last' logic could be added if needed
+            
+            if (identifier) {
+                const target = await findTask(identifier);
                 if (target) {
                     await db.deleteTask(target.task_id_str, userId);
                     console.log(`[Mission] Intent: Deleted task ${target.task_id_str}`);
@@ -249,13 +257,47 @@ Message: "${content}"`;
             }
         }
 
-        // 2. Clear Intent
+        // 2. Status Updates: DONE / COMPLETED
+        if (lower.includes('mark as done') || lower.includes('complete') || lower.includes('finished')) {
+            const match = message.match(/(?:mark\s+)?(?:as\s+)?(?:done|complete|finished)(?:\s+that)?\s+task\s+([a-zA-Z0-9-_\s]+)/i) || 
+                          message.match(/task\s+([a-zA-Z0-9-_\s]+)\s+(?:is\s+)?(?:done|complete|finished)/i);
+            if (match) {
+                const target = await findTask(match[1].trim());
+                if (target) {
+                    await db.updateTaskStatus(userId, target.task_id_str, 'COMPLETED', 'Marked as DONE by Operator intent.');
+                }
+            }
+        }
+
+        // 3. Status Updates: IN_PROGRESS
+        if (lower.includes('mark as in progress') || lower.includes('start that') || lower.includes('process task')) {
+            const match = message.match(/(?:mark\s+as\s+in\s+progress|start\s+that|process)\s+task\s+([a-zA-Z0-9-_\s]+)/i);
+            if (match) {
+                const target = await findTask(match[1].trim());
+                if (target) {
+                    await db.updateTaskStatus(userId, target.task_id_str, 'PROCESS', 'Marked as IN_PROGRESS by Operator intent.');
+                }
+            }
+        }
+
+        // 4. Status Updates: BLOCKED
+        if (lower.includes('mark as blocked')) {
+            const match = message.match(/mark(?:\s+task\s+([a-zA-Z0-9-_\s]+))?\s+as\s+blocked/i);
+            if (match) {
+                const target = await findTask(match[1].trim());
+                if (target) {
+                    await db.updateTaskStatus(userId, target.task_id_str, 'BLOCKED', 'Marked as BLOCKED by Operator intent.');
+                }
+            }
+        }
+
+        // 5. Clear Intent
         if (lower.includes('clear all tasks') || lower.includes('delete all tasks') || lower.includes('reset mission board')) {
             await db.deleteAllTasks(userId);
             console.log(`[Mission] Intent: Cleared all tasks for ${userId}`);
         }
 
-        // 3. Simple Addition Intent (Natural Language)
+        // 6. Simple Addition Intent
         if (lower.includes('add task') || lower.includes('assign task')) {
             const match = message.match(/(?:add|assign) task\s+"?(.+?)"?(?:\s+to\s+([a-zA-Z\s_]+))?$/i);
             if (match) {
@@ -270,20 +312,6 @@ Message: "${content}"`;
                     status: 'TODO',
                     action_plan: 'Created via direct Operator intent.'
                 }, `T-${uuidv4().slice(0, 8)}`);
-                console.log(`[Mission] Intent: Added task "${name}" for ${owner}`);
-            }
-        }
-        // 4. Completion Intent
-        if (lower.includes('complete task') || lower.includes('mark task as done') || lower.includes('task completed')) {
-            const match = message.match(/(?:complete|mark|finished)\s+task\s+([a-zA-Z0-9-_\s]+)(?:\s+as\s+done)?/i);
-            if (match) {
-                const identifier = match[1].trim();
-                const tasks = await db.getTasks(userId);
-                const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
-                if (target) {
-                    await db.updateTaskStatus(userId, target.task_id_str, 'COMPLETED', 'Marked as completed via chat intent.');
-                    console.log(`[Mission] Intent: Completed task ${target.task_id_str}`);
-                }
             }
         }
     }
