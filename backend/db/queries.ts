@@ -274,7 +274,7 @@ export async function saveRaidResult(userId: string, raid: {
 }): Promise<any> {
     const result = await db.pool.query(
         'INSERT INTO intelligence_raids (user_id, category, risk_level, source_platform, content, summary, tags, metadata, ride_type, opportunity_score, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *',
-        [userId, raid.category, raid.risk_level, raid.source_platform, raid.content, raid.summary, raid.tags, raid.metadata || null, raid.ride_type || 'mid-week', raid.opportunity_score || 0, raid.status || 'active']
+        [userId, raid.category, raid.risk_level, raid.source_platform, raid.content, raid.summary, JSON.stringify(raid.tags), raid.metadata ? JSON.stringify(raid.metadata) : null, raid.ride_type || 'mid-week', raid.opportunity_score || 0, raid.status || 'active']
     );
     return result.rows[0];
 }
@@ -383,7 +383,7 @@ export async function createNotification(userId: string, data: {
 }): Promise<any> {
     const result = await db.pool.query(
         'INSERT INTO notifications (user_id, title, category, risk_level, monetization_potential, content, priority, metadata) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-        [userId, data.title, data.category, data.risk_level, data.monetization_potential, data.content, data.priority, data.metadata || null]
+        [userId, data.title, data.category, data.risk_level, data.monetization_potential, data.content, data.priority, data.metadata ? JSON.stringify(data.metadata) : null]
     );
     return result.rows[0];
 }
