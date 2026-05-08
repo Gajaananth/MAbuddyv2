@@ -103,12 +103,11 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
 
     const existingStatus = await getRaidStatus(userId);
     
-    // DB-level Lock: If recently updated and in-progress, skip to avoid race conditions
+    // DB-level Lock: Shorter lock (45s) for Vercel/Serverless responsiveness
     if (existingStatus && (['starting', 'analyzing', 'scanning'].includes(existingStatus.status))) {
         const lastUpdated = new Date(existingStatus.updated_at || existingStatus.last_started).getTime();
-        // If it was updated less than 3 minutes ago, it's likely still being processed by another Lambda
-        if (Date.now() - lastUpdated < 3 * 60 * 1000) {
-            console.log(`[Ride] Raid for user ${userId} is currently locked (active in another process). Skipping.`);
+        if (Date.now() - lastUpdated < 45 * 1000) {
+            console.log(`[Ride] Raid for user ${userId} is currently locked (active). Skipping.`);
             return;
         }
     }
@@ -143,6 +142,20 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
         for (let i = completed; i < RAID_CLUSTERS.length; i++) {
             const cluster = RAID_CLUSTERS[i];
             
+            // DEDUPLICATION: Check if we already have a finding for this cluster saved recently
+            const isDuplicate = await db.findRecentDuplicateRaid(userId, cluster.name, 1); // Last 1 hour
+            if (isDuplicate) {
+                console.log(`[Ride] [${cluster.name}] Already analyzed recently. Skipping to next.`);
+                completed = i + 1;
+                await upsertRaidStatus(userId, {
+                    status: 'analyzing',
+                    current_cluster: cluster.name,
+                    clusters_completed: completed,
+                    total_clusters: RAID_CLUSTERS.length,
+                });
+                continue;
+            }
+
             await upsertRaidStatus(userId, {
                 status: 'analyzing',
                 current_cluster: cluster.name,

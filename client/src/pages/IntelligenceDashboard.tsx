@@ -241,7 +241,7 @@ const IntelligenceDashboard: React.FC = () => {
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 text-nova-accent">
                         <Bird size={12} className="animate-pulse" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Intelligence Hub v4.5.0</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Intelligence Hub v6.0.0</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none">
                         Tactical <span className="text-nova-accent">Intelligence</span>
