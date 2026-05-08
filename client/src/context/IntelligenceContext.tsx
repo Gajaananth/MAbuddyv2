@@ -20,7 +20,7 @@ const IntelligenceContext = createContext<IntelligenceContextType | undefined>(u
 export const IntelligenceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [rideStatus, setRideStatus] = useState<RideStatus | null>(null);
     const [isTriggering, setIsTriggering] = useState(false);
-    const [staleCount, setStaleCount] = useState(0);
+    const [, setStaleCount] = useState(0);
     const { isAuthenticated } = useAuth();
 
     const checkStatus = useCallback(async () => {
