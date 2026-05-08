@@ -34,6 +34,7 @@ const riskColors: Record<string, string> = {
     Low: 'bg-green-500/10 text-green-400 border-green-500/30',
 };
 
+const IntelligenceDashboard: React.FC = () => {
     const { 
         rideStatus, 
         isTriggering: triggerLoading, 
