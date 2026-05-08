@@ -95,16 +95,17 @@ export const BUILD_ID = 'ZN-6.0.0-ANTIGRAVITY';
 let lastCycleStatus = 'Neural Grid Initialized (Groq Primary)';
 let failureHistory: string[] = [];
 
-async function fetchWithRetry(url: string, data: any, config: any, maxRetries = 1): Promise<any> {
+async function fetchWithRetry(url: string, data: any, config: any, maxRetries = 3, baseDelayMs = 2000): Promise<any> {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
             return await axios.post(url, data, config);
         } catch (error: any) {
             const status = error.response?.status;
+            // 429 is rate limit, 503 is service unavailable
             if ([408, 429, 500, 502, 503, 504].includes(status) || !error.response) {
                 if (attempt === maxRetries) throw error;
-                const delayMs = 1000;
-                console.warn(`[Brain] HTTP ${status || 'Err'} - Retrying ${attempt}/${maxRetries}...`);
+                const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+                console.warn(`[Brain] HTTP ${status || 'Err'} - Retrying ${attempt}/${maxRetries} in ${delayMs}ms...`);
                 await new Promise(res => setTimeout(res, delayMs));
             } else {
                 throw error;
@@ -197,15 +198,15 @@ export async function think(
 
     // --- TIER 1: NATIVE GEMINI (DEFERRED BACKUP) ---
     if (GEMINI_KEY && !options.model) {
-        const models = ['gemini-1.5-flash'];
+        const models = ['gemini-2.0-flash-lite-preview-02-05', 'gemini-1.5-flash'];
         for (const model of models) {
             try {
                 console.log(`[Brain] T1 Gemini -> ${model}`);
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
-                const res = await axios.post(url, {
+                const res = await fetchWithRetry(url, {
                     contents: [{ role: 'user', parts: [{ text: fullContent }] }],
                     systemInstruction: { parts: [{ text: systemPrompt }] }
-                }, { timeout: 10000 });
+                }, { timeout: 15000 }, 3, 2000);
 
                 const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (text) {
