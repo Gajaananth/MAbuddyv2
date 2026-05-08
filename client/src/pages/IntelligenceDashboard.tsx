@@ -365,7 +365,7 @@ const IntelligenceDashboard: React.FC = () => {
             </div>
 
             {/* Unified Data View */}
-            <div className="flex-1 min-h-0 min-w-0">
+            <div className="flex-1 min-h-0 min-w-0 relative">
                 {activeTab === 'rides' && (
                     <div className="mb-10 relative group">
                         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-nova-text-dim/40 group-focus-within:text-nova-accent transition-colors" size={18} />
@@ -379,7 +379,7 @@ const IntelligenceDashboard: React.FC = () => {
                     </div>
                 )}
 
-                {loading ? (
+                {loading && rides.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-32 gap-6 opacity-40">
                         <div className="relative w-16 h-16">
                             <div className="absolute inset-0 border-4 border-nova-accent/20 rounded-full"></div>
@@ -388,7 +388,15 @@ const IntelligenceDashboard: React.FC = () => {
                         <span className="text-[10px] font-black text-nova-accent uppercase tracking-[0.4em]">Synchronizing Mesh...</span>
                     </div>
                 ) : activeTab === 'rides' ? (
-                    <div className="grid grid-cols-1 gap-4 lg:gap-6">
+                    <div className={`grid grid-cols-1 gap-4 lg:gap-6 transition-opacity duration-300 relative ${loading ? 'opacity-50' : 'opacity-100'}`}>
+                        {loading && rides.length > 0 && (
+                             <div className="absolute top-0 right-0 p-4 z-50">
+                                <div className="flex items-center gap-2 px-3 py-1 bg-nova-accent/20 border border-nova-accent/30 rounded-full animate-pulse">
+                                    <div className="w-1.5 h-1.5 bg-nova-accent rounded-full animate-ping"></div>
+                                    <span className="text-[8px] font-black text-nova-accent uppercase tracking-widest">Mesh Syncing...</span>
+                                </div>
+                             </div>
+                        )}
                         {filteredRides.length === 0 ? (
                             <div className="py-32 text-center glass border-2 border-dashed border-nova-border/30 rounded-[3rem] opacity-30">
                                 <Bird size={64} className="mx-auto mb-6 text-nova-accent opacity-20" />
