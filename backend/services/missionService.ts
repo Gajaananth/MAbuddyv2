@@ -161,10 +161,36 @@ export class MissionService {
         }
 
         // 2. Structured Commands (Autonomous & Explicit)
-        // UPDATE: [task name or id] | STATUS: DONE/IN_PROGRESS/BLOCKED/TODO | REASON: [reason]
-        const updateMatches = content.matchAll(/UPDATE:\s*([^|]+)\|\s*STATUS:\s*([A-Z_]+)\|\s*REASON:\s*(.*)/gi);
+        
+        // Helper to clean identifiers (removes trailing dots/ellipsis for better fuzzy matching)
+        const cleanId = (id: string) => id.replace(/\.+$/, '').trim();
+
+        // TASK: [name] | PRIORITY: [prio] | OWNER: [owner] | PLAN: [plan]
+        const taskMatches = content.matchAll(/TASK:\s*(.*?)\s*\|\s*PRIORITY:\s*(.*?)\s*\|\s*OWNER:\s*(.*?)\s*\|\s*PLAN:\s*(.*?)(?=\s*TASK:|\s*UPDATE:|\s*DELETE:|$)/gi);
+        for (const match of taskMatches) {
+            const name = match[1].trim();
+            const priority = match[2].trim().toUpperCase() as any;
+            const ownerRaw = match[3].trim().toUpperCase();
+            const owner = ownerRaw.includes('NOVA') ? 'NOVA' : 'OPERATOR';
+            const plan = match[4].trim();
+
+            if (name) {
+                console.log(`[Mission] Auto-creating task: ${name}`);
+                await db.createTask(userId, {
+                    task_name: name.slice(0, 100),
+                    owner: owner as any,
+                    priority: (['LOW', 'MEDIUM', 'HIGH'].includes(priority) ? priority : 'MEDIUM') as any,
+                    status: 'TODO',
+                    action_plan: plan,
+                    notes: `Autonomous sync from Zium Nova.`
+                }, `T-${uuidv4().slice(0, 8)}`);
+            }
+        }
+
+        // UPDATE: [task name or id] | STATUS: DONE/PROCESS/BLOCKED/TODO | REASON: [reason]
+        const updateMatches = content.matchAll(/UPDATE:\s*(.*?)\s*\|\s*STATUS:\s*(.*?)\s*\|\s*REASON:\s*(.*?)(?=\s*TASK:|\s*UPDATE:|\s*DELETE:|$)/gi);
         for (const match of updateMatches) {
-            const identifier = match[1].trim();
+            const identifier = cleanId(match[1]);
             const statusRaw = match[2].trim().toUpperCase();
             const reason = match[3].trim();
             
@@ -185,9 +211,9 @@ export class MissionService {
         }
 
         // DELETE: [task name or id] | REASON: [reason]
-        const deleteMatches = content.matchAll(/DELETE:\s*([^|]+)\|\s*REASON:\s*(.*)/gi);
+        const deleteMatches = content.matchAll(/DELETE:\s*(.*?)\s*\|\s*REASON:\s*(.*?)(?=\s*TASK:|\s*UPDATE:|\s*DELETE:|$)/gi);
         for (const match of deleteMatches) {
-            const identifier = match[1].trim();
+            const identifier = cleanId(match[1]);
             const reason = match[2].trim();
             
             const tasks = await db.getTasks(userId);
@@ -249,9 +275,9 @@ Message: "${content}"`;
         };
 
         // 1. Deletion Intent: "delete that task" / "remove that task"
-        if (lower.includes('delete that task') || lower.includes('remove that task') || lower.includes('delete task') || lower.includes('remove task')) {
-            const match = message.match(/(?:delete|remove)(?:\s+that)?\s+task\s+([a-zA-Z0-9-_\s]+)/i);
-            const identifier = match ? match[1].trim() : (lower.includes('that') ? 'last' : ''); // 'last' logic could be added if needed
+        if (lower.includes('delete') || lower.includes('remove')) {
+            const match = message.match(/(?:delete|remove)(?:\s+(?:that|the|all))?\s+task\s*(?:s)?\s*([a-zA-Z0-9-_\s.]+)?/i);
+            const identifier = match ? match[1]?.trim() : '';
             
             if (identifier) {
                 const target = await findTask(identifier);
@@ -259,6 +285,13 @@ Message: "${content}"`;
                     await db.deleteTask(target.task_id_str, userId);
                     console.log(`[Mission] Intent: Deleted task ${target.task_id_str}`);
                 }
+            } else if (lower.includes('delete all tasks not for me') || lower.includes('delete your tasks')) {
+                const tasks = await db.getTasks(userId);
+                const toDelete = tasks.filter(t => t.owner === 'NOVA');
+                for (const t of toDelete) {
+                    await db.deleteTask(t.task_id_str, userId);
+                }
+                console.log(`[Mission] Intent: Cleared all AI tasks.`);
             }
         }
 
