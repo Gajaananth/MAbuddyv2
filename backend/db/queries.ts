@@ -690,7 +690,7 @@ const queries = {
     getConversationById,
     addMessage,
     getMessages,
-    getRecentMemoryContext,
+    getRecentMemory,
     getMessagesByDateRange,
     saveTrendAnalysis,
     getTrendAnalyses,

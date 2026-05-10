@@ -218,7 +218,11 @@ export async function think(
                     console.log(`[Brain] T0-Alt Groq -> llama-3.1-8b-instant`);
                     const altRes = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
                         model: 'llama-3.1-8b-instant',
-                        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullContent }]
+                        messages: [
+                            { role: 'system', content: systemPrompt }, 
+                            ...history.map(h => ({ role: h.role as any, content: h.content })),
+                            { role: 'user', content: prompt }
+                        ]
                     }, { headers: { 'Authorization': `Bearer ${GROQ_KEY}` }, timeout: 10000 });
                     
                     if (altRes.data?.choices?.[0]?.message?.content) {

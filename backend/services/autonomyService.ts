@@ -708,7 +708,7 @@ RULES:
 - Just calm, real-world conversation.
 BANNED: "mind's sharp," "watching your back," "ready to shake things up."
 
-ALERT: "${combinedAlert}"`, '', { skipSync: true }, userId);
+ALERT: "${combinedAlert}"`, [], { skipSync: true }, userId);
 
             await db.addMessage(convId, 'nova', humanized.content, { proactive: true, alert_type: 'critical' });
 

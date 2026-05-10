@@ -236,7 +236,7 @@ TASK: [Name] | PRIORITY: [Low/Medium/High] | OWNER: [NOVA/OPERATOR] | PLAN: [Des
 Message: "${content}"`;
 
             // We use a light model for recovery to save tokens
-            const recoveryResponse = await think(recoveryPrompt, '', { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
+            const recoveryResponse = await think(recoveryPrompt, [], { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
             const recoveredContent = recoveryResponse.content;
 
             const recoveredMatches = recoveredContent.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*OWNER:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);

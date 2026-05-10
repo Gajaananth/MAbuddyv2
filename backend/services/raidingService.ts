@@ -203,7 +203,7 @@ RULES:
 
             let analysisContent = '';
             try {
-                const analysis = await think(raidPrompt, '', { skipSync: true }, userId);
+                const analysis = await think(raidPrompt, [], { skipSync: true }, userId);
                 analysisContent = analysis.content;
             } catch (err: any) {
                 console.error(`[Ride] [${cluster.name}] Analysis failed:`, err.message);
