@@ -167,13 +167,13 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         }
 
         console.log('[Chat] Retrieving memory context...');
-        // Retrieve memory context for RAG
-        memoryContext = await db.getRecentMemoryContext(userId, convId, 15);
+        // Retrieve memory context for RAG as structured messages
+        const history = await db.getRecentMemory(userId, 15);
 
         console.log('[Chat] Thinking...');
         // Send to Zium Nova's brain (Groq / Gemini / OpenAI)
         const { model } = req.body;
-        const openClawResponse = await think(message, memoryContext, { model }, userId);
+        const openClawResponse = await think(message, history, { model }, userId);
 
         // Determine if analytics are requested (Specifically matching Rule 3)
         const analyticsRequested = lowerMessage.includes('activate analytics mode');

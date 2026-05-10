@@ -156,9 +156,8 @@ function logFailure(tier: string, error: any) {
     lastCycleStatus = log;
 }
 
-export async function think(
     prompt: string,
-    memoryContext: string = '',
+    history: {role: string, content: string}[] = [],
     options: { mode?: string; skipSync?: boolean; model?: string } = {},
     userId: string = '00000000-0000-0000-0000-000000000000'
 ): Promise<OpenClawResponse> {
@@ -166,8 +165,6 @@ export async function think(
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
     const OPENAI_KEY = process.env.OPENAI_API_KEY;
     const QWEN_KEY = process.env.QWEN_API_KEY;
-
-    const fullContent = memoryContext ? `MEMORY: ${memoryContext.slice(-8000)}\n\nUSER: ${prompt}` : prompt;
     
     // Requested model or default
     const targetModel = options.model || 'llama-3.3-70b-versatile';
@@ -186,9 +183,10 @@ export async function think(
                 model: targetModel,
                 messages: [
                     { role: 'system', content: systemPrompt }, 
-                    { role: 'user', content: fullContent }
+                    ...history.map(h => ({ role: h.role as any, content: h.content })),
+                    { role: 'user', content: prompt }
                 ],
-                temperature: 0.7,
+                temperature: 0.8,
                 max_tokens: 4096
             }, { 
                 headers: { 
@@ -237,8 +235,16 @@ export async function think(
             try {
                 console.log(`[Brain] T1 Gemini -> ${model}`);
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
+                
+                // Map history to Gemini format (user/model roles)
+                const contents = history.map(h => ({
+                    role: h.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: h.content }]
+                }));
+                contents.push({ role: 'user', parts: [{ text: prompt }] });
+
                 const res = await fetchWithRetry(url, {
-                    contents: [{ role: 'user', parts: [{ text: fullContent }] }],
+                    contents,
                     systemInstruction: { parts: [{ text: systemPrompt }] }
                 }, { timeout: 15000 }, 3, 2000);
 
@@ -258,7 +264,11 @@ export async function think(
             console.log(`[Brain] T2 Qwen -> ${model}`);
             const res = await axios.post('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
                 model,
-                messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullContent }]
+                messages: [
+                    { role: 'system', content: systemPrompt }, 
+                    ...history.map(h => ({ role: h.role as any, content: h.content })),
+                    { role: 'user', content: prompt }
+                ]
             }, { headers: { 'Authorization': `Bearer ${QWEN_KEY}` }, timeout: 12000 });
 
             if (res.data?.choices?.[0]?.message?.content) {
@@ -273,7 +283,11 @@ export async function think(
             const model = 'gpt-4o-mini';
             const res = await axios.post('https://api.openai.com/v1/chat/completions', {
                 model,
-                messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: fullContent }]
+                messages: [
+                    { role: 'system', content: systemPrompt }, 
+                    ...history.map(h => ({ role: h.role as any, content: h.content })),
+                    { role: 'user', content: prompt }
+                ]
             }, { headers: { 'Authorization': `Bearer ${OPENAI_KEY}` }, timeout: 15000 });
 
             if (res.data?.choices?.[0]?.message?.content) {

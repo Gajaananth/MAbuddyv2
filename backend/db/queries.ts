@@ -129,25 +129,18 @@ export async function getMessages(conversationId: string, limit: number = 50): P
     return result.rows;
 }
 
-export async function getRecentMemoryContext(userId: string, currentConversationId?: string, limit: number = 10): Promise<string> {
-    // Pull the latest messages for this user across ANY conversation to provide global context
+export async function getRecentMemory(userId: string, limit: number = 10): Promise<{role: string, content: string}[]> {
     const result = await db.pool.query(
-        `SELECT m.* FROM messages m 
+        `SELECT m.role, m.content FROM messages m 
          JOIN conversations c ON m.conversation_id = c.id 
          WHERE c.user_id = $1 AND c.is_deleted = FALSE 
          ORDER BY m.created_at DESC LIMIT $2`,
         [userId, limit]
     );
-    const messages = result.rows.reverse(); // Back to chronological for the prompt
-
-    if (messages.length === 0) return 'No previous strategic memory context available.';
-
-    return messages
-        .map(m => {
-            const label = m.role === 'user' ? '»' : '•';
-            return `${label} ${m.content.slice(0, 500)}${m.content.length > 500 ? '...' : ''}`;
-        })
-        .join('\n');
+    return result.rows.reverse().map((m: any) => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content
+    }));
 }
 
 export async function getMessagesByDateRange(startDate: Date, endDate: Date): Promise<Message[]> {
