@@ -138,7 +138,7 @@ Rules:
 
 Output ONLY the message.`;
 
-            const checkIn = await think(prompt, '', { skipSync: true }, userId);
+            const checkIn = await think(prompt, [], { skipSync: true }, userId);
             
             await db.addMessage(activeConv.id, 'nova', checkIn.content, { proactive: true, check_in: true });
 
@@ -300,7 +300,7 @@ ${improvementContext}
 - If NOVA owns a TASK, she will attempt to execute it in the next cycle. Make it executable.
 `;
 
-            const response = await think(heartbeatPrompt, 'System Autonomy Cycle', { mode: 'STRATEGIC', skipSync: true }, userId);
+            const response = await think(heartbeatPrompt, [], { mode: 'STRATEGIC', skipSync: true }, userId);
             const content = response.content;
             console.log(`[Autonomy v4.2] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
 
@@ -595,8 +595,7 @@ RULES:
 - Only mark DONE if there is CLEAR evidence of completion in the learning context.
 - Only mark BLOCKED if there is a specific blocker you can name.
 - Do NOT mark tasks as done because they are old. Age is not completion.
-- Output ONLY the UPDATE/SKIP lines. No preamble.`,
-'Autonomous Task Audit', { skipSync: true }, userId);
+- Output ONLY the UPDATE/SKIP lines. No preamble.`, [], { skipSync: true }, userId);
 
         const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*REASON:\s*(.*)/gi);
         for (const match of updateMatches) {
