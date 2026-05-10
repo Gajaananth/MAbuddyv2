@@ -745,8 +745,7 @@ const queries = {
     getSecurityLogs,
     upsertRaidStatus,
     getRaidStatus,
-    markAllNotificationsRead,
-    getRecentMemory
+    markAllNotificationsRead
 };
 
 /**
