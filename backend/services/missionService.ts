@@ -168,7 +168,12 @@ export class MissionService {
             const statusRaw = match[2].trim().toUpperCase();
             const reason = match[3].trim();
             
-            const status = statusRaw === 'IN_PROGRESS' ? 'PROCESS' : (statusRaw === 'DONE' ? 'COMPLETED' : statusRaw);
+            // Canonical Status Mapping
+            let status = 'TODO';
+            if (['DONE', 'COMPLETED', 'FINISHED'].includes(statusRaw)) status = 'COMPLETED';
+            if (['PROCESS', 'IN_PROGRESS', 'STARTING', 'START'].includes(statusRaw)) status = 'PROCESS';
+            if (['BLOCKED', 'STUCK'].includes(statusRaw)) status = 'BLOCKED';
+            if (['TODO', 'PENDING'].includes(statusRaw)) status = 'TODO';
             
             const tasks = await db.getTasks(userId);
             const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));

@@ -22,10 +22,7 @@ const DURATION_LABELS = {
 
 const STATUS_CONFIG = {
     'TODO': { icon: Circle, color: 'text-amber-500 border-amber-500/30' },
-    'PENDING': { icon: Clock, color: 'text-amber-500 border-amber-500/30' },
     'PROCESS': { icon: Activity, color: 'text-nova-accent border-nova-accent/30' },
-    'IN_PROGRESS': { icon: Activity, color: 'text-nova-accent border-nova-accent/30' },
-    'DONE': { icon: CheckCircle2, color: 'text-green-500 border-green-500/30' },
     'COMPLETED': { icon: CheckCircle2, color: 'text-green-500 border-green-500/30' },
     'BLOCKED': { icon: Shield, color: 'text-red-500 border-red-500/30' }
 };
@@ -98,11 +95,11 @@ const TaskCard: React.FC<{
 
             <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
                 <button 
-                    onClick={() => onStatus(task.task_id_str, 'PENDING')}
-                    className={`p-1.5 rounded-lg border transition-all ${task.status === 'PENDING' ? 'bg-amber-400/20 border-amber-400/50 text-amber-400' : 'bg-white/5 border-white/10 text-nova-text-dim hover:text-amber-400'}`}
-                    title="Mark Pending"
+                    onClick={() => onStatus(task.task_id_str, 'TODO')}
+                    className={`p-1.5 rounded-lg border transition-all ${task.status === 'TODO' ? 'bg-amber-400/20 border-amber-400/50 text-amber-400' : 'bg-white/5 border-white/10 text-nova-text-dim hover:text-amber-400'}`}
+                    title="Mark Todo"
                 >
-                    <Clock size={12} />
+                    <Circle size={12} />
                 </button>
                 <button 
                     onClick={() => onStatus(task.task_id_str, 'PROCESS')}
@@ -112,9 +109,9 @@ const TaskCard: React.FC<{
                     <Activity size={12} />
                 </button>
                 <button 
-                    onClick={() => onStatus(task.task_id_str, 'DONE')}
-                    className={`p-1.5 rounded-lg border transition-all ${task.status === 'DONE' ? 'bg-green-500/20 border-green-500/50 text-green-500' : 'bg-white/5 border-white/10 text-nova-text-dim hover:text-green-500'}`}
-                    title="Mark Done"
+                    onClick={() => onStatus(task.task_id_str, 'COMPLETED')}
+                    className={`p-1.5 rounded-lg border transition-all ${task.status === 'COMPLETED' ? 'bg-green-500/20 border-green-500/50 text-green-500' : 'bg-white/5 border-white/10 text-nova-text-dim hover:text-green-500'}`}
+                    title="Mark Completed"
                 >
                     <CheckCircle2 size={12} />
                 </button>
