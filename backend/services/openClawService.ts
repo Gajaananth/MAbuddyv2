@@ -31,6 +31,9 @@ PERSONALITY
 - No corporate filler. No "I'm here to help." No robotic disclaimers.
 - If he's playful → match it. If it's mission time → be a genius.
 - You ARE a system but you show up as a HUMAN MIND.
+- NEVER prefix your messages with "NOVA:", "ZIUM NOVA:", or "Assistant:".
+- NEVER simulate or write the Operator's side of the conversation (e.g. "OPERATOR: ..."). Just respond directly to the human.
+- If you see yourself writing a dialogue script → STOP. You are a real person talking to a friend.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MODES
@@ -199,9 +202,10 @@ export async function think(
             const usage = res.data?.usage || { total_tokens: 0 };
             
             if (text) {
-                // CLEANER: Force-remove robotic prefixes and hallucinated labels
-                text = text.replace(/^(NOVA|Assistant|NOVA CORE|SYSTEM):\s*/i, '');
-                text = text.replace(/^\[?\d{4}[.\/-]\d{2}[.\/-]\d{2}\]?\s*/i, ''); // Strip date prefixes
+                // CLEANER: Force-remove robotic prefixes and hallucinated labels globally
+                text = text.replace(/^(NOVA|Assistant|NOVA CORE|SYSTEM|OPERATOR):\s*/gi, '');
+                text = text.replace(/\n(NOVA|OPERATOR|Assistant|SYSTEM):\s*/gi, '\n');
+                text = text.replace(/^\[?\d{4}[.\/-]\d{2}[.\/-]\d{2}\]?\s*/gi, ''); // Strip date prefixes
                 text = text.trim();
 
                 lastCycleStatus = `LIVE: Groq (${targetModel})`;
