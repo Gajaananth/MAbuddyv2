@@ -125,7 +125,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             // Auto-generate topic tag in the background
             setTimeout(async () => {
                 try {
-                    const tagResponse = await think(`Generate a single 1-3 word topic tag for this message: "${message}". Output ONLY the tag.`, '', {}, userId);
+                    const tagResponse = await think(`Generate a single 1-3 word topic tag for this message: "${message}". Output ONLY the tag.`, [], {}, userId);
                     const cleanTag = tagResponse.content.trim().replace(/["']/g, '');
                     await db.updateConversationTopic(convId, userId, cleanTag);
                     console.log(`[Chat] Auto-tagged conversation ${convId} as: ${cleanTag}`);

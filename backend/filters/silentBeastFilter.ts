@@ -64,7 +64,7 @@ Output JSON format ONLY:
   "reasoning": "Brief explanation"
 }`;
 
-            const auditResponse = await think(auditPrompt, '', { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
+            const auditResponse = await think(auditPrompt, [], { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
             const auditResult = JSON.parse(auditResponse.content.replace(/```json|```/gi, '').trim());
 
             // Adjust scores based on Strategic Audit

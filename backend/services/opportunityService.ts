@@ -45,7 +45,7 @@ Output JSON format ONLY as an array of objects:
   }
 ]`;
 
-            const response = await think(prompt, '', { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
+            const response = await think(prompt, [], { model: 'llama-3.1-8b-instant', skipSync: true }, userId);
             const signals = JSON.parse(response.content.replace(/```json|```/gi, '').trim());
 
             return Array.isArray(signals) ? signals : [];

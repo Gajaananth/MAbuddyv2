@@ -65,7 +65,7 @@ Do NOT produce a report that says nothing happened. If nothing happened, say:
 
 Raw Findings: ${raidSummary}`;
 
-        const analysis = await think(reportPrompt, '', { skipSync: true }, userId);
+        const analysis = await think(reportPrompt, [], { skipSync: true }, userId);
 
         // Structure the report
         const reportData = {
@@ -143,7 +143,7 @@ If nothing significant happened, say: "No significant signals this cycle. Recomm
 
 Findings: ${raidSummary}`;
 
-        const analysis = await think(midWeekPrompt, '', { skipSync: true }, userId);
+        const analysis = await think(midWeekPrompt, [], { skipSync: true }, userId);
 
         await saveWeeklyReport(userId, {
             report_data: {
