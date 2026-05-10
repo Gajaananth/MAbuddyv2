@@ -156,6 +156,7 @@ function logFailure(tier: string, error: any) {
     lastCycleStatus = log;
 }
 
+export async function think(
     prompt: string,
     history: {role: string, content: string}[] = [],
     options: { mode?: string; skipSync?: boolean; model?: string } = {},
