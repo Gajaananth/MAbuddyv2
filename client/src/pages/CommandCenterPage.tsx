@@ -3,7 +3,7 @@ import {
     Bird, User, Search, Circle, CheckCircle2, 
     Terminal, Activity, Shield,
     Trash2, Archive, ArchiveRestore, ArrowLeftRight, Clock,
-    FileText, ListTodo
+    FileText, ListTodo, Check
 } from 'lucide-react';
 import { missionService } from '../services/api';
 import { formatTimestamp } from '../utils/formatUtils';
@@ -446,6 +446,8 @@ const CommandCenterPage: React.FC = () => {
                                     <TaskCard 
                                         key={task.id} 
                                         task={task} 
+                                        isSelected={selectedIds.includes(task.task_id_str)}
+                                        onToggleSelection={toggleSelection}
                                         onStatus={handleStatus}
                                         onArchive={handleArchive}
                                         onDelete={handleDelete}
