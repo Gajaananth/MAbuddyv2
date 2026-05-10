@@ -572,8 +572,13 @@ export async function updateTaskAssignment(userId: string, taskIdStr: string, ow
     return result.rows[0];
 }
 
-export async function deleteTask(taskIdStr: string, userId: string): Promise<void> {
-    await db.pool.query('DELETE FROM tasks WHERE user_id = $1 AND (task_id_str = $2 OR id::text = $2)', [userId, taskIdStr]);
+export async function deleteTask(id: string, userId: string): Promise<void> {
+    await db.pool.query('DELETE FROM tasks WHERE task_id_str = $1 AND user_id = $2', [id, userId]);
+}
+
+export async function bulkDeleteTasks(ids: string[], userId: string): Promise<void> {
+    if (ids.length === 0) return;
+    await db.pool.query('DELETE FROM tasks WHERE task_id_str = ANY($1) AND user_id = $2', [ids, userId]);
 }
 
 export async function deleteAllTasks(userId: string): Promise<void> {
@@ -735,6 +740,7 @@ const queries = {
     updateTaskAssignment,
     archiveTask,
     deleteTask,
+    bulkDeleteTasks,
     deleteAllTasks,
     findRecentDuplicateNotification,
     findRecentDuplicateRaid,

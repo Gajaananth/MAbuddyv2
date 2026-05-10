@@ -117,6 +117,33 @@ router.delete('/:id', authenticate, async (req: AuthRequest, res: Response) => {
 });
 
 /**
+ * POST /api/tasks/bulk-delete
+ * Bulk delete multiple mission objectives.
+ */
+router.post('/bulk-delete', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'Invalid or empty IDs array' });
+        }
+
+        await db.bulkDeleteTasks(ids, userId);
+
+        res.json({
+            success: true,
+            message: `${ids.length} mission objectives purged`,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        console.error('[Tasks] Bulk Delete Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to purge mission objectives' });
+    }
+});
+
+/**
  * GET /api/tasks/progress
  * Real-time task progress statistics (total, completed, in-progress, stuck, by assignee).
  */

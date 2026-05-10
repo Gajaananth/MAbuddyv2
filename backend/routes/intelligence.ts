@@ -201,6 +201,60 @@ router.delete('/raids/:id', authenticate, async (req: AuthRequest, res: Response
 });
 
 /**
+ * POST /api/intelligence/raids/bulk-delete
+ * Bulk delete multiple raid results.
+ */
+router.post('/raids/bulk-delete', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'Invalid or empty IDs array' });
+        }
+
+        await db.bulkDeleteRaidResults(ids, userId);
+
+        res.json({
+            success: true,
+            message: `${ids.length} raid results purged`,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        console.error('[Intelligence] Bulk Delete Raids Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to purge raid results' });
+    }
+});
+
+/**
+ * POST /api/intelligence/reports/bulk-delete
+ * Bulk delete multiple weekly reports.
+ */
+router.post('/reports/bulk-delete', authenticate, async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
+
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'Invalid or empty IDs array' });
+        }
+
+        await db.bulkDeleteReports(ids, userId);
+
+        res.json({
+            success: true,
+            message: `${ids.length} reports purged`,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        console.error('[Intelligence] Bulk Delete Reports Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to purge reports' });
+    }
+});
+
+/**
  * POST /api/intelligence/raid/trigger (Alias: /raids/trigger)
  * Trigger a manual internet ride.
  */

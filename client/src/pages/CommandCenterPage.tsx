@@ -38,11 +38,13 @@ const PRIORITY_COLORS = {
 
 const TaskCard: React.FC<{ 
     task: any; 
+    isSelected: boolean;
+    onToggleSelection: (id: string) => void;
     onStatus: (id: string, s: string) => void;
     onArchive: (id: string, a: boolean) => void;
     onDelete: (id: string) => void;
     onAssign: (id: string, to: string) => void;
-}> = ({ task, onStatus, onArchive, onDelete, onAssign }) => {
+}> = ({ task, isSelected, onToggleSelection, onStatus, onArchive, onDelete, onAssign }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const StatusIcon = STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.icon || Circle;
     const ownerInfo = OWNER_CONFIG[task.owner as keyof typeof OWNER_CONFIG] || OWNER_CONFIG['NOVA'];
@@ -66,7 +68,18 @@ const TaskCard: React.FC<{
                         {task.task_name}
                     </h4>
                 </div>
-                <div className="flex flex-col items-end gap-1">
+                <div className="flex flex-col items-end gap-2">
+                    <div className="relative">
+                        <input 
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => onToggleSelection(task.task_id_str)}
+                            className="w-5 h-5 opacity-0 absolute inset-0 cursor-pointer z-10"
+                        />
+                        <div className={`w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all ${isSelected ? 'bg-nova-accent border-nova-accent text-nova-bg' : 'border-nova-border/50 bg-white/5'}`}>
+                            <Check size={12} className={isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50'} />
+                        </div>
+                    </div>
                     <div className={`px-2 py-0.5 rounded-full border text-[8px] font-black ${PRIORITY_COLORS[task.priority as keyof typeof PRIORITY_COLORS]}`}>
                         {task.priority || 'MEDIUM'}
                     </div>
@@ -114,7 +127,6 @@ const TaskCard: React.FC<{
                     {task.is_archived ? <ArchiveRestore size={12} /> : <Archive size={12} />}
                 </button>
                 
-                {/* Switch between OPERATOR / NOVA / SHARED */}
                 <button 
                     onClick={() => {
                         const nextOwner = task.owner === 'OPERATOR' ? 'NOVA' : task.owner === 'NOVA' ? 'SHARED' : 'OPERATOR';
@@ -169,6 +181,7 @@ const CommandCenterPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     const loadData = async () => {
         try {
@@ -177,9 +190,7 @@ const CommandCenterPage: React.FC = () => {
                 missionService.getTasks(true)
             ]);
             
-            // Merge or handle based on tab
             const allTasks = [...tasksRes.data.data, ...archivedRes.data.data.filter((t: any) => t.is_archived)];
-            // Removing duplicates if any
             const uniqueTasks = Array.from(new Map(allTasks.map((t: any) => [t.id, t])).values());
             setTasks(uniqueTasks);
             
@@ -216,11 +227,42 @@ const CommandCenterPage: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('PERMANENT DELETION: Are you sure you want to scrub this objective from the grid?')) return;
+        if (!window.confirm('Terminate mission from the grid permanently?')) return;
         try {
             await missionService.deleteTask(id);
-            loadData();
-        } catch (e) { console.error(e); }
+            await loadData();
+        } catch (error) {
+            console.error('[Tasks] Delete Error:', error);
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedIds.length === 0) return;
+        if (!window.confirm(`Permanently purge ${selectedIds.length} mission objectives from the Tactical Grid?`)) return;
+        try {
+            await missionService.bulkDeleteTasks(selectedIds);
+            setSelectedIds([]);
+            await loadData();
+        } catch (error) {
+            console.error('[Tasks] Bulk Delete Error:', error);
+        }
+    };
+
+    const toggleSelectAll = () => {
+        const currentFilteredIds = filteredTasks.map(t => t.task_id_str);
+        const allSelected = currentFilteredIds.every(id => selectedIds.includes(id));
+        
+        if (allSelected) {
+            setSelectedIds(prev => prev.filter(id => !currentFilteredIds.includes(id)));
+        } else {
+            setSelectedIds(prev => Array.from(new Set([...prev, ...currentFilteredIds])));
+        }
+    };
+
+    const toggleSelection = (id: string) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
     };
 
     const stats = {
@@ -266,7 +308,7 @@ const CommandCenterPage: React.FC = () => {
             </header>
 
             {/* Status Sub-Filters */}
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div className="flex flex-wrap items-center gap-2 mb-8">
                 <button 
                     onClick={() => setStatusFilter(null)}
                     className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest transition-all ${statusFilter === null ? 'bg-white/10 border-white/20 text-white' : 'border-white/5 text-nova-text-dim hover:text-white'}`}
@@ -282,6 +324,24 @@ const CommandCenterPage: React.FC = () => {
                         {status}
                     </button>
                 ))}
+                
+                <div className="flex items-center gap-3 ml-auto">
+                    {selectedIds.length > 0 && (
+                        <button 
+                            onClick={handleBulkDelete}
+                            className="px-4 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-500 text-[9px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all flex items-center gap-2"
+                        >
+                            <Trash2 size={12} />
+                            PURGE ({selectedIds.length})
+                        </button>
+                    )}
+                    <button 
+                        onClick={toggleSelectAll}
+                        className="px-4 py-1.5 rounded-full border border-white/10 bg-white/5 text-nova-text-dim text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
+                    >
+                        {filteredTasks.length > 0 && filteredTasks.every(t => selectedIds.includes(t.task_id_str)) ? 'RELEASE ALL' : 'SELECT ALL'}
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -351,6 +411,8 @@ const CommandCenterPage: React.FC = () => {
                                     <TaskCard 
                                         key={task.id} 
                                         task={task} 
+                                        isSelected={selectedIds.includes(task.task_id_str)}
+                                        onToggleSelection={toggleSelection}
                                         onStatus={handleStatus}
                                         onArchive={handleArchive}
                                         onDelete={handleDelete}

@@ -201,16 +201,22 @@ const IntelligenceDashboard: React.FC = () => {
 
     const toggleSelectAll = () => {
         if (activeTab === 'rides') {
-            if (selectedIds.length === rides.length) {
-                setSelectedIds([]);
+            const currentFilteredIds = filteredRides.map(r => r.id);
+            const allFilteredSelected = currentFilteredIds.every(id => selectedIds.includes(id));
+            
+            if (allFilteredSelected) {
+                setSelectedIds(prev => prev.filter(id => !currentFilteredIds.includes(id)));
             } else {
-                setSelectedIds(rides.map(r => r.id));
+                setSelectedIds(prev => Array.from(new Set([...prev, ...currentFilteredIds])));
             }
         } else {
-            if (selectedIds.length === reports.length) {
-                setSelectedIds([]);
+            const currentFilteredIds = filteredReports.map(r => r.id);
+            const allFilteredSelected = currentFilteredIds.every(id => selectedIds.includes(id));
+            
+            if (allFilteredSelected) {
+                setSelectedIds(prev => prev.filter(id => !currentFilteredIds.includes(id)));
             } else {
-                setSelectedIds(reports.map(r => r.id));
+                setSelectedIds(prev => Array.from(new Set([...prev, ...currentFilteredIds])));
             }
         }
     };
@@ -232,6 +238,11 @@ const IntelligenceDashboard: React.FC = () => {
             r.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
             r.tags.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
+    const filteredReports = reports.filter(
+        (r: WeeklyReport) => 
+            r.report_data && JSON.stringify(r.report_data).toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -344,7 +355,8 @@ const IntelligenceDashboard: React.FC = () => {
                         onClick={toggleSelectAll}
                         className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-nova-text-dim text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all"
                     >
-                        {selectedIds.length === (activeTab === 'rides' ? rides.length : reports.length) && (activeTab === 'rides' ? rides.length : reports.length) > 0
+                        {(activeTab === 'rides' ? filteredRides : filteredReports).length > 0 && 
+                         (activeTab === 'rides' ? filteredRides : filteredReports).every(item => selectedIds.includes(item.id))
                             ? 'Release All' : 'Select All'}
                     </button>
                 </div>
@@ -469,13 +481,13 @@ const IntelligenceDashboard: React.FC = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-6 pb-20">
-                        {reports.length === 0 ? (
+                        {filteredReports.length === 0 ? (
                             <div className="py-32 text-center glass border-2 border-dashed border-nova-border/30 rounded-[3rem] opacity-30">
                                 <Clock size={64} className="mx-auto mb-6 text-nova-accent opacity-20" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-[0.2em]">Zero Reports Compiled</h3>
                             </div>
                         ) : (
-                            reports.map((report: WeeklyReport) => (
+                            filteredReports.map((report: WeeklyReport) => (
                                 <div
                                     key={report.id}
                                     id={`report-${report.id}`}

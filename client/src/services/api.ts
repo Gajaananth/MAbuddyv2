@@ -150,6 +150,7 @@ export const missionService = {
     archiveTask: (id: string, is_archived: boolean) => api.patch(`/tasks/${id}/archive`, { is_archived }),
     assignTask: (id: string, owner: string) => api.patch(`/tasks/${id}/assign`, { owner }),
     deleteTask: (id: string) => api.delete(`/tasks/${id}`),
+    bulkDeleteTasks: (ids: string[]) => api.post('/tasks/bulk-delete', { ids }),
 };
 
 export const learningService = {
