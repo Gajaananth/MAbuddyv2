@@ -11,7 +11,7 @@ import { NovaLogo } from '../components/NovaLogo';
 
 const OWNER_CONFIG = {
     'OPERATOR': { label: 'Operator (You)', icon: User, color: 'text-amber-400 border-amber-400/30 bg-amber-400/10' },
-    'NOVA': { label: 'Karuppu (AI)', icon:  color: 'text-nova-accent border-nova-accent/30 bg-nova-accent/10' },
+    'NOVA': { label: 'Karuppu (AI)', icon: Activity, color: 'text-nova-accent border-nova-accent/30 bg-nova-accent/10' },
     'SHARED': { label: 'Shared Mission', icon: ArrowLeftRight, color: 'text-purple-400 border-purple-400/30 bg-purple-400/10' }
 };
 
