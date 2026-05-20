@@ -472,6 +472,20 @@ export async function getIntelligenceLogs(userId: string, limit: number = 50): P
 
 // ──────────────────────────── Command Center Tasks ────────────────────────────
 
+export function mapToCanonicalStatus(status: string): string {
+    const canonical = (status || 'TODO').toUpperCase().trim();
+    if (['DONE', 'COMPLETED', 'FINISHED', 'COMPLETE'].includes(canonical)) {
+        return 'COMPLETED';
+    }
+    if (['PROCESS', 'IN_PROGRESS', 'IN-PROGRESS', 'PROGRESS', 'STARTING', 'START', 'ACTIVE', 'RUNNING'].includes(canonical)) {
+        return 'PROCESS';
+    }
+    if (['BLOCKED', 'STUCK', 'PAUSED', 'HOLD'].includes(canonical)) {
+        return 'BLOCKED';
+    }
+    return 'TODO';
+}
+
 export async function createTask(userId: string, task: {
     task_name: string;
     owner?: TaskOwner;
@@ -501,7 +515,8 @@ export async function createTask(userId: string, task: {
         const duration = task.duration || 'MEDIUM';
         const actionPlan = task.action_plan || '';
         const notes = task.notes || '';
-        const status = task.status || 'TODO';
+        const rawStatus = task.status || 'TODO';
+        const status = mapToCanonicalStatus(rawStatus);
         const deadline = task.deadline || null;
 
         const res = await db.pool.query(
@@ -544,13 +559,15 @@ export async function updateTaskStatus(
 
     // Disable automatic archiving to keep completed tasks visible in the main view
     const archiveClause = '';
+    
+    const canonicalStatus = mapToCanonicalStatus(status);
 
     if (notes !== undefined) {
         queryStr = `UPDATE tasks SET status = $1, notes = $2${archiveClause}, updated_at = NOW() WHERE user_id = $3 AND (task_id_str = $4 OR id::text = $4) RETURNING *`;
-        queryArgs = [status.toUpperCase(), notes, userId, taskIdStr];
+        queryArgs = [canonicalStatus, notes, userId, taskIdStr];
     } else {
         queryStr = `UPDATE tasks SET status = $1${archiveClause}, updated_at = NOW() WHERE user_id = $2 AND (task_id_str = $3 OR id::text = $3) RETURNING *`;
-        queryArgs = [status.toUpperCase(), userId, taskIdStr];
+        queryArgs = [canonicalStatus, userId, taskIdStr];
     }
 
     const result = await db.pool.query(queryStr, queryArgs);
@@ -653,7 +670,7 @@ export async function getTaskProgress(userId: string): Promise<{
     const STUCK_THRESHOLD_MS = 48 * 60 * 60 * 1000; // 48 hours
 
     const stuck = tasks.filter(t => {
-        if (t.status !== 'IN-PROGRESS') return false;
+        if (t.status !== 'PROCESS') return false;
         const updated = new Date(t.updated_at).getTime();
         return (now - updated) > STUCK_THRESHOLD_MS;
     });
@@ -661,7 +678,7 @@ export async function getTaskProgress(userId: string): Promise<{
     return {
         total: tasks.length,
         completed: tasks.filter(t => t.status === 'COMPLETED').length,
-        in_progress: tasks.filter(t => t.status === 'IN-PROGRESS').length,
+        in_progress: tasks.filter(t => t.status === 'PROCESS').length,
         todo: tasks.filter(t => t.status === 'TODO').length,
         blocked: tasks.filter(t => t.status === 'BLOCKED').length,
         stuck,
@@ -730,6 +747,7 @@ const queries = {
     createTask,
     getTasks,
     updateTaskStatus,
+    mapToCanonicalStatus,
     updateTaskAssignment,
     archiveTask,
     deleteTask,

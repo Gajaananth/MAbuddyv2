@@ -1,5 +1,6 @@
+import { NovaLogo } from './NovaLogo';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Bell, X, Archive, Check, AlertTriangle, TrendingUp, Bird, Zap, Clock } from 'lucide-react';
+import { Bell, X, Archive, Check, AlertTriangle, TrendingUp, Zap, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { notificationService } from '../services/api';
 import type { Notification } from '../types';
@@ -19,7 +20,7 @@ const PRIORITY_BADGES: Record<string, string> = {
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     'SL Market Intelligence': <TrendingUp size={13} />,
-    'Scam Detection': <Bird size={13} />,
+    'Scam Detection': <NovaLogo size={13} />,
     'Algorithm Analysis': <Zap size={13} />,
     'Ethical Earning': <TrendingUp size={13} />,
     'AI Agent Intelligence': <Zap size={13} />,

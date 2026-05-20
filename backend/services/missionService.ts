@@ -2,7 +2,7 @@ import db from '../db/queries.js';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Service to manage Zium Nova's Weekly Missions and Task Automation.
+ * Service to manage Karuppu's Weekly Missions and Task Automation.
  */
 export class MissionService {
     /**
@@ -108,7 +108,7 @@ export class MissionService {
         );
 
         if (targetTask) {
-            await db.updateTaskStatus(userId, targetTask.task_id_str, 'COMPLETED', 'Automatically resolved by Zium Nova Protocol.');
+            await db.updateTaskStatus(userId, targetTask.task_id_str, 'COMPLETED', 'Automatically resolved by Karuppu Protocol.');
             console.log(`[Mission] Auto-completed task: ${targetTask.task_id_str}`);
         }
     }
@@ -166,7 +166,7 @@ export class MissionService {
         const cleanId = (id: string) => id.replace(/\.+$/, '').trim();
 
         // TASK: [name] | PRIORITY: [prio] | OWNER: [owner] | PLAN: [plan]
-        const taskMatches = content.matchAll(/TASK:\s*(.*?)\s*\|\s*PRIORITY:\s*(.*?)\s*\|\s*OWNER:\s*(.*?)\s*\|\s*PLAN:\s*(.*?)(?=\s*TASK:|\s*UPDATE:|\s*DELETE:|$)/gi);
+        const taskMatches = content.matchAll(/TASK:\s*([^|\n]+)\s*\|\s*PRIORITY:\s*([^|\n]+)\s*\|\s*OWNER:\s*([^|\n]+)\s*\|\s*PLAN:\s*(.*?)(?=\n\s*TASK:|\n\s*UPDATE:|\n\s*DELETE:|$)/gi);
         for (const match of taskMatches) {
             const name = match[1].trim();
             const priority = match[2].trim().toUpperCase() as any;
@@ -182,27 +182,27 @@ export class MissionService {
                     priority: (['LOW', 'MEDIUM', 'HIGH'].includes(priority) ? priority : 'MEDIUM') as any,
                     status: 'TODO',
                     action_plan: plan,
-                    notes: `Autonomous sync from Zium Nova.`
+                    notes: `Autonomous sync from Karuppu.`
                 }, `T-${uuidv4().slice(0, 8)}`);
             }
         }
 
-        // UPDATE: [task name or id] | STATUS: DONE/PROCESS/BLOCKED/TODO | REASON: [reason]
-        const updateMatches = content.matchAll(/UPDATE:\s*(.*?)\s*\|\s*STATUS:\s*(.*?)\s*\|\s*REASON:\s*(.*?)(?=\s*TASK:|\s*UPDATE:|\s*DELETE:|$)/gi);
+        // UPDATE: [task name or id] | STATUS: DONE/PROCESS/BLOCKED/TODO (| REASON: [reason])
+        const updateMatches = content.matchAll(/UPDATE:\s*([^|\n]+)\s*\|\s*STATUS:\s*([^|\n]+)(?:\s*\|\s*REASON:\s*(.*?))?(?=\n\s*TASK:|\n\s*UPDATE:|\n\s*DELETE:|$)/gi);
         for (const match of updateMatches) {
             const identifier = cleanId(match[1]);
-            const statusRaw = match[2].trim().toUpperCase();
-            const reason = match[3].trim();
+            const statusRaw = match[2].trim().toUpperCase().split(/[\s,.-]+/)[0];
+            const reason = (match[3] || 'Autonomous update').trim();
             
             // Canonical Status Mapping
             let status = 'TODO';
-            if (['DONE', 'COMPLETED', 'FINISHED'].includes(statusRaw)) status = 'COMPLETED';
-            if (['PROCESS', 'IN_PROGRESS', 'STARTING', 'START'].includes(statusRaw)) status = 'PROCESS';
+            if (['DONE', 'COMPLETED', 'FINISHED', 'COMPLETE'].includes(statusRaw)) status = 'COMPLETED';
+            if (['PROCESS', 'IN_PROGRESS', 'IN-PROGRESS', 'PROGRESS', 'STARTING', 'START'].includes(statusRaw)) status = 'PROCESS';
             if (['BLOCKED', 'STUCK'].includes(statusRaw)) status = 'BLOCKED';
             if (['TODO', 'PENDING'].includes(statusRaw)) status = 'TODO';
             
             const tasks = await db.getTasks(userId);
-            const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            const target = tasks.find(t => t.task_id_str === identifier || t.task_id_str === `T-${identifier}` || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
             
             if (target) {
                 await db.updateTaskStatus(userId, target.task_id_str, status, `Update: ${reason}`);
@@ -210,14 +210,14 @@ export class MissionService {
             }
         }
 
-        // DELETE: [task name or id] | REASON: [reason]
-        const deleteMatches = content.matchAll(/DELETE:\s*(.*?)\s*\|\s*REASON:\s*(.*?)(?=\s*TASK:|\s*UPDATE:|\s*DELETE:|$)/gi);
+        // DELETE: [task name or id] (| REASON: [reason])
+        const deleteMatches = content.matchAll(/DELETE:\s*([^|\n]+)(?:\s*\|\s*REASON:\s*(.*?))?(?=\n\s*TASK:|\n\s*UPDATE:|\n\s*DELETE:|$)/gi);
         for (const match of deleteMatches) {
             const identifier = cleanId(match[1]);
-            const reason = match[2].trim();
+            const reason = (match[2] || 'Operator/AI request').trim();
             
             const tasks = await db.getTasks(userId);
-            const target = tasks.find(t => t.task_id_str === identifier || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            const target = tasks.find(t => t.task_id_str === identifier || t.task_id_str === `T-${identifier}` || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
             
             if (target) {
                 await db.deleteTask(target.task_id_str, userId);
@@ -225,12 +225,12 @@ export class MissionService {
             }
         }
 
-        // 3. Strategic Task Recovery (Fallback: Ask Zium Nova's brain to extract tasks from natural language)
+        // 3. Strategic Task Recovery (Fallback: Ask Karuppu's brain to extract tasks from natural language)
         if (content.length > 20 && !content.includes('TASK_CENTER_UPDATE')) {
             const { think } = await import('./openClawService.js');
-                const recoveryPrompt = `[ZIUM NOVA — STRATEGIC TASK RECOVERY]
+                const recoveryPrompt = `[Karuppu — STRATEGIC TASK RECOVERY]
 Extract any actionable tasks or strategic missions mentioned in the following message.
-Provide the output in standard Zium Nova TASK format:
+Provide the output in standard Karuppu TASK format:
 TASK: [Name] | PRIORITY: [Low/Medium/High] | OWNER: [NOVA/OPERATOR] | PLAN: [Description]
 
 Message: "${content}"`;
@@ -263,84 +263,47 @@ Message: "${content}"`;
      * Process direct intent for tasks from a message.
      */
     async processTaskIntent(userId: string, message: string) {
-        const lower = message.toLowerCase();
-        
-        // Helper to find task by fuzzy name or ID
-        const findTask = async (idOrName: string) => {
-            const tasks = await db.getTasks(userId);
-            return tasks.find(t => 
-                t.task_id_str.toLowerCase() === idOrName.toLowerCase() || 
-                t.task_name.toLowerCase().includes(idOrName.toLowerCase())
-            );
-        };
+        const cleanMsg = message.toLowerCase().trim();
 
-        // 1. Deletion Intent: "delete that task" / "remove that task"
-        if (lower.includes('delete') || lower.includes('remove')) {
-            const match = message.match(/(?:delete|remove)(?:\s+(?:that|the|all))?\s+task\s*(?:s)?\s*([a-zA-Z0-9-_\s.]+)?/i);
-            const identifier = match ? match[1]?.trim() : '';
-            
-            if (identifier) {
-                const target = await findTask(identifier);
-                if (target) {
-                    await db.deleteTask(target.task_id_str, userId);
-                    console.log(`[Mission] Intent: Deleted task ${target.task_id_str}`);
-                }
-            } else if (lower.includes('delete all tasks not for me') || lower.includes('delete your tasks')) {
-                const tasks = await db.getTasks(userId);
-                const toDelete = tasks.filter(t => t.owner === 'NOVA');
-                for (const t of toDelete) {
-                    await db.deleteTask(t.task_id_str, userId);
-                }
-                console.log(`[Mission] Intent: Cleared all AI tasks.`);
-            }
+        // 1. Determine the core action from the message keywords
+        let action: 'DELETE' | 'COMPLETED' | 'PROCESS' | 'BLOCKED' | 'TODO' | null = null;
+        if (cleanMsg.includes('delete') || cleanMsg.includes('remove') || cleanMsg.includes('purge') || cleanMsg.includes('erase') || cleanMsg.includes('discard') || cleanMsg.includes('kill') || cleanMsg.includes('trash')) {
+            action = 'DELETE';
+        } else if (cleanMsg.includes('complete') || cleanMsg.includes('done') || cleanMsg.includes('finished') || cleanMsg.includes('resolve') || cleanMsg.includes('close')) {
+            action = 'COMPLETED';
+        } else if (cleanMsg.includes('block') || cleanMsg.includes('stuck') || cleanMsg.includes('hold') || cleanMsg.includes('pause')) {
+            action = 'BLOCKED';
+        } else if (cleanMsg.includes('progress') || cleanMsg.includes('process') || cleanMsg.includes('start') || cleanMsg.includes('run') || cleanMsg.includes('running')) {
+            action = 'PROCESS';
+        } else if (cleanMsg.includes('todo') || cleanMsg.includes('to-do') || cleanMsg.includes('pending') || cleanMsg.includes('reset') || cleanMsg.includes('reopen') || cleanMsg.includes('open')) {
+            action = 'TODO';
         }
 
-        // 2. Status Updates: DONE / COMPLETED
-        if (lower.includes('mark as done') || lower.includes('complete') || lower.includes('finished')) {
-            const match = message.match(/(?:mark\s+)?(?:as\s+)?(?:done|complete|finished)(?:\s+that)?\s+task\s+([a-zA-Z0-9-_\s]+)/i) || 
-                          message.match(/task\s+([a-zA-Z0-9-_\s]+)\s+(?:is\s+)?(?:done|complete|finished)/i);
-            if (match) {
-                const target = await findTask(match[1].trim());
-                if (target) {
-                    await db.updateTaskStatus(userId, target.task_id_str, 'COMPLETED', 'Marked as DONE by Operator intent.');
-                }
-            }
-        }
+        // Fetch all active tasks
+        const tasks = await db.getTasks(userId);
 
-        // 3. Status Updates: IN_PROGRESS
-        if (lower.includes('mark as in progress') || lower.includes('start that') || lower.includes('process task')) {
-            const match = message.match(/(?:mark\s+as\s+in\s+progress|start\s+that|process)\s+task\s+([a-zA-Z0-9-_\s]+)/i);
-            if (match) {
-                const target = await findTask(match[1].trim());
-                if (target) {
-                    await db.updateTaskStatus(userId, target.task_id_str, 'PROCESS', 'Marked as IN_PROGRESS by Operator intent.');
-                }
-            }
-        }
-
-        // 4. Status Updates: BLOCKED
-        if (lower.includes('mark as blocked')) {
-            const match = message.match(/mark(?:\s+task\s+([a-zA-Z0-9-_\s]+))?\s+as\s+blocked/i);
-            if (match) {
-                const target = await findTask(match[1].trim());
-                if (target) {
-                    await db.updateTaskStatus(userId, target.task_id_str, 'BLOCKED', 'Marked as BLOCKED by Operator intent.');
-                }
-            }
-        }
-
-        // 5. Clear Intent
-        if (lower.includes('clear all tasks') || lower.includes('delete all tasks') || lower.includes('reset mission board')) {
+        // 2. Handle global actions (e.g. clear all, delete your tasks)
+        if (cleanMsg.includes('clear all tasks') || cleanMsg.includes('delete all tasks') || cleanMsg.includes('reset mission board') || cleanMsg.includes('purge all tasks')) {
             await db.deleteAllTasks(userId);
             console.log(`[Mission] Intent: Cleared all tasks for ${userId}`);
+            return;
         }
 
-        // 6. Simple Addition Intent
-        if (lower.includes('add task') || lower.includes('assign task')) {
-            const match = message.match(/(?:add|assign) task\s+"?(.+?)"?(?:\s+to\s+([a-zA-Z\s_]+))?$/i);
-            if (match) {
-                const name = match[1].trim();
-                const ownerRaw = (match[2] || 'OPERATOR').trim().toUpperCase();
+        if (action === 'DELETE' && (cleanMsg.includes('delete all tasks not for me') || cleanMsg.includes('delete your tasks') || cleanMsg.includes('clear your tasks') || cleanMsg.includes('remove your tasks'))) {
+            const toDelete = tasks.filter(t => t.owner === 'NOVA');
+            for (const t of toDelete) {
+                await db.deleteTask(t.task_id_str, userId);
+            }
+            console.log(`[Mission] Intent: Cleared all AI tasks.`);
+            return;
+        }
+
+        // 3. Handle Add Intent
+        if (cleanMsg.includes('add task') || cleanMsg.includes('assign task') || cleanMsg.includes('create task') || cleanMsg.includes('new task')) {
+            const addMatch = message.match(/(?:add|assign|create|new) task\s+"?(.+?)"?(?:\s+to\s+([a-zA-Z\s_]+))?$/i);
+            if (addMatch) {
+                const name = addMatch[1].trim();
+                const ownerRaw = (addMatch[2] || 'OPERATOR').trim().toUpperCase();
                 const owner = ownerRaw.includes('NOVA') ? 'NOVA' : 'OPERATOR';
                 
                 await db.createTask(userId, {
@@ -350,6 +313,82 @@ Message: "${content}"`;
                     status: 'TODO',
                     action_plan: 'Created via direct Operator intent.'
                 }, `T-${uuidv4().slice(0, 8)}`);
+                console.log(`[Mission] Intent: Created task "${name}" assigned to ${owner}`);
+                return;
+            }
+        }
+
+        // 4. Perform fuzzy matching to find the targeted task
+        if (action && tasks.length > 0) {
+            let bestTask: any = null;
+            let bestScore = 0;
+
+            for (const t of tasks) {
+                let score = 0;
+                const taskId = t.task_id_str.toLowerCase();
+                const taskName = t.task_name.toLowerCase();
+
+                // Scenario A: Direct ID Match (highest priority)
+                if (cleanMsg.includes(taskId)) {
+                    score = Math.max(score, 100);
+                }
+
+                // Scenario B: Numeric suffix match (e.g. '03' or '3' for W12-26-03)
+                const idParts = taskId.split('-');
+                const numericSuffix = idParts[idParts.length - 1];
+                if (numericSuffix && /^\d+$/.test(numericSuffix)) {
+                    const numericVal = parseInt(numericSuffix, 10);
+                    // Match word boundary for matching number format: e.g. "03" or "3"
+                    const regexNum = new RegExp(`\\b0*${numericVal}\\b`);
+                    if (regexNum.test(cleanMsg)) {
+                        score = Math.max(score, 95);
+                    }
+                }
+
+                // Scenario C: Exact name match
+                if (cleanMsg.includes(taskName)) {
+                    score = Math.max(score, 80);
+                }
+
+                // Scenario D: Distinct keyword substring match
+                const stopWords = new Set([
+                    'the', 'and', 'for', 'our', 'new', 'latest', 'with', 'into', 'this', 
+                    'that', 'your', 'about', 'from', 'task', 'mission', 'board', 'grid',
+                    'delete', 'remove', 'mark', 'complete', 'done', 'process', 'todo', 'block'
+                ]);
+                const nameTokens = taskName.split(/[\s,._\-()]+/).filter(w => w.length >= 3 && !stopWords.has(w));
+                
+                if (nameTokens.length > 0) {
+                    let matchedTokens = 0;
+                    for (const token of nameTokens) {
+                        const regexToken = new RegExp(`\\b${token}\\b`);
+                        if (regexToken.test(cleanMsg) || cleanMsg.includes(token)) {
+                            matchedTokens++;
+                        }
+                    }
+                    if (matchedTokens > 0) {
+                        const matchRatio = matchedTokens / nameTokens.length;
+                        const keywordScore = 40 + Math.round(matchRatio * 35);
+                        score = Math.max(score, keywordScore);
+                    }
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestTask = t;
+                }
+            }
+
+            // If a task is matched with high confidence, execute the action
+            if (bestTask && bestScore >= 15) {
+                if (action === 'DELETE') {
+                    await db.deleteTask(bestTask.task_id_str, userId);
+                    console.log(`[Mission] Intent Match: Deleted task "${bestTask.task_name}" (${bestTask.task_id_str}) with confidence score ${bestScore}`);
+                } else {
+                    const statusReason = `Marked as ${action} via Operator natural language intent.`;
+                    await db.updateTaskStatus(userId, bestTask.task_id_str, action, statusReason);
+                    console.log(`[Mission] Intent Match: Updated task "${bestTask.task_name}" (${bestTask.task_id_str}) to status ${action} with confidence score ${bestScore}`);
+                }
             }
         }
     }

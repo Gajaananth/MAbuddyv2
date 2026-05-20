@@ -1,9 +1,10 @@
+import { NovaLogo } from './NovaLogo';
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import NotificationPanel from './NotificationPanel';
 import { memoryService } from '../services/api';
 import {
-    Bird, Shield, TrendingUp, X, Database, PlusCircle, Brain, Lock, BarChart3, UserCheck
+     Shield, TrendingUp, X, Database, PlusCircle, Brain, Lock, BarChart3, UserCheck
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -48,7 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             path: '/memory',
             hasBadge: unreadMessages > 0
         },
-        { icon: <Bird size={18} />, label: 'Intelligence', path: '/intelligence' },
+        { icon: <NovaLogo size={18} />, label: 'Intelligence', path: '/intelligence' },
         { icon: <TrendingUp size={18} />, label: 'Market Trends', path: '/trends' },
         { icon: <Brain size={18} />, label: 'Learning Outcomes', path: '/learning' },
         { icon: <BarChart3 size={18} />, label: 'Reports Archive', path: '/reports' },
@@ -71,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <div className="p-5 sm:p-8 lg:p-6 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2.5">
                         <div className="w-10 h-10 lg:w-9 lg:h-9 rounded-xl lg:rounded-lg bg-nova-accent flex items-center justify-center nova-accent-glow shrink-0">
-                            <Bird className="text-nova-bg" size={20} />
+                            <NovaLogo className="text-nova-bg" size={20} />
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl lg:text-base font-black tracking-tighter text-white truncate uppercase leading-none">NOVA</h1>

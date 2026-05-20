@@ -1,7 +1,7 @@
 import { FilterScores } from '../types/index.js';
 
 /**
- * Zium Nova Scoring System
+ * Karuppu Scoring System
  * Evaluates opportunities and agent collaborations based on production specs.
  */
 

@@ -100,7 +100,7 @@ async function initDatabase(): Promise<void> {
       
       if (error.stack) console.error('[DB] ERROR STACK:', error.stack);
       
-      throw new Error(`[Zium Nova] Database Grid Failure/Timeout: ${error.message}`);
+      throw new Error(`[Karuppu] Database Grid Failure/Timeout: ${error.message}`);
     }
   })();
 
@@ -162,7 +162,7 @@ async function runMigrations(pool: any) {
         -- Migrating assigned_to to owner if assigned_to exists
         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'assigned_to') THEN
           UPDATE tasks SET owner = 'OPERATOR' WHERE assigned_to = 'BUDDY';
-          UPDATE tasks SET owner = 'NOVA' WHERE assigned_to = 'ZIUM NOVA' OR assigned_to = 'NOVA';
+          UPDATE tasks SET owner = 'NOVA' WHERE assigned_to = 'Karuppu' OR assigned_to = 'NOVA';
           -- Final cleanup will happen in code, but this moves data over
         END IF;
       END $$;

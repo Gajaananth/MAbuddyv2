@@ -14,7 +14,7 @@ const router = Router();
 
 /**
  * POST /api/trends/analyze
- * Analyze a topic/trend through Zium Nova's lens.
+ * Analyze a topic/trend through Karuppu's lens.
  */
 router.post('/analyze', authenticate, async (req: AuthRequest, res: Response) => {
     try {
@@ -33,7 +33,7 @@ router.post('/analyze', authenticate, async (req: AuthRequest, res: Response) =>
             return;
         }
 
-        const prompt = `Analyze this market/social trend as Zium Nova (Silent Beast mode):
+        const prompt = `Analyze this market/social trend as Karuppu (Silent Beast mode):
 
 TOPIC: "${topic}"
 

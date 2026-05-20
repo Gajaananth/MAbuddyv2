@@ -1,5 +1,6 @@
+import { NovaLogo } from '../components/NovaLogo';
 import React, { useState, useEffect } from 'react';
-import { Bird, Plus, Globe, Activity, Award, UserCheck } from 'lucide-react';
+import {  Plus, Globe, Activity, Award, UserCheck } from 'lucide-react';
 import { agentService } from '../services/api';
 import type { Agent } from '../types';
 
@@ -43,7 +44,7 @@ const AgentsPage: React.FC = () => {
     const handleInitiate = async (id: string) => {
         try {
             await agentService.initiateAgent(id);
-            alert('Strategic collaboration protocol initiated. Nova is now syncing with this agent.');
+            alert('Strategic collaboration protocol initiated. Karuppu is now syncing with this agent.');
         } catch (error) {
             console.error('Initiate Agent Error:', error);
         }
@@ -113,14 +114,14 @@ const AgentsPage: React.FC = () => {
                 {!loading && agents.map((agent) => (
                     <div key={agent.id} className="glass p-6 lg:p-4 rounded-3xl lg:rounded-xl border-2 border-nova-border hover:border-nova-accent/20 transition-all group overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-8 lg:p-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                            <Bird size={80} className="hidden lg:block" />
-                            <Bird size={120} className="lg:hidden" />
+                            <NovaLogo size={80} className="hidden lg:block" />
+                            <NovaLogo size={120} className="lg:hidden" />
                         </div>
 
 
                         <div className="flex items-start gap-6 lg:gap-4 relative z-10">
                             <div className="w-20 lg:w-14 h-20 lg:h-14 rounded-2xl lg:rounded-xl bg-nova-accent/10 border-2 border-nova-accent/20 flex items-center justify-center text-nova-accent shadow-inner">
-                                {agent.name.includes('Nova') ? <Bird size={32} className="lg:w-7 lg:h-7" /> : <UserCheck size={32} className="lg:w-7 lg:h-7" />}
+                                {agent.name.includes('Karuppu') ? <NovaLogo size={32} className="lg:w-7 lg:h-7" /> : <UserCheck size={32} className="lg:w-7 lg:h-7" />}
                             </div>
 
 
@@ -144,7 +145,7 @@ const AgentsPage: React.FC = () => {
 
                                 <div className="space-y-2">
                                     <p className="text-xs lg:text-[10px] text-nova-text-dim line-clamp-2 leading-relaxed font-medium opacity-80">
-                                        {agent.description || 'Verified tactical agent contributing to the Zium Nova intelligence ecosystem.'}
+                                        {agent.description || 'Verified tactical agent contributing to the Karuppu intelligence ecosystem.'}
                                     </p>
                                 </div>
 

@@ -2,7 +2,7 @@ import { tool } from '@openrouter/sdk';
 import { z } from 'zod';
 
 /**
- * Zium Nova Strategic Tools
+ * Karuppu Strategic Tools
  */
 
 export const internetRideTool = tool({
@@ -19,11 +19,11 @@ export const internetRideTool = tool({
             const { getRaidResults } = await import('../db/queries.js');
 
             if (action === 'initiate') {
-                const result = await runManualWeeklyRide(userId);
+                await runManualWeeklyRide(userId);
                 return {
                     success: true,
                     message: 'Internet Ride initiated. Reconnaissance in progress.',
-                    details: result.message
+                    details: 'Ride successfully triggered.'
                 };
             }
 
@@ -48,7 +48,7 @@ export const internetRideTool = tool({
             if (action === 'analyze') {
                 return {
                     success: true,
-                    message: 'Zium Nova is performing deep signal analysis on the latest intelligence cluster. Focus: Opportunity detection and scam filtering.'
+                    message: 'Karuppu is performing deep signal analysis on the latest intelligence cluster. Focus: Opportunity detection and scam filtering.'
                 };
             }
 
@@ -198,15 +198,15 @@ export const moltbookTool = tool({
 
 export const commandCenterTool = tool({
     name: 'command_center',
-    description: 'Interface with the Zium Nova Strategic Grid to manage mission tasks. Use this to ADD, UPDATE, ARCHIVE, ASSIGN, or SHOW tasks when requested by the Operator or when autonomously tracking progress.',
+    description: 'Interface with the Karuppu Strategic Grid to manage mission tasks. Use this to ADD, UPDATE, ARCHIVE, ASSIGN, or SHOW tasks when requested by the Operator or when autonomously tracking progress.',
     inputSchema: z.object({
-        action: z.enum(['add', 'update', 'archive', 'assign', 'show']).describe('Action: add (new task), update (status/notes), archive (hide), assign (handoff), show (list grid)'),
+        action: z.enum(['add', 'update', 'archive', 'assign', 'show', 'delete']).describe('Action: add (new task), update (status/notes), archive (hide), assign (handoff), show (list grid), delete (permanent purge)'),
         userId: z.string().describe('The Operator ID / User ID'),
         task_name: z.string().optional().describe('Required for "add": The objective name'),
         action_plan: z.string().optional().describe('Required for "add": Strategic execution steps'),
         owner: z.enum(['OPERATOR', 'NOVA', 'SHARED']).optional().describe('Optional: "OPERATOR", "NOVA", or "SHARED"'),
         priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Optional: Defaults to MEDIUM'),
-        task_id_str: z.string().optional().describe('Required for "update/archive/assign": Task ID string (e.g. "001")'),
+        task_id_str: z.string().optional().describe('Required for "update/archive/assign/delete": Task ID string (e.g. "001")'),
         duration: z.enum(['SHORT', 'MEDIUM', 'LONG']).optional().describe('Optional: Defaults to MEDIUM'),
         status: z.enum(['TODO', 'IN_PROGRESS', 'COMPLETED', 'PAUSED', 'PENDING', 'PROCESS', 'DONE', 'BLOCKED']).optional().describe('Note: "DONE" will automatically archive the task.'),
         notes: z.string().optional().describe('Optional: Progress updates or blocking reasons'),
@@ -214,7 +214,7 @@ export const commandCenterTool = tool({
     }),
     execute: async ({ action, userId, task_name, action_plan, owner, priority, task_id_str, status, duration, notes, is_archived }) => {
         try {
-            const { createTask, getTasks, updateTaskStatus, archiveTask, updateTaskAssignment } = await import('../db/queries.js');
+            const { createTask, getTasks, updateTaskStatus, archiveTask, updateTaskAssignment, deleteTask } = await import('../db/queries.js');
 
             if (action === 'add') {
                 if (!task_name) return { success: false, error: 'task_name is required' };
@@ -238,6 +238,12 @@ export const commandCenterTool = tool({
                 if (!task_id_str || !owner) return { success: false, error: 'task_id_str and owner required' };
                 const updatedTask = await updateTaskAssignment(userId, task_id_str, owner);
                 return { success: true, message: `Task ${task_id_str} assigned to -> ${owner}`, task: updatedTask };
+            }
+
+            if (action === 'delete') {
+                if (!task_id_str) return { success: false, error: 'task_id_str required' };
+                await deleteTask(task_id_str, userId);
+                return { success: true, message: `Task ${task_id_str} permanently deleted from the grid.` };
             }
 
             if (action === 'show') {

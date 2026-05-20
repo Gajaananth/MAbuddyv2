@@ -1,5 +1,6 @@
+import { NovaLogo } from '../components/NovaLogo';
 import React, { useState } from 'react';
-import { Bird, Calculator, ArrowRight, UserPlus, AlertCircle } from 'lucide-react';
+import {  Calculator, ArrowRight, UserPlus, AlertCircle } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
 
@@ -47,7 +48,7 @@ const RegisterPage: React.FC = () => {
             <div className="w-full max-w-md relative z-10">
                 <div className="text-center mb-10">
                     <div className="w-20 h-20 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-center justify-center text-red-500 mx-auto mb-6 shadow-2xl">
-                        <Bird size={44} />
+                        <NovaLogo size={44} />
                     </div>
                     <h1 className="text-4xl font-black text-white tracking-tighter uppercase mb-2">Protocol Enrollment</h1>
                     <p className="text-nova-text-dim font-bold text-sm tracking-widest uppercase">Silent Beast Domain Entrance</p>
@@ -79,7 +80,7 @@ const RegisterPage: React.FC = () => {
                                 <div>
                                     <label className="block text-[10px] font-black text-nova-text-dim uppercase tracking-[2px] mb-3 ml-2">Establish 6-Digit Protocol PIN</label>
                                     <div className="relative">
-                                        <Bird className="absolute left-4 top-1/2 -translate-y-1/2 text-nova-text-dim" size={18} />
+                                        <NovaLogo className="absolute left-4 top-1/2 -translate-y-1/2 text-nova-text-dim" size={18} />
                                         <input
                                             type="password"
                                             name="pin"

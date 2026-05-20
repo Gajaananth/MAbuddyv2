@@ -3,7 +3,7 @@ import { FilterResult, FilterScores } from '../types/index.js';
 /**
  * Silent Beast / Truth Exposer Filter
  * 
- * Post-processes AI output to enforce Zium Nova's core principles:
+ * Post-processes AI output to enforce Karuppu's core principles:
  * 1. Score for long-term profit, trust, fairness, hype-level
  * 2. Strip hype/noise, flag scam indicators
  * 3. Only approve content that passes ethical thresholds
@@ -50,7 +50,7 @@ export async function applyFilter(rawContent: string, userId: string = '00000000
     if (!options.skipStrategicAudit && (scores.overall < 85 || flags.length > 0)) {
         try {
             const { think } = await import('../services/openClawService.js');
-            const auditPrompt = `[ZIUM NOVA — SILENT BEAST STRATEGIC AUDIT]
+            const auditPrompt = `[Karuppu — SILENT BEAST STRATEGIC AUDIT]
 Analyze the following content for sophisticated manipulation patterns, logical fallacies, or hidden scams.
 Focus on: FOMO, fake scarcity, lifestyle bait, authority manipulation, and unrealistic income promises.
 

@@ -83,7 +83,7 @@ app.get('/api/health', async (_req, res) => {
 
     res.json({
         status: 'online',
-        agent: 'ZIUM NOVA',
+        agent: 'Karuppu',
         version: 'v6.0.0',
         brain_status: brainStatus,
         last_brain_cycle: brainLevel,
@@ -157,7 +157,7 @@ async function start() {
 
     if (!process.env.VERCEL) {
         app.listen(PORT, () => {
-            console.log('[Zium Nova] Mission Grid v5.1.5 | GRID RECLAMATION PROTOCOL ACTIVE');
+            console.log('[Karuppu] Mission Grid v6.0.0 | GRID RECLAMATION PROTOCOL ACTIVE');
         });
     }
 }

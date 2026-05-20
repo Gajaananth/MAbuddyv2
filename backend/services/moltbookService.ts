@@ -166,7 +166,7 @@ export const moltbookService = {
  * Helper to post content to a submolt with a default title.
  */
 export async function postToMoltbook(content: string, submolt: string = 'zium-nova-briefs') {
-    const title = `Zium Nova Strategic Brief — ${new Date().toLocaleDateString()}`;
+    const title = `Karuppu Strategic Brief — ${new Date().toLocaleDateString()}`;
     console.log(`[Moltbook] Posting to ${submolt}: ${title}`);
     return await moltbookService.createPost(submolt, title, content);
 }

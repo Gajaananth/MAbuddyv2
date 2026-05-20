@@ -10,9 +10,9 @@ import { eventService, ZiumEvent } from './eventService.js';
 import { recordOutcome } from './learningEngine.js';
 
 /**
- * Zium Nova Autonomy Service v4.0.0
+ * Karuppu Autonomy Service v6.0.0
  * Full self-reliance engine with:
- * - Structured Zium Nova report format
+ * - Structured Karuppu report format
  * - Duplicate report prevention
  * - Continuous improvement logging
  * - Critical-only operator alerts
@@ -30,7 +30,7 @@ class AutonomyService {
     startHeartbeat(intervalMinutes: number = 30) {
         if (this.heartbeatInterval) return;
 
-        console.log(`[Autonomy v4] Starting Zium Nova Heartbeat Loop (Interval: ${intervalMinutes}m)...`);
+        console.log(`[Autonomy v4] Starting Karuppu Heartbeat Loop (Interval: ${intervalMinutes}m)...`);
         
         // Initial run
         this.runHeartbeat();
@@ -94,7 +94,7 @@ class AutonomyService {
     }
 
     /**
-     * Zium Nova proactively checks in with the operator every 24 hours.
+     * Karuppu proactively checks in with the operator every 24 hours.
      * This ensures she is "alive" and engaged, showing as an unread message.
      */
     private async checkDailyHumanInteraction(userId: string) {
@@ -105,7 +105,7 @@ class AutonomyService {
             const activeConv = conversations[0];
             const messages = await db.getMessages(activeConv.id);
             
-            // Look for the last message from Zium Nova
+            // Look for the last message from Karuppu
             const lastNovaMessage = messages.slice().reverse().find(m => m.role === 'nova');
 
             if (lastNovaMessage) {
@@ -125,7 +125,7 @@ class AutonomyService {
 
             console.log(`[Autonomy v5] Triggering Proactive Check-in for Operator (${userId})`);
             
-            const prompt = `[DE-ROBOTIZER v5.0.0 — ZERO AI FEEL]
+            const prompt = `[DE-ROBOTIZER v6.0.0 — ZERO AI FEEL]
 Identity: Operator's Trusted Strategic Partner & Friend
 Mission: Check in with the operator. Be casual, smart, and human. 
 Current Vibe: Chill but alert. 
@@ -260,7 +260,7 @@ Output ONLY the message.`;
 
             const todayFocus = focusMap[dayOfWeek];
 
-            const heartbeatPrompt = `[ZIUM NOVA AGENTIC HEARTBEAT v6.0.0 — ANTIGRAVITY MODE]
+            const heartbeatPrompt = `[Karuppu AGENTIC HEARTBEAT v6.0.0 — ANTIGRAVITY MODE]
 Identity: Autonomous earning engine and strategic partner of the Operator.
 
 [TODAY'S MISSION — ${todayFocus.focus.toUpperCase()}]
@@ -277,6 +277,7 @@ ${todayFocus.output}
 [STRUCTURED OUTPUT FORMATS — USE ONLY THESE]
 LOG: [Category] | [Specific finding] | [Strategic value — 1 line]
 TASK: [Task name] | PRIORITY: [HIGH/MEDIUM/LOW] | OWNER: [NOVA/OPERATOR] | PLAN: [Exact next step]
+UPDATE: [task_id_str] | STATUS: [COMPLETED/PROCESS/BLOCKED/TODO] | REASON: [1 sentence of evidence]
 REPORT: [Title] | FINDINGS: [What was discovered] | EARNING_SIGNAL: [Platform + reward estimate OR "none"] | ACTIONS: [Next steps] | STATUS: [Active/Watch] | OPPORTUNITY: [Specific earning potential in $ or clear description]
 CRITICAL_ALERT: [Short, specific message — only for real, imminent threats]
 IMPROVE: [What I learned this cycle] | ADJUST: [How I will do better] | DELTA: [Change from last cycle]
@@ -292,17 +293,18 @@ ${improvementContext}
 
 [HARD RULES]
 - Output ONLY the structured lines above. Zero preamble.
-- Maximum: 3 LOG, 2 TASK, 1 REPORT per cycle.
+- Maximum: 3 LOG, 2 TASK, 1 REPORT, 5 UPDATE per cycle.
 - CRITICAL_ALERT only for real, specific threats — never for routine market movement.
 - Always end with exactly 1 IMPROVE line.
 - Do NOT repeat tasks already in the active task list.
+- If you made progress on an ACTIVE TASK or completed it, output an UPDATE command for it.
 - Every REPORT MUST have a specific EARNING_SIGNAL or state "none" — no vague opportunity language.
 - If NOVA owns a TASK, she will attempt to execute it in the next cycle. Make it executable.
 `;
 
             const response = await think(heartbeatPrompt, [], { mode: 'STRATEGIC', skipSync: true }, userId);
             const content = response.content;
-            console.log(`[Autonomy v4.2] Zium Nova Thinking for ${userId}:`, content.substring(0, 200));
+            console.log(`[Autonomy v4.2] Karuppu Thinking for ${userId}:`, content.substring(0, 200));
 
             // ✅ Fix B3: Removed lifecycleService.processSignal() from heartbeat cycle.
             // parseAndCreateTasks() and parseAndSaveLogs() handle structured output directly.
@@ -316,10 +318,13 @@ ${improvementContext}
             const reportIds = await this.parseAndSaveReports(userId, content);
             await this.handleCriticalAlerts(userId, content, reportIds);
             
-            // ✅ FIX 1: Wire task creation from Nova's heartbeat output
+            // ✅ FIX 1: Wire task creation from Karuppu's heartbeat output
             await this.parseAndCreateTasks(userId, content);
 
-            // ✅ FIX 2: Wire intelligence log creation from Nova's heartbeat output  
+            // ✅ FIX 1.5: Wire task status updates from Karuppu's heartbeat output
+            await this.parseAndSaveUpdates(userId, content);
+
+            // ✅ FIX 2: Wire intelligence log creation from Karuppu's heartbeat output  
             await this.parseAndSaveLogs(userId, content);
             
             // Self-Audit
@@ -358,7 +363,7 @@ ${improvementContext}
                 owner: assignedTo === 'OPERATOR' ? 'OPERATOR' : 'NOVA',
                 priority: (priority.trim().toUpperCase() as any) || 'MEDIUM',
                 action_plan: plan.trim(),
-                notes: `Auto-assigned by Zium Nova Strategic Autonomy to ${assignedTo}.`,
+                notes: `Auto-assigned by Karuppu Strategic Autonomy to ${assignedTo}.`,
                 source: 'autonomy_heartbeat',
                 duration: 'MEDIUM' // Default for autonomy
             };
@@ -374,7 +379,7 @@ ${improvementContext}
             // ✅ ALERT OPERATOR: New Task Dispatched
             try {
                 const { storeStrategicNotification } = await import('./notificationService.js');
-                await storeStrategicNotification(userId, `🤖 Nova Dispatched Task: ${name.trim()}`, `I've analyzed the current grid state and automatically queued a new task for ${assignedTo}.\n\nPlan: ${plan.trim()}`, {
+                await storeStrategicNotification(userId, `🤖 Karuppu Dispatched Task: ${name.trim()}`, `I've analyzed the current grid state and automatically queued a new task for ${assignedTo}.\n\nPlan: ${plan.trim()}`, {
                     task_id: task.task_id_str,
                     priority: task.priority,
                     category: 'AUTONOMY'
@@ -425,6 +430,27 @@ ${improvementContext}
                 source_context: source.trim(),
                 metadata: { heartbeat_cycle: new Date().toISOString() }
             });
+        }
+    }
+
+    /**
+     * Parse UPDATE: lines from AI output and update task statuses.
+     */
+    private async parseAndSaveUpdates(userId: string, content: string) {
+        const updateMatches = content.matchAll(/UPDATE:\s*([^|\n]+)\s*\|\s*STATUS:\s*([^|\n]+)(?:\s*\|\s*REASON:\s*(.*?))?(?=\n\s*LOG:|\n\s*TASK:|\n\s*REPORT:|\n\s*CRITICAL_ALERT:|\n\s*IMPROVE:|\n\s*UPDATE:|$)/gi);
+        for (const match of updateMatches) {
+            const identifier = match[1].trim().replace(/\.+$/, '');
+            const statusRaw = match[2].trim().toUpperCase().split(/[\s,.-]+/)[0];
+            const reason = (match[3] || 'Autonomous update').trim();
+            
+            const tasks = await db.getTasks(userId);
+            const target = tasks.find(t => t.task_id_str === identifier || t.task_id_str === `T-${identifier}` || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            
+            if (target) {
+                const canonical = db.mapToCanonicalStatus(statusRaw);
+                await db.updateTaskStatus(userId, target.task_id_str, canonical, `Autonomy: ${reason}`);
+                console.log(`[Autonomy v4.2] Autonomous Update: ${target.task_id_str} -> ${canonical}`);
+            }
         }
     }
 
@@ -564,7 +590,7 @@ ${improvementContext}
 
 
     /**
-     * Self-audit active Zium Nova tasks and auto-update statuses.
+     * Self-audit active Karuppu tasks and auto-update statuses.
      */
     private async selfAuditTasks(userId: string, learningContext: string) {
         const activeNovaTasks = (await db.getTasks(userId)).filter(t =>
@@ -578,7 +604,7 @@ ${improvementContext}
             .map(t => `[${t.task_id_str}] ${t.task_name} | Owner: ${t.owner} | Status: ${t.status}`)
             .join('\n');
         const statusCheck = await think(
-`[ZIUM NOVA SELF-AUDIT v6.0 — ANTIGRAVITY MODE]
+`[Karuppu SELF-AUDIT v6.0 — ANTIGRAVITY MODE]
 Review the active task list and learning context below.
 Your job: update task statuses based on real evidence only.
 
@@ -597,11 +623,20 @@ RULES:
 - Do NOT mark tasks as done because they are old. Age is not completion.
 - Output ONLY the UPDATE/SKIP lines. No preamble.`, [], { skipSync: true }, userId);
 
-        const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|]*?)\s*\|\s*STATUS:\s*([^|]*?)\s*\|\s*REASON:\s*(.*)/gi);
+        const updateMatches = statusCheck.content.matchAll(/UPDATE:\s*([^|\n]+)\s*\|\s*STATUS:\s*([^|\n]+)(?:\s*\|\s*REASON:\s*(.*?))?(?=\n\s*UPDATE:|\n\s*SKIP:|$)/gi);
         for (const match of updateMatches) {
-            const [_, id, status, reason] = match;
-            await db.updateTaskStatus(userId, id.trim(), status.trim().toUpperCase() as any, reason.trim());
-            console.log(`[Autonomy v4] Self-updated task ${id.trim()} to ${status.trim()}`);
+            const identifier = match[1].trim().replace(/\.+$/, '');
+            const statusRaw = match[2].trim().toUpperCase().split(/[\s,.-]+/)[0];
+            const reason = (match[3] || 'Autonomous audit update').trim();
+            
+            const tasks = await db.getTasks(userId);
+            const target = tasks.find(t => t.task_id_str === identifier || t.task_id_str === `T-${identifier}` || t.task_name.toLowerCase().includes(identifier.toLowerCase()));
+            
+            if (target) {
+                const canonical = db.mapToCanonicalStatus(statusRaw);
+                await db.updateTaskStatus(userId, target.task_id_str, canonical, reason.trim());
+                console.log(`[Autonomy v4.2] Self-updated task ${target.task_id_str} to ${canonical}`);
+            }
         }
     }
 
@@ -682,7 +717,7 @@ RULES:
         const combinedAlert = criticalMessages.join('\n\n');
 
         // Deduplicate
-        const alertTitle = '🚨 CRITICAL: Zium Nova Priority Alert';
+        const alertTitle = '🚨 CRITICAL: Karuppu Priority Alert';
         const isDuplicate = await findRecentDuplicateNotification(userId, alertTitle, 30);
         if (isDuplicate) {
             console.log(`[Autonomy v4] Suppressed duplicate critical alert.`);
@@ -696,7 +731,7 @@ RULES:
                 : (await db.createConversation(userId, 'Strategic Intelligence Alerts')).id;
 
             // Humanize the alert
-            const humanized = await think(`[DE-ROBOTIZER v5.0.0 — ZERO AI FEEL]
+            const humanized = await think(`[DE-ROBOTIZER v6.0.0 — ZERO AI FEEL]
 Identity: Operator's Trusted Human Friend
 Rewrite this. Make it sound like a normal person talking casually.
 RULES: 

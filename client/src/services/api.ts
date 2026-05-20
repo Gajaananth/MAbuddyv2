@@ -19,7 +19,7 @@ const getBaseUrl = () => {
 };
 
 const API_BASE_URL = getBaseUrl();
-console.log('%c[Zium Nova] ACTIVE_SCAN_API:', 'color: #00f2ff; font-weight: bold;', API_BASE_URL);
+console.log('%c[Karuppu] ACTIVE_SCAN_API:', 'color: #00f2ff; font-weight: bold;', API_BASE_URL);
 
 const api = axios.create({
     baseURL: API_BASE_URL,

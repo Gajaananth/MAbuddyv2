@@ -1,5 +1,5 @@
 /**
- * Push Notification Service — Zium Nova
+ * Push Notification Service — Karuppu
  * Handles service worker registration, permission requests, and push subscription management.
  * RULE: Never request permission automatically. Only after user interaction.
  */

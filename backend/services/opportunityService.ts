@@ -13,7 +13,7 @@ export interface OpportunitySignal {
 
 /**
  * Opportunity Intelligence Engine (Phase 1)
- * Evaluates earning signals discovered by Zium Nova during Internet Rides.
+ * Evaluates earning signals discovered by Karuppu during Internet Rides.
  */
 export const opportunityService = {
     /**
@@ -21,7 +21,7 @@ export const opportunityService = {
      */
     async evaluateSignals(rawAnalysis: string, userId: string = '00000000-0000-0000-0000-000000000000'): Promise<OpportunitySignal[]> {
         try {
-            const prompt = `[ZIUM NOVA — OPPORTUNITY INTELLIGENCE ENGINE]
+            const prompt = `[Karuppu — OPPORTUNITY INTELLIGENCE ENGINE]
 Analyze the following strategic findings and identify specific earning opportunities.
 For each opportunity, calculate an Opportunity Score based on:
 1. Demand (High/Medium/Low)

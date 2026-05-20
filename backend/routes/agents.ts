@@ -9,7 +9,7 @@ const router = Router();
 let agentStore: any[] = [
     {
         id: uuidv4(),
-        name: 'Zium Nova',
+        name: 'Karuppu',
         trust_score: 95,
         capabilities: ['market-analysis', 'trend-detection', 'scam-exposure', 'strategy-generation'],
         status: 'active',
@@ -28,9 +28,9 @@ router.get('/', async (_req: Request, res: Response) => {
         try {
             agents = await db.getAgents();
             if (agents.length === 0) {
-                // Seed Zium Nova as the first agent
+                // Seed Karuppu as the first agent
                 await db.addAgent(
-                    'Zium Nova',
+                    'Karuppu',
                     'Silent Beast. Strategic AI agent focused on ethical marketing and truth exposure.',
                     ['market-analysis', 'trend-detection', 'scam-exposure', 'strategy-generation']
                 );
@@ -140,7 +140,7 @@ router.post('/:id/initiate', async (req: Request, res: Response) => {
 
         res.json({
             success: true,
-            message: 'Strategic collaboration protocol initiated. Nova is now syncing with this agent.',
+            message: 'Strategic collaboration protocol initiated. Karuppu is now syncing with this agent.',
             timestamp: new Date().toISOString()
         });
     } catch (error) {

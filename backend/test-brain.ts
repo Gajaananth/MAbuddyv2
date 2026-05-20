@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 async function testBrain() {
-    console.log('--- ZIUM NOVA NEURAL GRID DIAGNOSTICS ---');
+    console.log('--- Karuppu NEURAL GRID DIAGNOSTICS ---');
     
     const keys = {
         GROQ: process.env.GROQ_API_KEY,

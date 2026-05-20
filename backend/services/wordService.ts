@@ -4,7 +4,7 @@ import path from 'path';
 
 /**
  * Word Service
- * Generates editable Word reports for Zium Nova intelligence.
+ * Generates editable Word reports for Karuppu intelligence.
  */
 
 export async function generateIntelligenceWord(reportData: any): Promise<string> {
@@ -23,7 +23,7 @@ export async function generateIntelligenceWord(reportData: any): Promise<string>
             properties: {},
             children: [
                 new Paragraph({
-                    text: "ZIUM NOVA — SILENT BEAST INTELLIGENCE",
+                    text: "Karuppu — SILENT BEAST INTELLIGENCE",
                     heading: HeadingLevel.HEADING_1,
                     alignment: AlignmentType.CENTER,
                 }),

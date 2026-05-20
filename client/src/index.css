@@ -164,3 +164,13 @@ h1, h2, h3, h4, h5, h6 {
 .unread-indicator {
   animation: red-pulse 1.5s infinite;
 }
+.font-karuppu {
+  font-family: 'Metal Mania', cursive;
+  font-weight: normal;
+  text-transform: uppercase;
+  background: linear-gradient(to top, #ff0000, #ff7a00, #ffcc00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.6));
+}

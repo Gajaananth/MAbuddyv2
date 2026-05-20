@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    Bird, User, Search, Circle, CheckCircle2, 
+     User, Search, Circle, CheckCircle2, 
     Terminal, Activity, Shield,
     Trash2, Archive, ArchiveRestore, ArrowLeftRight, Clock,
     FileText, ListTodo, Check
 } from 'lucide-react';
 import { missionService } from '../services/api';
 import { formatTimestamp } from '../utils/formatUtils';
+import { NovaLogo } from '../components/NovaLogo';
 
 const OWNER_CONFIG = {
     'OPERATOR': { label: 'Operator (You)', icon: User, color: 'text-amber-400 border-amber-400/30 bg-amber-400/10' },
-    'NOVA': { label: 'Nova (AI)', icon: Bird, color: 'text-nova-accent border-nova-accent/30 bg-nova-accent/10' },
+    'NOVA': { label: 'Karuppu (AI)', icon:  color: 'text-nova-accent border-nova-accent/30 bg-nova-accent/10' },
     'SHARED': { label: 'Shared Mission', icon: ArrowLeftRight, color: 'text-purple-400 border-purple-400/30 bg-purple-400/10' }
 };
 
@@ -282,7 +283,7 @@ const CommandCenterPage: React.FC = () => {
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 text-nova-accent">
                         <Terminal size={12} className="animate-pulse" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Grid Protocol v4.3.0</span>
+                        <span className="text-[9px] font-black uppercase tracking-[0.3em]">Grid Protocol v6.0.0</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none">
                         Tactical <span className="text-nova-accent">Grid</span>
@@ -425,9 +426,9 @@ const CommandCenterPage: React.FC = () => {
                         <div className="flex items-center justify-between mb-2 px-1 border-t border-white/5 pt-10">
                             <h3 className="text-xs font-black text-nova-text-dim uppercase tracking-widest flex items-center gap-3">
                                 <div className="p-2 bg-white/5 rounded-lg text-nova-text-dim">
-                                    <Bird size={16} />
+                                    <NovaLogo size={16} />
                                 </div>
-                                Autonomous Cycles (Zium Nova)
+                                Autonomous Cycles (<span className="font-karuppu text-[10px]">Karuppu</span>)
                             </h3>
                             <div className="flex items-center gap-2">
                                 <div className="w-1.5 h-1.5 bg-nova-accent rounded-full animate-pulse shadow-[0_0_8px_rgba(0,242,255,0.6)]"></div>

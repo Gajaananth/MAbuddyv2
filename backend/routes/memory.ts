@@ -43,7 +43,7 @@ router.get('/conversations', authenticate, async (req: AuthRequest, res: Respons
 
 /**
  * GET /api/memory/unread-count
- * Get count of unread messages from Zium Nova.
+ * Get count of unread messages from Karuppu.
  */
 router.get('/unread-count', authenticate, async (req: AuthRequest, res: Response) => {
     try {

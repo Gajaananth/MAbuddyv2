@@ -6,7 +6,7 @@ const router = Router();
 
 /**
  * GET /api/learning/logs
- * Returns intelligence logs — what Nova has learned from raids and heartbeats.
+ * Returns intelligence logs — what Karuppu has learned from raids and heartbeats.
  */
 router.get('/logs', authenticate, async (req: AuthRequest, res: Response) => {
     try {
@@ -25,7 +25,7 @@ router.get('/logs', authenticate, async (req: AuthRequest, res: Response) => {
 
 /**
  * GET /api/learning/improvements
- * Returns Nova's self-improvement history — how she evolves each cycle.
+ * Returns Karuppu's self-improvement history — how she evolves each cycle.
  */
 router.get('/improvements', authenticate, async (req: AuthRequest, res: Response) => {
     try {

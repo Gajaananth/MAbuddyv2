@@ -116,7 +116,7 @@ const ReportsPage: React.FC = () => {
                 )}
             </header>
 
-            {/* Nova Performance Dashboard Widgets — Real Data */}
+            {/* Karuppu Performance Dashboard Widgets — Real Data */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
                 <div className="glass p-4 rounded-xl border border-nova-border flex flex-col justify-between">
                     <span className="text-[10px] uppercase text-nova-text-dim tracking-widest font-black">Opportunity Pipeline</span>

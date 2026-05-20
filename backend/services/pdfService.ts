@@ -59,7 +59,7 @@ export async function generateIntelligencePDF(reportData: any): Promise<string> 
         doc.rect(0, 0, pageWidth, 40, 'F');
         doc.setTextColor(255, 255, 255);
         centerText('SILENT BEAST DOMINANCE REPORT V2', 18, 20, true);
-        centerText('ZIUM NOVA INTELLIGENCE STRATA', 28, 11, false);
+        centerText('Karuppu INTELLIGENCE STRATA', 28, 11, false);
         doc.setTextColor(0, 255, 180); // Accent
         centerText('CONFIDENTIAL STRATEGIC ADVISORY', 35, 8, true);
         doc.setTextColor(0, 0, 0); // Reset
@@ -71,7 +71,7 @@ export async function generateIntelligencePDF(reportData: any): Promise<string> 
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'italic');
-        const footerText = `ZIUM NOVA CONFIDENTIAL | REPORT ID: ${reportData.id || 'ZN-STRAT'} | Page ${pageNum} of ${totalPages}`;
+        const footerText = `Karuppu CONFIDENTIAL | REPORT ID: ${reportData.id || 'ZN-STRAT'} | Page ${pageNum} of ${totalPages}`;
         const disclaimer = "DISCLAIMER: For analytical purposes only. NOT financial advice.";
 
         const textWidth = doc.getTextWidth(footerText);
@@ -206,7 +206,7 @@ export async function generateSummaryPDF(reports: any[], title: string = 'Intell
     doc.rect(0, 0, 210, 30, 'F');
     doc.setTextColor(0, 255, 200);
     doc.setFontSize(18);
-    doc.text('ZIUM NOVA — ' + title.toUpperCase(), 15, 20);
+    doc.text('Karuppu — ' + title.toUpperCase(), 15, 20);
 
     const tableData = reports.map(r => [
         new Date(r.created_at).toLocaleDateString(),

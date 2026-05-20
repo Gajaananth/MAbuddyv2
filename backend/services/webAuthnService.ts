@@ -7,7 +7,7 @@ import {
 import { isoUint8Array, isoBase64URL } from '@simplewebauthn/server/helpers';
 import authQueries from '../db/authQueries.js';
 
-const RP_NAME = 'Zium Nova Protocol';
+const RP_NAME = 'Karuppu Protocol';
 
 export async function createRegistrationOptions(
 

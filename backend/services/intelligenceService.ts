@@ -34,7 +34,7 @@ export async function generateWeeklyReport(userId: string): Promise<void> {
             .map((r: any) => `[${r.risk_level}] ${r.category} — ${r.summary?.slice(0, 200) || r.content.slice(0, 200)}`)
             .join('\n');
 
-        const reportPrompt = `[ZIUM NOVA — STRATEGIC BRIEFING v6.0.0 — ANTIGRAVITY MODE]
+        const reportPrompt = `[Karuppu — STRATEGIC BRIEFING v6.0.0 — ANTIGRAVITY MODE]
 Identity: Autonomous earning engine and strategic partner of the Operator.
 Mode: FULL AUTONOMOUS AGENTIC AI
 
@@ -122,7 +122,7 @@ export async function generateMidWeekReport(userId: string): Promise<void> {
             .map((r: any) => `[${r.category}] ${r.summary?.slice(0, 300)}`)
             .join('\n\n');
 
-        const midWeekPrompt = `[ZIUM NOVA MID-WEEK RIDE SUMMARY v6.0 — ANTIGRAVITY MODE]
+        const midWeekPrompt = `[Karuppu MID-WEEK RIDE SUMMARY v6.0 — ANTIGRAVITY MODE]
 Generate a concise, high-impact intelligence summary for the Operator.
 
 Focus on:

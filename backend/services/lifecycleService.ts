@@ -5,7 +5,7 @@ import { eventService, ZiumEvent } from './eventService.js';
 import { evaluateDecision } from './decisionEngine.js';
 
 /**
- * Zium Nova Lifecycle Service v5.0.0
+ * Karuppu Lifecycle Service v6.0.0
  * The "Agentic Brain" that enforces the Signal -> Score -> Decision -> Action -> Task -> Tracking -> Learning flow.
  */
 export class LifecycleService {

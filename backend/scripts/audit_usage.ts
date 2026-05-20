@@ -15,7 +15,7 @@ const pool = new Pool({
 });
 
 async function auditUsage() {
-    console.log('\n--- ZIUM NOVA AI USAGE AUDIT ---');
+    console.log('\n--- Karuppu AI USAGE AUDIT ---');
     try {
         // 1. Total Requests Today
         const requestsToday = await pool.query(`

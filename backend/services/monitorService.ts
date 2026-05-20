@@ -52,7 +52,7 @@ export const monitorService = {
                 source_context: 'MONITOR_SERVICE'
             });
             
-            // Notify Nova to mention it in the next chat interaction (via memory)
+            // Notify Karuppu to mention it in the next chat interaction (via memory)
             const latestConv = (await db.getConversations(userId))[0];
             if (latestConv) {
                 await db.addMessage(

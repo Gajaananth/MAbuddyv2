@@ -1,7 +1,7 @@
 import { ExternalTask } from './types.js';
 
 /**
- * Normalizes raw data from external platforms into the Zium Nova standard format.
+ * Normalizes raw data from external platforms into the Karuppu standard format.
  */
 export function normalizeTask(rawData: any, platform: string): ExternalTask | null {
     try {

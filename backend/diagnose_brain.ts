@@ -5,10 +5,10 @@ import { Pool } from 'pg';
 dotenv.config();
 
 /**
- * ZIUM NOVA DIAGNOSTIC SUITE
+ * Karuppu DIAGNOSTIC SUITE
  */
 async function runDiagnostics() {
-    console.log('--- ZIUM NOVA BRAIN DIAGNOSTICS ---');
+    console.log('--- Karuppu BRAIN DIAGNOSTICS ---');
     
     // 1. Check Environment
     const geminiKey = process.env.GEMINI_API_KEY;
@@ -70,7 +70,7 @@ async function runDiagnostics() {
                 headers: { 
                     'Authorization': `Bearer ${openRouterKey}`,
                     'HTTP-Referer': 'https://ma-buddy.vercel.app',
-                    'X-Title': 'Zium Nova Diagnostics'
+                    'X-Title': 'Karuppu Diagnostics'
                 },
                 timeout: 10000
             });

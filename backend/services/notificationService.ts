@@ -1,5 +1,5 @@
 /**
- * Notification Service — Zium Nova Intelligence Alert System
+ * Notification Service — Karuppu Intelligence Alert System
  * Handles persistent notifications, priority signal detection, push delivery, and strategic alerts.
  */
 
@@ -93,7 +93,7 @@ const PRIORITY_TRIGGERS = [
     'platform policy change',
     'security risk',
     'ecosystem development',
-    'urgent message from zium nova',
+    'urgent message from Karuppu',
 ];
 
 // ──────────────────────────── Detection Engine ────────────────────────────

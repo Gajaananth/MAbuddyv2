@@ -1,5 +1,6 @@
+import { NovaLogo } from './NovaLogo';
 import React, { useState, useEffect } from 'react';
-import { BellRing, BellOff, Bird, Smartphone, AlertTriangle } from 'lucide-react';
+import { BellRing, BellOff, Smartphone, AlertTriangle } from 'lucide-react';
 import {
     isPushSupported,
     isIOS,
@@ -58,7 +59,7 @@ const NotificationActivationBanner: React.FC = () => {
                     setState('enabled');
                     // Trigger confirmation notification
                     showLocalNotification(
-                        'ZIUM NOVA Activated',
+                        'Karuppu Activated',
                         'Intelligence monitoring is now active.'
                     );
                 } else {
@@ -101,7 +102,7 @@ const NotificationActivationBanner: React.FC = () => {
                 <div className="px-6 py-4 flex items-center gap-4 bg-blue-500/5 border-l-4 border-l-blue-500/50">
                     <Smartphone size={20} className="text-blue-400 flex-shrink-0" />
                     <div className="flex-1">
-                        <p className="text-sm font-bold text-blue-300">Add Zium Nova to your Home Screen for push notifications.</p>
+                        <p className="text-sm font-bold text-blue-300">Add Karuppu to your Home Screen for push notifications.</p>
                         <p className="text-xs text-nova-text-dim mt-0.5">Tap Share → "Add to Home Screen" → reopen the app.</p>
                     </div>
                 </div>
@@ -130,7 +131,7 @@ const NotificationActivationBanner: React.FC = () => {
                 <div className="px-6 py-5 flex items-center justify-between glass bg-nova-accent/[0.03]">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center">
-                            <Bird size={20} className="text-nova-accent" />
+                            <NovaLogo size={20} className="text-nova-accent" />
                         </div>
                         <div>
                             <p className="text-sm font-bold text-white">Intelligence alerts are disabled.</p>
@@ -147,7 +148,7 @@ const NotificationActivationBanner: React.FC = () => {
                         ) : (
                             <BellRing size={16} />
                         )}
-                        <span>{loading ? 'Activating...' : 'Enable ZIUM NOVA Alerts'}</span>
+                        <span>{loading ? 'Activating...' : 'Enable Karuppu Alerts'}</span>
                     </button>
                 </div>
             )}

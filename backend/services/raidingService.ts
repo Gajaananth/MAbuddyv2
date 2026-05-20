@@ -165,7 +165,7 @@ export async function performInternetRaid(type: 'mid-week' | 'end-of-week', user
 
             console.log(`[Ride] [${cluster.name}] Analyzing...`);
 
-            const raidPrompt = `[ZIUM NOVA — INTERNET RIDE SCAN v6.0 — ANTIGRAVITY MODE]
+            const raidPrompt = `[Karuppu — INTERNET RIDE SCAN v6.0 — ANTIGRAVITY MODE]
 Cluster: "${cluster.name}"
 Mission: ${cluster.topic}
 
@@ -216,7 +216,7 @@ RULES:
             const savedFinding = await db.saveRaidResult(userId, {
                 category: cluster.name,
                 risk_level: riskLevel,
-                source_platform: 'Zium Nova AI Analysis',
+                source_platform: 'Karuppu AI Analysis',
                 content: `[${cluster.name}] ${cluster.topic.slice(0, 200)}`,
                 summary: analysisContent,
                 tags: [...cluster.tags, type],

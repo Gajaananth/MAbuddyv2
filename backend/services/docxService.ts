@@ -55,7 +55,7 @@ export async function generateIntelligenceDocx(reportData: any): Promise<string>
                             new Paragraph({
                                 children: [
                                     new TextRun({
-                                        text: "ZIUM NOVA INTELLIGENCE STRATA",
+                                        text: "Karuppu INTELLIGENCE STRATA",
                                         size: 20,
                                         color: "64748B",
                                     }),
@@ -71,7 +71,7 @@ export async function generateIntelligenceDocx(reportData: any): Promise<string>
                             new Paragraph({
                                 children: [
                                     new TextRun({
-                                        text: `ZIUM NOVA CONFIDENTIAL | REPORT ID: ${reportData.id || 'ZN-STRAT'}`,
+                                        text: `Karuppu CONFIDENTIAL | REPORT ID: ${reportData.id || 'ZN-STRAT'}`,
                                         italics: true,
                                         size: 16,
                                     }),

@@ -1,4 +1,4 @@
-// Zium Nova — Shared TypeScript Types
+// Karuppu — Shared TypeScript Types
 
 export type TaskOwner = 'OPERATOR' | 'NOVA' | 'SHARED';
 export type TaskDuration = 'SHORT' | 'MEDIUM' | 'LONG';

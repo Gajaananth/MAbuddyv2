@@ -95,7 +95,7 @@ router.get('/poll', authenticate, async (req: AuthRequest, res: Response) => {
 
 /**
  * POST /api/chat
- * Send a message to Zium Nova and get a strategic, scored response.
+ * Send a message to Karuppu and get a strategic, scored response.
  */
 router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
     try {
@@ -171,7 +171,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         const history = await db.getRecentMemory(userId, 15);
 
         console.log('[Chat] Thinking...');
-        // Send to Zium Nova's brain (Groq / Gemini / OpenAI)
+        // Send to Karuppu's brain (Groq / Gemini / OpenAI)
         const { model } = req.body;
         const openClawResponse = await think(message, history, { model }, userId);
 
@@ -308,14 +308,14 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             console.log('[Chat] Strategic mode. Skipping metrics.');
         }
 
-        console.log('[Chat] Storing Nova response...');
+        console.log('[Chat] Storing Karuppu response...');
         // Merge token usage and model into metadata for tracking
         const finalMetadata = {
             ...(metadata || {}),
             usage: openClawResponse.usage,
             model: model || 'llama-3.3-70b-versatile'
         };
-        // Store Nova's response
+        // Store Karuppu's response
         const savedNovaMessage = await db.addMessage(convId, 'nova', content, finalMetadata);
 
         // Synchronize tasks from response content to the Command Center DB

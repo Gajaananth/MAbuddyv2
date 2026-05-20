@@ -1,5 +1,6 @@
+import { NovaLogo } from '../components/NovaLogo';
 import React, { useState } from 'react';
-import { Bird, Fingerprint, HelpCircle, ChevronLeft } from 'lucide-react';
+import {  Fingerprint, HelpCircle, ChevronLeft } from 'lucide-react';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
@@ -190,7 +191,7 @@ const LoginPage: React.FC = () => {
             <div className="w-full max-w-sm relative z-10">
                 <div className="text-center mb-12">
                     <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center text-red-500 mx-auto mb-6 shadow-2xl">
-                        <Bird size={32} />
+                        <NovaLogo size={32} />
                     </div>
                     <h1 className="text-3xl font-black text-white tracking-tighter uppercase mb-2">Protocol Entry</h1>
                     <p className="text-nova-text-dim font-bold text-xs tracking-widest uppercase">Verified Access Mandatory</p>
@@ -240,7 +241,7 @@ const LoginPage: React.FC = () => {
                 </div>
 
                 <div style={{ marginTop: '20px', fontSize: '12px', color: '#666', opacity: '0.5' }}>
-            Zium Nova Mission Grid v5.0.4 | 🦅🚀 GRID RECLAMATION
+            <span className="font-karuppu text-[14px]">Karuppu</span> Mission Grid v6.0.0 | 🦅🚀 GRID RECLAMATION
           </div>
             </div>
         </div>
