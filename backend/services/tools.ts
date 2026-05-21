@@ -204,7 +204,7 @@ export const commandCenterTool = tool({
         userId: z.string().describe('The Operator ID / User ID'),
         task_name: z.string().optional().describe('Required for "add": The objective name'),
         action_plan: z.string().optional().describe('Required for "add": Strategic execution steps'),
-        owner: z.enum(['OPERATOR', 'NOVA', 'SHARED']).optional().describe('Optional: "OPERATOR", "NOVA", or "SHARED"'),
+        owner: z.enum(['OPERATOR', 'Karuppu', 'SHARED']).optional().describe('Optional: "OPERATOR", "Karuppu", or "SHARED"'),
         priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']).optional().describe('Optional: Defaults to MEDIUM'),
         task_id_str: z.string().optional().describe('Required for "update/archive/assign/delete": Task ID string (e.g. "001")'),
         duration: z.enum(['SHORT', 'MEDIUM', 'LONG']).optional().describe('Optional: Defaults to MEDIUM'),

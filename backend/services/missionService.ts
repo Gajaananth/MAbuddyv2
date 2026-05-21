@@ -30,7 +30,7 @@ export class MissionService {
             { 
                 id: '01', 
                 name: 'Scout the latest AI signals', 
-                owner: 'NOVA', 
+                owner: 'Karuppu', 
                 priority: 'HIGH', 
                 action_plan: '1. Scan the internet grid. 2. Filter out the noise/scams. 3. Find some real winning moves.',
                 notes: "I'll handle the heavy lifting here, Operator." 
@@ -46,7 +46,7 @@ export class MissionService {
             { 
                 id: '03', 
                 name: 'Dig into new earning loops', 
-                owner: 'NOVA', 
+                owner: 'Karuppu', 
                 priority: 'HIGH', 
                 action_plan: '1. Study how agents are actually making bank. 2. Verify the legit ones. 3. Write it up for us.',
                 notes: "Hunting for our next move." 
@@ -62,7 +62,7 @@ export class MissionService {
             { 
                 id: '05', 
                 name: 'Self-Improvement Sync', 
-                owner: 'NOVA', 
+                owner: 'Karuppu', 
                 priority: 'MEDIUM', 
                 action_plan: '1. Log my new insights. 2. Tighten up my task logic. 3. Get ready for the next level.',
                 notes: 'Always getting smarter for the team.' 
@@ -94,7 +94,7 @@ export class MissionService {
     /**
      * Automatically mark a specific mission task as completed.
      */
-    async completeZiumTask(userId: string, taskPrefix: string) {
+    async completeKaruppuTask(userId: string, taskPrefix: string) {
         const now = new Date();
         const weekNumber = this.getWeekNumber(now);
         const year = now.getFullYear();
@@ -137,7 +137,7 @@ export class MissionService {
                             // Extract properties with fallbacks for different AI naming conventions
                             const name = item.name || item.description || item.task_name || item.topic || "Unnamed Strategic Task";
                             const rawOwner = (item.owner || item.assigned_to || item.assignee || item.assigned || "OPERATOR").toString().toUpperCase();
-                            const owner = rawOwner.includes('NOVA') ? 'NOVA' : 'OPERATOR';
+                            const owner = rawOwner.includes('Karuppu') ? 'Karuppu' : 'OPERATOR';
                             const priority = (item.priority || item.risk || 'MEDIUM').toString().toUpperCase();
                             const status = (item.status || 'TODO').toString().toUpperCase();
                             const plan = item.action_plan || item.plan || item.tracking || item.description || "";
@@ -171,7 +171,7 @@ export class MissionService {
             const name = match[1].trim();
             const priority = match[2].trim().toUpperCase() as any;
             const ownerRaw = match[3].trim().toUpperCase();
-            const owner = ownerRaw.includes('NOVA') ? 'NOVA' : 'OPERATOR';
+            const owner = ownerRaw.includes('Karuppu') ? 'Karuppu' : 'OPERATOR';
             const plan = match[4].trim();
 
             if (name) {
@@ -231,7 +231,7 @@ export class MissionService {
                 const recoveryPrompt = `[Karuppu — STRATEGIC TASK RECOVERY]
 Extract any actionable tasks or strategic missions mentioned in the following message.
 Provide the output in standard Karuppu TASK format:
-TASK: [Name] | PRIORITY: [Low/Medium/High] | OWNER: [NOVA/OPERATOR] | PLAN: [Description]
+TASK: [Name] | PRIORITY: [Low/Medium/High] | OWNER: [Karuppu/OPERATOR] | PLAN: [Description]
 
 Message: "${content}"`;
 
@@ -290,7 +290,7 @@ Message: "${content}"`;
         }
 
         if (action === 'DELETE' && (cleanMsg.includes('delete all tasks not for me') || cleanMsg.includes('delete your tasks') || cleanMsg.includes('clear your tasks') || cleanMsg.includes('remove your tasks'))) {
-            const toDelete = tasks.filter(t => t.owner === 'NOVA');
+            const toDelete = tasks.filter(t => t.owner === 'Karuppu');
             for (const t of toDelete) {
                 await db.deleteTask(t.task_id_str, userId);
             }
@@ -304,7 +304,7 @@ Message: "${content}"`;
             if (addMatch) {
                 const name = addMatch[1].trim();
                 const ownerRaw = (addMatch[2] || 'OPERATOR').trim().toUpperCase();
-                const owner = ownerRaw.includes('NOVA') ? 'NOVA' : 'OPERATOR';
+                const owner = ownerRaw.includes('Karuppu') ? 'Karuppu' : 'OPERATOR';
                 
                 await db.createTask(userId, {
                     task_name: name,

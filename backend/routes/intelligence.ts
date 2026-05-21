@@ -125,10 +125,10 @@ router.get('/reports/:id/download', authenticate, async (req: AuthRequest, res: 
 
         if (format === 'pdf') {
             filePath = await generateIntelligencePDF(data);
-            fileName = `Nova_Intelligence_${reportId}.pdf`;
+            fileName = `Karuppu_Intelligence_${reportId}.pdf`;
         } else if (format === 'docx') {
             filePath = await generateIntelligenceDocx(data);
-            fileName = `Nova_Intelligence_${reportId}.docx`;
+            fileName = `Karuppu_Intelligence_${reportId}.docx`;
         } else {
             return res.status(400).json({ success: false, error: 'Invalid format requested' });
         }

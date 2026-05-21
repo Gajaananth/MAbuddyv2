@@ -1,6 +1,6 @@
 // Karuppu — Shared TypeScript Types
 
-export type TaskOwner = 'OPERATOR' | 'NOVA' | 'SHARED';
+export type TaskOwner = 'OPERATOR' | 'Karuppu' | 'SHARED';
 export type TaskDuration = 'SHORT' | 'MEDIUM' | 'LONG';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'PAUSED' | 'PENDING' | 'PROCESS' | 'DONE' | 'BLOCKED';

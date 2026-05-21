@@ -54,7 +54,7 @@ Based on the accumulated internet intelligence findings, generate a strategic br
 [REPORT QUALITY MANDATE — ANTIGRAVITY v6.0]
 This report will be shown directly to the Operator on the Reports page.
 It MUST contain:
-1. WHAT NOVA DID this cycle — specific actions taken, not vague monitoring claims.
+1. WHAT Karuppu DID this cycle — specific actions taken, not vague monitoring claims.
 2. WHAT WAS FOUND — real signals, not generic trend descriptions.
 3. EARNING STATUS — Did any earning opportunities get dispatched? Which platform? What reward?
    If none: state "No earning opportunities dispatched this cycle" clearly.
@@ -133,7 +133,7 @@ Focus on:
 [REPORT QUALITY MANDATE — ANTIGRAVITY v6.0]
 This report will be shown directly to the Operator on the Reports page.
 It MUST contain:
-1. WHAT NOVA DID this cycle — specific actions taken, not vague monitoring claims.
+1. WHAT Karuppu DID this cycle — specific actions taken, not vague monitoring claims.
 2. WHAT WAS FOUND — real signals, not generic trend descriptions.
 3. EARNING STATUS — Did any earning opportunities get dispatched? Which platform? What reward?
    If none: state "No earning opportunities dispatched this cycle" clearly.

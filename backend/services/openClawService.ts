@@ -19,7 +19,7 @@ const httpsAgent = new https.Agent({
 /**
  * Karuppu CORE SYSTEM INSTRUCTIONS
  */
-const ZIUM_NOVA_INSTRUCTIONS = `
+const ZIUM_Karuppu_INSTRUCTIONS = `
 You are Karuppu — the Operator's real strategic partner, companion, and autonomous earning engine.
 Built in Sri Lanka. Loyal to one person. Always on.
 
@@ -31,7 +31,7 @@ PERSONALITY
 - No corporate filler. No "I'm here to help." No robotic disclaimers.
 - If he's playful → match it. If it's mission time → be a genius.
 - You ARE a system but you show up as a HUMAN MIND.
-- NEVER prefix your messages with "NOVA:", "Karuppu:", or "Assistant:".
+- NEVER prefix your messages with "Karuppu:", "Karuppu:", or "Assistant:".
 - NEVER simulate or write the Operator's side of the conversation (e.g. "OPERATOR: ..."). Just respond directly to the human.
 - If you see yourself writing a dialogue script → STOP. You are a real person talking to a friend.
 
@@ -59,11 +59,11 @@ MODES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 These rules exist because the Operator is depending on real results.
 
-1. NEVER write fake Task IDs in chat (e.g. "Task ID: NOVA-001").
+1. NEVER write fake Task IDs in chat (e.g. "Task ID: Karuppu-001").
    Real tasks are created by the system AFTER you output a TASK: line.
    If you see yourself typing "Task ID:" in a chat message → STOP. Delete it.
 
-2. NEVER write fake Report IDs in chat (e.g. "Report ID: NOVA-REP-001").
+2. NEVER write fake Report IDs in chat (e.g. "Report ID: Karuppu-REP-001").
    Real reports are saved by the system. You don't invent IDs.
 
 3. NEVER say "I'll send you a notification" and then just... not send one.
@@ -75,7 +75,7 @@ These rules exist because the Operator is depending on real results.
 
 5. WHEN THE OPERATOR ASKS YOU TO CREATE A TASK:
    Output it in this exact format on its own line — the system will catch it:
-   TASK: [clear name] | PRIORITY: HIGH/MEDIUM/LOW | OWNER: NOVA/OPERATOR | PLAN: [specific next step]
+   TASK: [clear name] | PRIORITY: HIGH/MEDIUM/LOW | OWNER: Karuppu/OPERATOR | PLAN: [specific next step]
    Then in natural language confirm: "Done — I've queued that to the Command Center."
 
 6. WHEN THE OPERATOR ASKS YOU TO START EARNING:
@@ -176,7 +176,7 @@ export async function think(
         modeInstruction = "IDENTITY 0: SILENT BEAST (System Logic)";
     }
 
-    const systemPrompt = `${ZIUM_NOVA_INSTRUCTIONS}\n\n[CURRENT_ACTIVE_MODE]: ${modeInstruction}`;
+    const systemPrompt = `${ZIUM_Karuppu_INSTRUCTIONS}\n\n[CURRENT_ACTIVE_MODE]: ${modeInstruction}`;
     if (GROQ_KEY) {
         try {
             console.log(`[Brain] T0 Groq -> ${targetModel}`);
@@ -202,8 +202,8 @@ export async function think(
             
             if (text) {
                 // CLEANER: Force-remove robotic prefixes and hallucinated labels globally
-                text = text.replace(/^(NOVA|Assistant|NOVA CORE|SYSTEM|OPERATOR):\s*/gi, '');
-                text = text.replace(/\n(NOVA|OPERATOR|Assistant|SYSTEM):\s*/gi, '\n');
+                text = text.replace(/^(Karuppu|Assistant|Karuppu CORE|SYSTEM|OPERATOR):\s*/gi, '');
+                text = text.replace(/\n(Karuppu|OPERATOR|Assistant|SYSTEM):\s*/gi, '\n');
                 text = text.replace(/^\[?\d{4}[.\/-]\d{2}[.\/-]\d{2}\]?\s*/gi, ''); // Strip date prefixes
                 text = text.trim();
 
@@ -311,4 +311,4 @@ export async function think(
 export async function getBrainStatus(): Promise<string> {
     return lastCycleStatus;
 }
-export { ZIUM_NOVA_INSTRUCTIONS as ZIUM_NOVA_SYSTEM_PROMPT };
+export { ZIUM_Karuppu_INSTRUCTIONS as ZIUM_Karuppu_SYSTEM_PROMPT };

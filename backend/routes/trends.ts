@@ -6,7 +6,7 @@ import db from '../db/queries.js';
 import { getTrendAggregation, getSecurityLogs } from '../db/queries.js';
 import { ApiResponse, TrendData } from '../types/index.js';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
-import { eventService, ZiumEvent } from '../services/eventService.js';
+import { eventService, KaruppuEvent } from '../services/eventService.js';
 
 const router = Router();
 
@@ -64,7 +64,7 @@ Be brutally honest. No hype. Data-driven. Expose manipulation.`;
         const cluster = topic.trim().split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '') || 'CORE';
         const savedTrend = await db.saveTrendAnalysis(userId, topic, trendData, score, cluster);
 
-        eventService.emitZium(ZiumEvent.TREND_UPDATED, {
+        eventService.emitKaruppu(KaruppuEvent.TREND_UPDATED, {
             userId,
             topic,
             score,

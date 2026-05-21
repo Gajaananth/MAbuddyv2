@@ -17,7 +17,7 @@ import { IntelligenceProvider } from './context/IntelligenceContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SecuritySettings from './pages/SecuritySettings';
-import { NovaLogo } from './components/NovaLogo';
+import { KaruppuLogo } from './components/KaruppuLogo';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -55,8 +55,8 @@ function App() {
                         <Menu size={22} />
                       </button>
                       <h1 className="text-xl font-black tracking-tighter text-white uppercase truncate flex items-center gap-2">
-                        <NovaLogo size={18} className="text-nova-accent" />
-                        <span>NOVA</span>
+                        <KaruppuLogo size={18} className="text-nova-accent" />
+                        <span className="font-karuppu text-[18px]">Karuppu</span>
                         <span className="text-[10px] font-bold bg-nova-accent/20 text-nova-accent px-1.5 py-0.5 rounded ml-1 border border-nova-accent/30">v6.0.0</span>
                       </h1>
                     </div>

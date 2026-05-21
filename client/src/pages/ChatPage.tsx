@@ -1,4 +1,4 @@
-import { NovaLogo } from '../components/NovaLogo';
+import { KaruppuLogo } from '../components/KaruppuLogo';
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Send, Terminal, User, Square, Pencil, ChevronDown, Cpu, Zap, BarChart3, RefreshCcw } from 'lucide-react';
@@ -55,7 +55,7 @@ const ChatPage: React.FC = () => {
         { label: 'Strategic Mode', command: 'MODE STRATEGIC', icon: <Cpu size={14} /> },
         { label: 'Execution Mode', command: 'MODE EXECUTION', icon: <Zap size={14} /> },
         { label: 'Analytics Mode', command: 'Activate Analytics Mode', icon: <BarChart3 size={14} /> },
-        { label: 'Strict Response Format', command: 'STRICT RESPONSE FORMAT', icon: <NovaLogo size={14} /> },
+        { label: 'Strict Response Format', command: 'STRICT RESPONSE FORMAT', icon: <KaruppuLogo size={14} /> },
         { label: 'Reset Default', command: 'RESET MODE', icon: <RefreshCcw size={14} /> },
     ];
 
@@ -331,14 +331,14 @@ const ChatPage: React.FC = () => {
             <header className="shrink-0 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-nova-bg/95 backdrop-blur-xl sticky top-0 z-30 py-3 gap-3 border-b border-nova-border/50 px-2 sm:px-0">
                 <div className="flex items-center gap-3">
                     <div className="w-11 h-11 lg:w-14 lg:h-14 rounded-xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent group relative shadow-2xl shadow-nova-accent/5 shrink-0">
-                        <NovaLogo size={24} className="group-hover:scale-110 transition-transform lg:size-30" />
+                        <KaruppuLogo size={24} className="group-hover:scale-110 transition-transform lg:size-30" />
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-nova-accent rounded-full border-2 border-nova-bg animate-pulse"></div>
                     </div>
                     <div className="min-w-0">
                         <h2 className="text-base lg:text-xl font-black text-white tracking-tight uppercase truncate leading-none mb-1">Intelligence Stream</h2>
                         <div className="flex items-center gap-2">
                              <p className="text-[9px] lg:text-[10px] font-bold text-nova-text-dim flex items-center gap-1 opacity-70">
-                                <NovaLogo size={10} className="text-nova-accent" />
+                                <KaruppuLogo size={10} className="text-nova-accent" />
                                 Protocol 4.2.1
                             </p>
                             <span className="w-1 h-1 rounded-full bg-white/20"></span>
@@ -363,7 +363,7 @@ const ChatPage: React.FC = () => {
                         onClick={() => setPublishToMoltbook(!publishToMoltbook)}
                         className={`flex-1 sm:flex-none px-4 py-2 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 ${publishToMoltbook ? 'bg-nova-accent/10 border-nova-accent/40 text-nova-accent' : 'bg-white/5 border-nova-border text-nova-text-dim'}`}
                     >
-                        <NovaLogo size={12} className={publishToMoltbook ? 'animate-pulse' : ''} />
+                        <KaruppuLogo size={12} className={publishToMoltbook ? 'animate-pulse' : ''} />
                         Moltbook: {publishToMoltbook ? 'ON' : 'OFF'}
                     </button>
                 </div>
@@ -377,7 +377,7 @@ const ChatPage: React.FC = () => {
             >
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center space-y-6 opacity-40 px-6 py-20">
-                        <NovaLogo size={64} className="text-nova-accent animate-bounce [animation-duration:3s]" />
+                        <KaruppuLogo size={64} className="text-nova-accent animate-bounce [animation-duration:3s]" />
                         <div className="max-w-md">
                             <h3 className="text-sm font-black text-white mb-2 uppercase tracking-[0.3em]"><span className="font-karuppu">Karuppu</span> Ready</h3>
                             <p className="text-[11px] sm:text-xs leading-relaxed text-nova-text-dim font-medium">Neural link established. Provide strategic signals or select a protocol mode to begin the takeover.</p>
@@ -544,7 +544,7 @@ const ChatPage: React.FC = () => {
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !isMobile) { e.preventDefault(); handleSend(); } }}
                         disabled={loading}
-                        placeholder={loading ? "Zium is processing..." : "Provide strategic signal..."}
+                        placeholder={loading ? "Karuppu is processing..." : "Provide strategic signal..."}
                         className="flex-1 bg-white/[0.03] border-2 border-nova-border text-white px-5 py-3.5 pr-14 rounded-2xl focus:outline-none focus:border-nova-accent transition-all placeholder:text-nova-text-dim/30 text-sm font-bold shadow-2xl resize-none max-h-40 min-h-[56px] custom-scrollbar"
                         rows={1}
                     />

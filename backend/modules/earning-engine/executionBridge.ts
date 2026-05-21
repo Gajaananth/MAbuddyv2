@@ -38,7 +38,7 @@ export async function dispatchToCommandCenter(userId: string, scoredTask: Scored
                     userId, 
                     taskIdStr, 
                     `[Earning] ${scoredTask.type} on ${scoredTask.platform}`, 
-                    'NOVA', // Owned by NOVA for autonomous execution
+                    'Karuppu', // Owned by Karuppu for autonomous execution
                     'TODO', 
                     priority, 
                     duration, 

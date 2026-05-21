@@ -4,7 +4,7 @@ import { trendService } from '../services/api';
 import api from '../services/api';
 import type { TrendAnalysis } from '../types';
 import { formatTimestamp } from '../utils/formatUtils';
-import { NovaLogo } from '../components/NovaLogo';
+import { KaruppuLogo } from '../components/KaruppuLogo';
 
 interface TrendCluster {
     cluster: string;
@@ -192,7 +192,7 @@ const TrendsPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
                     {trends.length === 0 ? (
                         <div className="col-span-full py-24 text-center glass border-2 border-dashed border-nova-border/30 rounded-[3rem] opacity-30">
-                            <NovaLogo size={48} className="mx-auto mb-6 text-nova-accent animate-bounce" />
+                            <KaruppuLogo size={48} className="mx-auto mb-6 text-nova-accent animate-bounce" />
                             <p className="text-lg font-black text-white uppercase tracking-[0.3em]">No Pulse Detected</p>
                         </div>
                     ) : trends.map((trend) => (

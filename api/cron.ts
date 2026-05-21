@@ -4,8 +4,8 @@ import { getAllUsers } from '../backend/db/authQueries.js';
 import { autonomyService } from '../backend/services/autonomyService.js';
 
 /**
- * Zium Nova — Vercel Cron Heartbeat
- * Runs every 30 minutes to keep Nova alive and proactive.
+ * Karuppu Karuppu — Vercel Cron Heartbeat
+ * Runs every 30 minutes to keep Karuppu alive and proactive.
  * Protected by CRON_SECRET environment variable.
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const startTime = Date.now();
-    console.log('[Cron] ⚡ Zium Nova Heartbeat Triggered at:', new Date().toISOString());
+    console.log('[Cron] ⚡ Karuppu Karuppu Heartbeat Triggered at:', new Date().toISOString());
 
     try {
         await initDatabase();

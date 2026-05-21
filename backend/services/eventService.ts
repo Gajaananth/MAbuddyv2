@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 
-export enum ZiumEvent {
+export enum KaruppuEvent {
     WEEKLY_MISSIONS_CREATED = 'WEEKLY_MISSIONS_CREATED',
     TASK_GENERATED = 'TASK_GENERATED',
     OPPORTUNITY_DETECTED = 'OPPORTUNITY_DETECTED',
@@ -15,7 +15,7 @@ class EventService extends EventEmitter {
     private constructor() {
         super();
         this.setMaxListeners(20);
-        console.log('[EventService] Zium Event Bus Initialized.');
+        console.log('[EventService] Karuppu Event Bus Initialized.');
     }
 
     public static getInstance(): EventService {
@@ -28,12 +28,12 @@ class EventService extends EventEmitter {
     /**
      * Broadcast an event to the system and log it synchronously for traceability.
      */
-    public emitZium(event: ZiumEvent, data: any) {
+    public emitKaruppu(event: KaruppuEvent, data: any) {
         console.log(`[EventBus] EMIT: ${event}`, JSON.stringify(data).substring(0, 200));
         this.emit(event, data);
         
         // Auto-hook into the security audit trail for critical event types
-        if (event === ZiumEvent.SECURITY_EVENT_LOGGED) {
+        if (event === KaruppuEvent.SECURITY_EVENT_LOGGED) {
             // This is usually handled by the caller, but extra internal logic can go here.
         }
     }

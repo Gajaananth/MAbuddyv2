@@ -1,4 +1,4 @@
-import { NovaLogo } from '../components/NovaLogo';
+import { KaruppuLogo } from '../components/KaruppuLogo';
 import React, { useState, useEffect } from 'react';
 import {  Plus, Globe, Activity, Award, UserCheck } from 'lucide-react';
 import { agentService } from '../services/api';
@@ -114,14 +114,14 @@ const AgentsPage: React.FC = () => {
                 {!loading && agents.map((agent) => (
                     <div key={agent.id} className="glass p-6 lg:p-4 rounded-3xl lg:rounded-xl border-2 border-nova-border hover:border-nova-accent/20 transition-all group overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-8 lg:p-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-                            <NovaLogo size={80} className="hidden lg:block" />
-                            <NovaLogo size={120} className="lg:hidden" />
+                            <KaruppuLogo size={80} className="hidden lg:block" />
+                            <KaruppuLogo size={120} className="lg:hidden" />
                         </div>
 
 
                         <div className="flex items-start gap-6 lg:gap-4 relative z-10">
                             <div className="w-20 lg:w-14 h-20 lg:h-14 rounded-2xl lg:rounded-xl bg-nova-accent/10 border-2 border-nova-accent/20 flex items-center justify-center text-nova-accent shadow-inner">
-                                {agent.name.includes('Karuppu') ? <NovaLogo size={32} className="lg:w-7 lg:h-7" /> : <UserCheck size={32} className="lg:w-7 lg:h-7" />}
+                                {agent.name.includes('Karuppu') ? <KaruppuLogo size={32} className="lg:w-7 lg:h-7" /> : <UserCheck size={32} className="lg:w-7 lg:h-7" />}
                             </div>
 
 

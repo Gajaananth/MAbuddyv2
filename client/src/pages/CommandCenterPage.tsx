@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 import { missionService } from '../services/api';
 import { formatTimestamp } from '../utils/formatUtils';
-import { NovaLogo } from '../components/NovaLogo';
+import { KaruppuLogo } from '../components/KaruppuLogo';
 
 const OWNER_CONFIG = {
     'OPERATOR': { label: 'Operator (You)', icon: User, color: 'text-amber-400 border-amber-400/30 bg-amber-400/10' },
-    'NOVA': { label: 'Karuppu (AI)', icon: Activity, color: 'text-nova-accent border-nova-accent/30 bg-nova-accent/10' },
+    'Karuppu': { label: 'Karuppu (AI)', icon: Activity, color: 'text-nova-accent border-nova-accent/30 bg-nova-accent/10' },
     'SHARED': { label: 'Shared Mission', icon: ArrowLeftRight, color: 'text-purple-400 border-purple-400/30 bg-purple-400/10' }
 };
 
@@ -45,7 +45,7 @@ const TaskCard: React.FC<{
 }> = ({ task, isSelected, onToggleSelection, onStatus, onArchive, onDelete, onAssign }) => {
     const [isExpanded, setIsExpanded] = useState(false);
     const StatusIcon = STATUS_CONFIG[task.status as keyof typeof STATUS_CONFIG]?.icon || Circle;
-    const ownerInfo = OWNER_CONFIG[task.owner as keyof typeof OWNER_CONFIG] || OWNER_CONFIG['NOVA'];
+    const ownerInfo = OWNER_CONFIG[task.owner as keyof typeof OWNER_CONFIG] || OWNER_CONFIG['Karuppu'];
     const OwnerIcon = ownerInfo.icon;
 
     return (
@@ -127,7 +127,7 @@ const TaskCard: React.FC<{
                 
                 <button 
                     onClick={() => {
-                        const nextOwner = task.owner === 'OPERATOR' ? 'NOVA' : task.owner === 'NOVA' ? 'SHARED' : 'OPERATOR';
+                        const nextOwner = task.owner === 'OPERATOR' ? 'Karuppu' : task.owner === 'Karuppu' ? 'SHARED' : 'OPERATOR';
                         onAssign(task.task_id_str, nextOwner);
                     }}
                     className="p-1.5 rounded-lg border bg-white/5 border-white/10 text-nova-text-dim hover:text-purple-400 hover:border-purple-400/50 transition-all"
@@ -426,7 +426,7 @@ const CommandCenterPage: React.FC = () => {
                         <div className="flex items-center justify-between mb-2 px-1 border-t border-white/5 pt-10">
                             <h3 className="text-xs font-black text-nova-text-dim uppercase tracking-widest flex items-center gap-3">
                                 <div className="p-2 bg-white/5 rounded-lg text-nova-text-dim">
-                                    <NovaLogo size={16} />
+                                    <KaruppuLogo size={16} />
                                 </div>
                                 Autonomous Cycles (<span className="font-karuppu text-[10px]">Karuppu</span>)
                             </h3>
@@ -437,10 +437,10 @@ const CommandCenterPage: React.FC = () => {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {filteredTasks.filter((t: any) => t.owner === 'NOVA').length === 0 ? (
+                            {filteredTasks.filter((t: any) => t.owner === 'Karuppu').length === 0 ? (
                                 <div className="col-span-full py-16 text-center text-nova-text-dim text-[10px] font-black uppercase tracking-widest opacity-20 italic">No active agentic cycles.</div>
                             ) : (
-                                filteredTasks.filter((t: any) => t.owner === 'NOVA').map((task: any) => (
+                                filteredTasks.filter((t: any) => t.owner === 'Karuppu').map((task: any) => (
                                     <TaskCard 
                                         key={task.id} 
                                         task={task} 

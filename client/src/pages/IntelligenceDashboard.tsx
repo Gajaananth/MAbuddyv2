@@ -1,4 +1,4 @@
-import { NovaLogo } from '../components/NovaLogo';
+import { KaruppuLogo } from '../components/KaruppuLogo';
 import React, { useState, useEffect } from 'react';
 import {  Search, AlertTriangle, Clock, Radio, ChevronDown, Zap, Trash2, FileText, Check } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -252,7 +252,7 @@ const IntelligenceDashboard: React.FC = () => {
             <header className="mb-8 lg:mb-12 flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-nova-border/30 pb-8 px-1">
                 <div className="space-y-3">
                     <div className="flex items-center gap-2 text-nova-accent">
-                        <NovaLogo size={12} className="animate-pulse" />
+                        <KaruppuLogo size={12} className="animate-pulse" />
                         <span className="text-[9px] font-black uppercase tracking-[0.3em]">Intelligence Hub v6.0.0</span>
                     </div>
                     <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tighter uppercase leading-none">
@@ -398,7 +398,7 @@ const IntelligenceDashboard: React.FC = () => {
                         )}
                         {filteredRides.length === 0 ? (
                             <div className="py-32 text-center glass border-2 border-dashed border-nova-border/30 rounded-[3rem] opacity-30">
-                                <NovaLogo size={64} className="mx-auto mb-6 text-nova-accent opacity-20" />
+                                <KaruppuLogo size={64} className="mx-auto mb-6 text-nova-accent opacity-20" />
                                 <h3 className="text-xl font-black text-white uppercase tracking-[0.2em]">Zero Intel Signals</h3>
                             </div>
                         ) : (

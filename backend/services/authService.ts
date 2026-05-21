@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import authQueries from '../db/authQueries.js';
 import { logSecurityEvent } from '../db/queries.js';
-import { eventService, ZiumEvent } from './eventService.js';
+import { eventService, KaruppuEvent } from './eventService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
 const MAX_USERS = 5;
@@ -146,7 +146,7 @@ export async function register(u: {
         details: `New device or profile registration sequence completed: ${u.device.identifier}`
     });
 
-    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId: user.id, type: 'REGISTER' });
+    eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId: user.id, type: 'REGISTER' });
 
     return { success: true, userId: user.id };
 }
@@ -269,7 +269,7 @@ export async function login(c: {
         details: `Successful grid access via PIN: Device ${c.device.identifier}`
     });
 
-    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN' });
+    eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN' });
 
     return {
         success: true,
@@ -340,7 +340,7 @@ export async function loginBiometric(c: {
         details: `Biometric grid access: Device ${c.device.identifier}`
     });
 
-    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN_BIOMETRIC' });
+    eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN_BIOMETRIC' });
 
     return {
         success: true,
@@ -391,7 +391,7 @@ export async function changePin(userId: string, data: { oldPin: string, newPin: 
         details: 'Self-service PIN update completed successfully.'
     });
 
-    eventService.emitZium(ZiumEvent.SECURITY_EVENT_LOGGED, { userId, type: 'PIN_CHANGE' });
+    eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId, type: 'PIN_CHANGE' });
 
     return { success: true };
 }

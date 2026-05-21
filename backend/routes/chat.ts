@@ -316,7 +316,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             model: model || 'llama-3.3-70b-versatile'
         };
         // Store Karuppu's response
-        const savedNovaMessage = await db.addMessage(convId, 'nova', content, finalMetadata);
+        const savedKaruppuMessage = await db.addMessage(convId, 'nova', content, finalMetadata);
 
         // Synchronize tasks from response content to the Command Center DB
         missionService.parseAndSaveTasksFromChat(userId, content).catch(e => console.error('[Chat] Task sync failed:', e));
@@ -390,7 +390,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
         // Optional: Post to Moltbook if strategic alignment is high
         if (publish_to_moltbook && (metadata?.production_scores?.overall > 70 || !analyticsRequested)) {
-            await postToMoltbook(content, 'zium-nova-briefs');
+            await postToMoltbook(content, 'karuppu-nova-briefs');
         }
 
         const response: ApiResponse = {
@@ -398,7 +398,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             data: {
                 conversation_id: convId,
                 message: {
-                    ...savedNovaMessage,
+                    ...savedKaruppuMessage,
                     metadata // Ensure processed metadata is included if it exists
                 },
             },

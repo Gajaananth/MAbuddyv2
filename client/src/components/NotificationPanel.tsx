@@ -1,4 +1,4 @@
-import { NovaLogo } from './NovaLogo';
+import { KaruppuLogo } from './KaruppuLogo';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, X, Archive, Check, AlertTriangle, TrendingUp, Zap, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -20,7 +20,7 @@ const PRIORITY_BADGES: Record<string, string> = {
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
     'SL Market Intelligence': <TrendingUp size={13} />,
-    'Scam Detection': <NovaLogo size={13} />,
+    'Scam Detection': <KaruppuLogo size={13} />,
     'Algorithm Analysis': <Zap size={13} />,
     'Ethical Earning': <TrendingUp size={13} />,
     'AI Agent Intelligence': <Zap size={13} />,

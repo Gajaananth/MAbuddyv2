@@ -13,7 +13,7 @@ dotenv.config();
 
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY || '';
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY || '';
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:zium-nova@ziumnova.app';
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:karuppu-nova@karuppunova.app';
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);

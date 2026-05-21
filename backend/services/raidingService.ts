@@ -3,7 +3,7 @@ import { think } from './openClawService.js';
 import { getAllUsers } from '../db/authQueries.js';
 import { generateWeeklyReport, generateMidWeekReport } from './intelligenceService.js';
 import { lifecycleService } from './lifecycleService.js';
-import { eventService, ZiumEvent } from './eventService.js';
+import { eventService, KaruppuEvent } from './eventService.js';
 import db from '../db/queries.js';
 
 // ✅ Fix C2: activeRaids Map replaced with DB-backed status for Vercel serverless compatibility.
@@ -193,7 +193,7 @@ STRATEGIC LESSON:
 4. APPLICATION: [How we use this right now — specific action, not theory]
 
 NEXT ACTION:
-One concrete next step. Who does it (NOVA or OPERATOR)? What exactly? By when?
+One concrete next step. Who does it (Karuppu or OPERATOR)? What exactly? By when?
 
 RULES:
 - Be specific. No filler. No generic "AI is growing" type statements.

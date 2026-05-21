@@ -133,7 +133,7 @@ async function runMigrations(pool: any) {
         user_id UUID NOT NULL,
         task_id_str VARCHAR(10) NOT NULL,
         task_name TEXT NOT NULL,
-        owner VARCHAR(20) DEFAULT 'NOVA' CHECK (owner IN ('OPERATOR', 'NOVA', 'SHARED')),
+        owner VARCHAR(20) DEFAULT 'Karuppu' CHECK (owner IN ('OPERATOR', 'Karuppu', 'SHARED')),
         status VARCHAR(20) DEFAULT 'TODO',
         priority VARCHAR(20) DEFAULT 'MEDIUM' CHECK (priority IN ('LOW', 'MEDIUM', 'HIGH', 'CRITICAL')),
         duration VARCHAR(20) DEFAULT 'MEDIUM' CHECK (duration IN ('SHORT', 'MEDIUM', 'LONG')),
@@ -150,7 +150,7 @@ async function runMigrations(pool: any) {
       BEGIN 
         -- Add missing columns if they don't exist
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'owner') THEN
-          ALTER TABLE tasks ADD COLUMN owner VARCHAR(20) DEFAULT 'NOVA';
+          ALTER TABLE tasks ADD COLUMN owner VARCHAR(20) DEFAULT 'Karuppu';
         END IF;
         IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'duration') THEN
           ALTER TABLE tasks ADD COLUMN duration VARCHAR(20) DEFAULT 'MEDIUM';
@@ -162,7 +162,7 @@ async function runMigrations(pool: any) {
         -- Migrating assigned_to to owner if assigned_to exists
         IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'tasks' AND column_name = 'assigned_to') THEN
           UPDATE tasks SET owner = 'OPERATOR' WHERE assigned_to = 'BUDDY';
-          UPDATE tasks SET owner = 'NOVA' WHERE assigned_to = 'Karuppu' OR assigned_to = 'NOVA';
+          UPDATE tasks SET owner = 'Karuppu' WHERE assigned_to = 'Karuppu' OR assigned_to = 'Karuppu';
           -- Final cleanup will happen in code, but this moves data over
         END IF;
       END $$;
@@ -332,7 +332,7 @@ async function runMigrations(pool: any) {
 
       CREATE TABLE IF NOT EXISTS agent_activity_logs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        agent_id VARCHAR(100) DEFAULT 'ZIUM_NOVA',
+        agent_id VARCHAR(100) DEFAULT 'ZIUM_Karuppu',
         action_type VARCHAR(100) NOT NULL,
         platform VARCHAR(100),
         details TEXT,

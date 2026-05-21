@@ -1,7 +1,7 @@
 import db from '../db/queries.js';
 import { opportunityService, OpportunitySignal } from './opportunityService.js';
 import { taskService } from './taskService.js';
-import { eventService, ZiumEvent } from './eventService.js';
+import { eventService, KaruppuEvent } from './eventService.js';
 import { evaluateDecision } from './decisionEngine.js';
 
 /**
@@ -44,7 +44,7 @@ export class LifecycleService {
                 
                 // 4. TRACKING: Log the agent activity
                 await db.logAgentActivity({
-                    agent_id: 'NOVA',
+                    agent_id: 'Karuppu',
                     action_type: 'LIFECYCLE_STEP',
                     platform: data.source,
                     details: `Processed Signal: ${signal.topic} | Decision: ${decision} | Result: ${actionResult}`,
@@ -58,7 +58,7 @@ export class LifecycleService {
             await this.logLearning(userId, data.category, data.content, data.source, { signals: results });
 
             // 6. EVENT: Emit completion
-            eventService.emitZium(ZiumEvent.OPPORTUNITY_DETECTED, {
+            eventService.emitKaruppu(KaruppuEvent.OPPORTUNITY_DETECTED, {
                 userId,
                 category: data.category,
                 count: signals.length,
@@ -97,7 +97,7 @@ export class LifecycleService {
             case 'AUTO_TASK':
                 const task = await taskService.createTask(userId, {
                     task_name: `[AUTO] ${signal.topic}`,
-                    owner: 'NOVA',
+                    owner: 'Karuppu',
                     priority: signal.overall_score > 9.0 ? 'HIGH' : 'MEDIUM',
                     duration: 'MEDIUM',
                     action_plan: signal.recommended_action,

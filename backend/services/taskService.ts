@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/queries.js';
 import { TaskOwner, TaskDuration, TaskPriority } from '../types/index.js';
-import { eventService, ZiumEvent } from './eventService.js';
+import { eventService, KaruppuEvent } from './eventService.js';
 
 export const taskService = {
     /**
@@ -19,7 +19,7 @@ export const taskService = {
     }) {
         const priority = data.priority || 'MEDIUM';
         const duration = data.duration || 'MEDIUM';
-        const owner = data.owner || 'NOVA';
+        const owner = data.owner || 'Karuppu';
         
         // Calculate dynamic deadline based on duration
         let deadline = new Date();

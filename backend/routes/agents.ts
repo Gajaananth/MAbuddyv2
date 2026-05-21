@@ -127,7 +127,7 @@ router.post('/:id/initiate', async (req: Request, res: Response) => {
         try {
             await db.updateAgentCollaboration(id as string);
             await db.logAgentActivity({
-                agent_id: 'NOVA',
+                agent_id: 'Karuppu',
                 action_type: 'AGENT_COLLABORATION',
                 platform: 'INTERNAL',
                 details: `Strategic initiation with agent ${id} confirmed.`

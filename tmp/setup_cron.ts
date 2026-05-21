@@ -25,14 +25,14 @@ async function setupSupabaseCron() {
         console.log('Enabling pg_cron...');
         await client.query('create extension if not exists pg_cron;');
 
-        console.log('Scheduling cron job (zium-nova-heartbeat)...');
+        console.log('Scheduling cron job (karuppu-nova-heartbeat)...');
         
         const frontendUrl = process.env.FRONTEND_URL || 'https://m-abuddyv2.vercel.app';
         const cronSecret = process.env.CRON_SECRET || 'dev_secret_override';
 
         const sql = `
             select cron.schedule(
-              'zium-nova-heartbeat',
+              'karuppu-nova-heartbeat',
               '*/30 * * * *',
               $$
                 select net.http_get(

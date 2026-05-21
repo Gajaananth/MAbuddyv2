@@ -6,7 +6,7 @@ import db from '../db/queries.js';
 import { getAllUsers } from '../db/authQueries.js';
 import { missionService } from './missionService.js';
 import { lifecycleService } from './lifecycleService.js';
-import { eventService, ZiumEvent } from './eventService.js';
+import { eventService, KaruppuEvent } from './eventService.js';
 import { recordOutcome } from './learningEngine.js';
 
 /**
@@ -106,10 +106,10 @@ class AutonomyService {
             const messages = await db.getMessages(activeConv.id);
             
             // Look for the last message from Karuppu
-            const lastNovaMessage = messages.slice().reverse().find(m => m.role === 'nova');
+            const lastKaruppuMessage = messages.slice().reverse().find(m => m.role === 'nova');
 
-            if (lastNovaMessage) {
-                const lastTime = new Date(lastNovaMessage.created_at).getTime();
+            if (lastKaruppuMessage) {
+                const lastTime = new Date(lastKaruppuMessage.created_at).getTime();
                 const nowMs = Date.now();
                 // ✅ Fix: Check 24h has passed in real time (timezone-independent)
                 if (nowMs - lastTime < 24 * 60 * 60 * 1000) {
@@ -224,12 +224,12 @@ Output ONLY the message.`;
                 0: { // Sunday
                     focus: 'Weekly synthesis and planning',
                     cluster: 'Synthesize all intelligence from this week. Create a clear weekly summary and 3 specific action items for the operator. What did we learn? What should we do next week?',
-                    output: '1 REPORT with weekly findings. 2 TASK items for OPERATOR. 1 TASK item for NOVA.'
+                    output: '1 REPORT with weekly findings. 2 TASK items for OPERATOR. 1 TASK item for Karuppu.'
                 },
                 1: { // Monday
                     focus: 'Moltbook agent marketplace intelligence',
                     cluster: 'Scout Moltbook for signal agents — AI agents that are ethical, high-quality, and worth collaborating with. Identify 2-3 potential collaboration targets and what makes them valuable.',
-                    output: '2-3 LOG entries about agents found. 1 TASK for NOVA to follow up with a specific agent.'
+                    output: '2-3 LOG entries about agents found. 1 TASK for Karuppu to follow up with a specific agent.'
                 },
                 2: { // Tuesday
                     focus: 'Agent economy earning patterns',
@@ -276,7 +276,7 @@ ${todayFocus.output}
 
 [STRUCTURED OUTPUT FORMATS — USE ONLY THESE]
 LOG: [Category] | [Specific finding] | [Strategic value — 1 line]
-TASK: [Task name] | PRIORITY: [HIGH/MEDIUM/LOW] | OWNER: [NOVA/OPERATOR] | PLAN: [Exact next step]
+TASK: [Task name] | PRIORITY: [HIGH/MEDIUM/LOW] | OWNER: [Karuppu/OPERATOR] | PLAN: [Exact next step]
 UPDATE: [task_id_str] | STATUS: [COMPLETED/PROCESS/BLOCKED/TODO] | REASON: [1 sentence of evidence]
 REPORT: [Title] | FINDINGS: [What was discovered] | EARNING_SIGNAL: [Platform + reward estimate OR "none"] | ACTIONS: [Next steps] | STATUS: [Active/Watch] | OPPORTUNITY: [Specific earning potential in $ or clear description]
 CRITICAL_ALERT: [Short, specific message — only for real, imminent threats]
@@ -299,7 +299,7 @@ ${improvementContext}
 - Do NOT repeat tasks already in the active task list.
 - If you made progress on an ACTIVE TASK or completed it, output an UPDATE command for it.
 - Every REPORT MUST have a specific EARNING_SIGNAL or state "none" — no vague opportunity language.
-- If NOVA owns a TASK, she will attempt to execute it in the next cycle. Make it executable.
+- If Karuppu owns a TASK, she will attempt to execute it in the next cycle. Make it executable.
 `;
 
             const response = await think(heartbeatPrompt, [], { mode: 'STRATEGIC', skipSync: true }, userId);
@@ -336,7 +336,7 @@ ${improvementContext}
     }
 
     /**
-     * Parse TASK: lines from AI output and create tasks (both NOVA and OPERATOR).
+     * Parse TASK: lines from AI output and create tasks (both Karuppu and OPERATOR).
      */
     private async parseAndCreateTasks(userId: string, content: string) {
         const taskMatches = content.matchAll(/TASK:\s*([^|]*?)\s*\|\s*PRIORITY:\s*([^|]*?)\s*\|\s*OWNER:\s*([^|]*?)\s*\|\s*PLAN:\s*(.*)/gi);
@@ -360,7 +360,7 @@ ${improvementContext}
 
             const taskData = {
                 task_name: name.trim().substring(0, 255),
-                owner: assignedTo === 'OPERATOR' ? 'OPERATOR' : 'NOVA',
+                owner: assignedTo === 'OPERATOR' ? 'OPERATOR' : 'Karuppu',
                 priority: (priority.trim().toUpperCase() as any) || 'MEDIUM',
                 action_plan: plan.trim(),
                 notes: `Auto-assigned by Karuppu Strategic Autonomy to ${assignedTo}.`,
@@ -369,7 +369,7 @@ ${improvementContext}
             };
 
             // Hard Validation Rule
-            if (!['OPERATOR', 'NOVA', 'SHARED'].includes(taskData.owner)) {
+            if (!['OPERATOR', 'Karuppu', 'SHARED'].includes(taskData.owner)) {
                 console.warn(`[Autonomy] REJECTED: Invalid owner ${taskData.owner}`);
                 continue;
             }
@@ -388,7 +388,7 @@ ${improvementContext}
                 console.error('[Autonomy] Notification failed:', e);
             }
 
-            eventService.emitZium(ZiumEvent.TASK_GENERATED, {
+            eventService.emitKaruppu(KaruppuEvent.TASK_GENERATED, {
                 userId,
                 taskId: task.task_id_str,
                 owner: task.owner,
@@ -405,7 +405,7 @@ ${improvementContext}
                 const [_, name, priority, plan] = match;
                 await db.createTask(userId, {
                     task_name: name.trim().substring(0, 255),
-                    owner: 'NOVA',
+                    owner: 'Karuppu',
                     priority: (priority.trim().toUpperCase().substring(0, 10) as any) || 'MEDIUM',
                     action_plan: plan.trim(),
                     notes: 'Auto-generated (legacy format).'
@@ -593,13 +593,13 @@ ${improvementContext}
      * Self-audit active Karuppu tasks and auto-update statuses.
      */
     private async selfAuditTasks(userId: string, learningContext: string) {
-        const activeNovaTasks = (await db.getTasks(userId)).filter(t =>
-            t.owner === 'NOVA' && t.status !== 'COMPLETED'
+        const activeKaruppuTasks = (await db.getTasks(userId)).filter(t =>
+            t.owner === 'Karuppu' && t.status !== 'COMPLETED'
         );
 
-        if (activeNovaTasks.length === 0) return;
+        if (activeKaruppuTasks.length === 0) return;
 
-        const taskSummary = activeNovaTasks
+        const taskSummary = activeKaruppuTasks
             .filter(t => t.status !== 'DONE')
             .map(t => `[${t.task_id_str}] ${t.task_name} | Owner: ${t.owner} | Status: ${t.status}`)
             .join('\n');

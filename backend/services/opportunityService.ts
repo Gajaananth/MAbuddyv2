@@ -71,7 +71,7 @@ Output JSON format ONLY as an array of objects:
                 const { taskService } = await import('./taskService.js');
                 await taskService.createTask(userId, {
                     task_name: `[AUTO] ${signal.topic}`,
-                    owner: 'NOVA',
+                    owner: 'Karuppu',
                     priority: score > 9.0 ? 'HIGH' : 'MEDIUM',
                     duration: 'MEDIUM',
                     action_plan: signal.recommended_action,

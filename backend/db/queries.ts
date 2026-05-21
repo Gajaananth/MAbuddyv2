@@ -445,7 +445,7 @@ export async function logAgentActivity(action: {
 }): Promise<void> {
     await db.pool.query(
         'INSERT INTO agent_activity_logs (agent_id, action_type, platform, details, metadata) VALUES ($1, $2, $3, $4, $5)',
-        [action.agent_id || 'NOVA', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata || null]
+        [action.agent_id || 'Karuppu', action.action_type, action.platform || 'INTERNAL', action.details, action.metadata || null]
     );
 }
 
@@ -510,7 +510,7 @@ export async function createTask(userId: string, task: {
             taskIdStr = nextIdNum.toString().padStart(3, '0');
         }
 
-        const owner = task.owner || 'NOVA';
+        const owner = task.owner || 'Karuppu';
         const priority = task.priority || 'MEDIUM';
         const duration = task.duration || 'MEDIUM';
         const actionPlan = task.action_plan || '';
@@ -682,7 +682,7 @@ export async function getTaskProgress(userId: string): Promise<{
         todo: tasks.filter(t => t.status === 'TODO').length,
         blocked: tasks.filter(t => t.status === 'BLOCKED').length,
         stuck,
-        by_assignee: { nova: tasks.filter(t => t.owner === 'NOVA').length, operator: tasks.filter(t => t.owner === 'OPERATOR').length, shared: tasks.filter(t => t.owner === 'SHARED').length }
+        by_assignee: { nova: tasks.filter(t => t.owner === 'Karuppu').length, operator: tasks.filter(t => t.owner === 'OPERATOR').length, shared: tasks.filter(t => t.owner === 'SHARED').length }
     };
 }
 
