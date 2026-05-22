@@ -54,7 +54,7 @@ const RegisterPage: React.FC = () => {
                     <p className="text-nova-text-dim font-bold text-sm tracking-widest uppercase">Silent Beast Domain Entrance</p>
                 </div>
 
-                <div className="bg-white/5 border border-white/10 p-8 rounded-[40px] backdrop-blur-xl shadow-2xl">
+                <div className="bg-white/5 border border-white/10 p-8 rounded-[40px] shadow-2xl">
                     {error && (
                         <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400 text-xs font-bold animate-shake">
                             <AlertCircle size={16} />

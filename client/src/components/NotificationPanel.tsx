@@ -399,7 +399,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
                 <>
                     {/* ─── Backdrop (both mobile and desktop) ─ */}
                     <div
-                        className="fixed inset-0 z-[9990] md:bg-transparent bg-black/60 md:backdrop-blur-none backdrop-blur-sm"
+                        className="fixed inset-0 z-[9990] md:bg-transparent bg-black/60 md:"
                         onClick={() => setIsOpen(false)}
                     />
 
@@ -417,7 +417,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({ className = '' })
 
                         className="
                             hidden md:flex flex-col
-                            bg-nova-bg/98 backdrop-blur-3xl rounded-2xl border-2 border-nova-border
+                            bg-nova-bg/98 rounded-2xl border-2 border-nova-border
                             shadow-[0_0_50px_rgba(0,0,0,0.8)] z-[9999]
                             overflow-hidden
                         "

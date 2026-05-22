@@ -118,7 +118,7 @@ const LoginPage: React.FC = () => {
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-500 rounded-full blur-[150px]"></div>
                 </div>
 
-                <div className="w-full max-w-md bg-white/5 border border-white/10 p-8 rounded-[40px] backdrop-blur-xl shadow-2xl relative z-10 transition-all">
+                <div className="w-full max-w-md bg-black/80 border border-white/10 p-8 rounded-[40px] shadow-2xl relative z-10 transition-all">
                     <button onClick={() => { setIsForgotMode(false); setIsEnrollMode(false); setError(null); }} className="flex items-center gap-2 text-nova-text-dim hover:text-white transition-colors mb-6 text-sm font-bold uppercase tracking-widest">
                         <ChevronLeft size={16} /> Back to Entry
                     </button>
@@ -197,7 +197,7 @@ const LoginPage: React.FC = () => {
                     <p className="text-nova-text-dim font-bold text-xs tracking-widest uppercase">Verified Access Mandatory</p>
                 </div>
 
-                <div className="space-y-8 text-center bg-white/[0.02] border border-white/5 p-8 rounded-[40px] backdrop-blur-md">
+                <div className="space-y-8 text-center bg-black/60 border border-white/5 p-8 rounded-[40px]">
                     {/* PIN Display */}
                     <div className="flex justify-center gap-3 mb-10">
                         {[0, 1, 2, 3, 4, 5].map((i) => (

@@ -328,7 +328,7 @@ const ChatPage: React.FC = () => {
         <div className="flex-1 flex flex-col min-w-0 max-w-5xl mx-auto w-full h-[calc(100vh-80px)] lg:h-[calc(100vh-40px)] animate-in fade-in duration-500">
 
             {/* Tactical Header */}
-            <header className="shrink-0 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-nova-bg/95 backdrop-blur-xl sticky top-0 z-30 py-3 gap-3 border-b border-nova-border/50 px-2 sm:px-0">
+            <header className="shrink-0 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-nova-bg/95 sticky top-0 z-30 py-3 gap-3 border-b border-nova-border/50 px-2 sm:px-0">
                 <div className="flex items-center gap-3">
                     <div className="w-11 h-11 lg:w-14 lg:h-14 rounded-xl bg-nova-accent/10 border border-nova-accent/20 flex items-center justify-center text-nova-accent group relative shadow-2xl shadow-nova-accent/5 shrink-0">
                         <KaruppuLogo size={24} className="group-hover:scale-110 transition-transform lg:size-30" />
@@ -462,7 +462,7 @@ const ChatPage: React.FC = () => {
             </div>
 
             {/* Strategic Input Field */}
-            <div className="shrink-0 pt-4 pb-safe lg:pb-4 border-t border-nova-border/30 bg-nova-bg/95 backdrop-blur-xl relative z-40">
+            <div className="shrink-0 pt-4 pb-safe lg:pb-4 border-t border-nova-border/30 bg-nova-bg/95 relative z-40">
                 {showScrollButton && (
                     <button onClick={scrollToBottom} className="absolute -top-14 right-2 sm:right-0 p-3 rounded-full bg-nova-accent text-nova-bg shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300 active:scale-90">
                         <ChevronDown size={20} />

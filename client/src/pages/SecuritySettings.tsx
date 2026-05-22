@@ -213,7 +213,7 @@ const SecuritySettings: React.FC = () => {
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
+                <div className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-2xl p-4 sm:p-6 ">
                     {message && (
                         <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 animate-in zoom-in-95 duration-300 ${message.type === 'success' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
                             {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" /> : <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />}
