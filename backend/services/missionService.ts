@@ -171,7 +171,7 @@ export class MissionService {
             const name = match[1].trim();
             const priority = match[2].trim().toUpperCase() as any;
             const ownerRaw = match[3].trim().toUpperCase();
-            const owner = ownerRaw.includes('Karuppu') ? 'Karuppu' : 'OPERATOR';
+            const owner = ownerRaw.includes('KARUPPU') ? 'Karuppu' : 'OPERATOR';
             const plan = match[4].trim();
 
             if (name) {
