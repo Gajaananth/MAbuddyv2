@@ -71,7 +71,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
                 <div className="p-5 sm:p-8 lg:p-6 flex items-center justify-between shrink-0">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-10 h-10 lg:w-9 lg:h-9 rounded-xl lg:rounded-lg bg-nova-accent flex items-center justify-center nova-accent-glow shrink-0">
+                        {/* Logo box — BLACK with dark red border glow */}
+                        <div className="w-10 h-10 lg:w-9 lg:h-9 rounded-xl lg:rounded-lg bg-black border border-red-900/50 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(139,0,0,0.4)]">
                             <KaruppuLogo className="text-nova-bg" size={20} />
                         </div>
                         <div className="min-w-0">
@@ -101,7 +102,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                     onClick={() => { if (window.innerWidth < 1024) onClose(); }}
                                     className={({ isActive }) =>
                                         `flex items-center gap-3 px-4 py-3 lg:py-2.5 rounded-xl transition-all duration-300 group relative ${isActive
-                                            ? 'bg-nova-accent/10 text-nova-accent border-2 border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
+                                            ? 'bg-red-950/40 text-red-400 border-2 border-red-600/40 shadow-[0_0_15px_rgba(220,38,38,0.2)]'
                                             : 'text-nova-text-dim hover:text-white hover:bg-white/5 border-2 border-transparent'
                                         }`
                                     }
@@ -129,7 +130,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                                     onClick={() => { if (window.innerWidth < 1024) onClose(); }}
                                     className={({ isActive }) =>
                                         `flex items-center gap-3 px-4 py-3 lg:py-2.5 rounded-xl transition-all duration-300 group ${isActive
-                                            ? 'bg-nova-accent/10 text-nova-accent border-2 border-nova-accent/30 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
+                                            ? 'bg-red-950/40 text-red-400 border-2 border-red-600/40 shadow-[0_0_15px_rgba(220,38,38,0.2)]'
                                             : 'text-nova-text-dim hover:text-white hover:bg-white/5 border-2 border-transparent'
                                         }`
                                     }
@@ -147,17 +148,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <div className="p-4 sm:p-6 lg:p-4 shrink-0">
                     <div className="glass p-4 rounded-2xl border border-nova-border/50 bg-white/[0.02] shadow-inner">
                         <div className="flex items-center gap-2 mb-2 lg:mb-3">
-                            <div className="w-2 h-2 rounded-full bg-nova-accent animate-pulse shadow-[0_0_8px_rgba(0,242,255,0.5)]"></div>
+                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
                             <span className="text-[9px] lg:text-[8px] font-black text-nova-text uppercase tracking-widest">System Protocols</span>
                         </div>
                         <div className="flex flex-col gap-1.5 lg:gap-2">
                             <div className="flex justify-between text-[9px] lg:text-[8px] font-black text-nova-text-dim uppercase">
                                 <span>Neural Mesh</span>
-                                <span className="text-nova-accent">LIVE</span>
+                                <span className="text-red-400">LIVE</span>
                             </div>
                             <div className="flex justify-between text-[9px] lg:text-[8px] font-black text-nova-text-dim uppercase">
                                 <span>Core Grid</span>
-                                <span className="text-nova-accent">ARMED</span>
+                                <span className="text-red-400">ARMED</span>
                             </div>
                         </div>
                     </div>
