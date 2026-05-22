@@ -69,8 +69,8 @@ function App() {
                   <main className="flex-1 min-w-0 lg:pl-64 transition-all duration-500 relative flex flex-col items-center">
 
                     {/* Background Atmosphere - deep red tones */}
-                    <div className="fixed top-0 right-0 w-[300px] sm:w-[600px] lg:w-[900px] h-[300px] sm:h-[600px] lg:h-[900px] bg-red-900/10 blur-[80px] sm:blur-[120px] lg:blur-[200px] rounded-full -mr-32 sm:-mr-64 lg:-mr-128 -mt-32 sm:-mt-64 lg:-mt-128 pointer-events-none z-0 opacity-60"></div>
-                    <div className="fixed bottom-0 left-0 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-red-950/10 blur-[60px] sm:blur-[100px] rounded-full -ml-16 sm:-ml-32 -mb-16 sm:-mb-32 pointer-events-none z-0 opacity-40"></div>
+                    <div className="fixed top-0 right-0 w-[300px] sm:w-[600px] lg:w-[900px] h-[300px] sm:h-[600px] lg:h-[900px] bg-red-900/10 blur-2xl opacity-40 sm:blur-3xl opacity-30 lg:blur-3xl opacity-30 rounded-full -mr-32 sm:-mr-64 lg:-mr-128 -mt-32 sm:-mt-64 lg:-mt-128 pointer-events-none z-0 opacity-60"></div>
+                    <div className="fixed bottom-0 left-0 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-red-950/10 blur-xl opacity-50 sm:blur-2xl opacity-40 rounded-full -ml-16 sm:-ml-32 -mb-16 sm:-mb-32 pointer-events-none z-0 opacity-40"></div>
 
                     {/* Page Content */}
                     <div className="relative z-10 pt-20 lg:pt-8 px-4 sm:px-6 lg:px-10 w-full max-w-[1500px] pb-24">

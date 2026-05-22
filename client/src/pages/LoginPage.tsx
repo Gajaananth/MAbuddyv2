@@ -115,7 +115,7 @@ const LoginPage: React.FC = () => {
         return (
             <div className="min-h-screen bg-nova-bg flex items-center justify-center p-6 relative font-inter text-white">
                 <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-500 rounded-full blur-[150px]"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-red-500 rounded-full blur-3xl opacity-30"></div>
                 </div>
 
                 <div className="w-full max-w-md bg-black/80 border border-white/10 p-8 rounded-[40px] shadow-2xl relative z-10 transition-all">
@@ -185,7 +185,7 @@ const LoginPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-nova-bg flex items-center justify-center p-6 relative overflow-hidden font-inter">
             <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-500 rounded-full blur-[200px]"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-500 rounded-full blur-3xl opacity-30"></div>
             </div>
 
             <div className="w-full max-w-sm relative z-10">
