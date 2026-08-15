@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import authQueries from '../db/authQueries.js';
-import { logSecurityEvent } from '../db/queries.js';
+import * as dbQueries from '../db/queries.js';
 import { eventService, KaruppuEvent } from './eventService.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
@@ -139,7 +139,7 @@ export async function register(u: {
         os_type: u.device.os
     });
 
-    await logSecurityEvent(user.id, {
+    await dbQueries.logSecurityEvent(user.id, {
         event_type: 'REGISTER',
         actor: 'OPERATOR',
         risk_level: 'LOW',
@@ -237,19 +237,25 @@ export async function login(c: {
         if (!existingDevice) {
             const deviceCount = await authQueries.getDeviceCountByUserId(matchedUser.id);
             const userLimit = await getDeviceLimit(matchedUser.id);
-            if (deviceCount < userLimit) {
-                await authQueries.registerDevice({
-                    user_id: matchedUser.id,
-                    device_identifier: c.device.identifier,
-                    fingerprint: c.device.fingerprint,
-                    os_type: c.device.os || 'unknown'
-                });
-                // Re-find to get the ID for the token
-                registeredDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
-            } else {
-                throw new Error(`DEVICE_LIMIT_EXCEEDED: Maximum of ${userLimit} devices allowed for your clearance level.`);
+
+            if (deviceCount >= userLimit) {
+                const oldestDevice = await authQueries.getOldestDeviceByUserId(matchedUser.id);
+                if (oldestDevice) {
+                    await authQueries.removeDevice(oldestDevice.id, matchedUser.id);
+                    console.warn(`[Auth] Replaced oldest device ${oldestDevice.device_identifier} for user ${matchedUser.id} to allow new login.`);
+                } else {
+                    throw new Error(`DEVICE_LIMIT_EXCEEDED: Maximum of ${userLimit} devices allowed for your clearance level.`);
+                }
             }
 
+            await authQueries.registerDevice({
+                user_id: matchedUser.id,
+                device_identifier: c.device.identifier,
+                fingerprint: c.device.fingerprint,
+                os_type: c.device.os || 'unknown'
+            });
+            // Re-find to get the ID for the token
+            registeredDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
         } else {
             registeredDevice = existingDevice;
         }
@@ -262,7 +268,7 @@ export async function login(c: {
         { expiresIn: '72h' }
     );
 
-    await logSecurityEvent(matchedUser.id, {
+    await dbQueries.logSecurityEvent(matchedUser.id, {
         event_type: 'LOGIN',
         actor: 'OPERATOR',
         risk_level: 'LOW',

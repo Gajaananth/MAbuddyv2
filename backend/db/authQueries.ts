@@ -96,6 +96,14 @@ export async function getDeviceCountByUserId(userId: string): Promise<number> {
     return parseInt(result.rows[0].count, 10);
 }
 
+export async function getOldestDeviceByUserId(userId: string): Promise<any | null> {
+    const result = await db.pool.query(
+        'SELECT * FROM devices WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1',
+        [userId]
+    );
+    return result.rows[0] || null;
+}
+
 export async function findDevice(userId: string, fingerprint: string): Promise<any | null> {
     const result = await db.pool.query(
         'SELECT * FROM devices WHERE user_id = $1 AND fingerprint = $2',
@@ -145,6 +153,7 @@ const authQueries = {
     findDevice,
     getDevicesByUserId,
     getDeviceCountByUserId,
+    getOldestDeviceByUserId,
     getDeviceByIdentifierAndFingerprint,
     getDeviceCount,
     removeDevice,
