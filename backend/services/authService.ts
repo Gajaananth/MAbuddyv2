@@ -339,7 +339,7 @@ export async function loginBiometric(c: {
     // 4. Generate Session
     const token = jwt.sign({ userId: matchedUser.id, deviceId: device.id }, JWT_SECRET, { expiresIn: '24h' });
 
-    await logSecurityEvent(matchedUser.id, {
+    await dbQueries.logSecurityEvent(matchedUser.id, {
         event_type: 'LOGIN_BIOMETRIC',
         actor: 'OPERATOR',
         risk_level: 'LOW',
@@ -390,7 +390,7 @@ export async function changePin(userId: string, data: { oldPin: string, newPin: 
     const newHash = await hashValue(data.newPin);
     await authQueries.updatePin(userId, newHash);
 
-    await logSecurityEvent(userId, {
+    await dbQueries.logSecurityEvent(userId, {
         event_type: 'PIN_CHANGE',
         actor: 'OPERATOR',
         risk_level: 'MEDIUM',

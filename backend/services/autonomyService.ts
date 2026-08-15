@@ -108,19 +108,24 @@ class AutonomyService {
             // Look for the last message from Karuppu
             const lastKaruppuMessage = messages.slice().reverse().find(m => m.role === 'nova');
 
-            if (lastKaruppuMessage) {
-                const lastTime = new Date(lastKaruppuMessage.created_at).getTime();
-                const nowMs = Date.now();
-                // ✅ Fix: Check 24h has passed in real time (timezone-independent)
-                if (nowMs - lastTime < 24 * 60 * 60 * 1000) {
-                    return; // Already messaged in last 24h
-                }
-                // ✅ Fix: Only check in during waking hours SL time (8am - 10pm)
-                const sriLankaHour = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' })).getHours();
-                if (sriLankaHour < 8 || sriLankaHour >= 22) {
-                    console.log(`[Autonomy] Skipping check-in — outside waking hours SL (${sriLankaHour}:00)`);
-                    return;
-                }
+            if (!lastKaruppuMessage) {
+                console.log(`[Autonomy] Skipping proactive check-in for ${userId} — no prior Karuppu message in this conversation.`);
+                return;
+            }
+
+            const lastTime = new Date(lastKaruppuMessage.created_at).getTime();
+            const nowMs = Date.now();
+            const timeSinceLastMessage = nowMs - lastTime;
+
+            // Prevent repeat self-sends. Only send once per day in daytime hours.
+            if (timeSinceLastMessage < 24 * 60 * 60 * 1000) {
+                return;
+            }
+
+            const sriLankaHour = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' })).getHours();
+            if (sriLankaHour < 9 || sriLankaHour >= 21) {
+                console.log(`[Autonomy] Skipping check-in — outside allowed hours SL (${sriLankaHour}:00)`);
+                return;
             }
 
             console.log(`[Autonomy v5] Triggering Proactive Check-in for Operator (${userId})`);

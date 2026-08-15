@@ -175,7 +175,7 @@ export async function think(
     const NVIDIA_KEY = process.env.NVIDIA_API_KEY;
     
     const requestedProvider = getProviderForModel(options.model);
-    const targetModel = options.model || 'llama-3.3-70b-versatile';
+    const targetModel = options.model || 'meta/llama-3.1-70b-instruct';
 
     // Personality Dispatcher
     let modeInstruction = "IDENTITY 1: PRIVATE PARTNER (Direct Chat)";
@@ -184,155 +184,147 @@ export async function think(
     }
 
     const systemPrompt = `${ZIUM_Karuppu_INSTRUCTIONS}\n\n[CURRENT_ACTIVE_MODE]: ${modeInstruction}`;
-    const shouldUseGroq = requestedProvider === 'auto' || requestedProvider === 'groq';
-    const shouldUseGemini = requestedProvider === 'auto' || requestedProvider === 'gemini';
-    const shouldUseNvidia = requestedProvider === 'auto' || requestedProvider === 'nvidia';
+    const providerOrder: Array<'nvidia' | 'groq' | 'gemini'> = requestedProvider === 'auto'
+        ? ['nvidia', 'groq', 'gemini']
+        : [requestedProvider];
 
-    if (GROQ_KEY && shouldUseGroq) {
-        try {
-            console.log(`[Brain] T0 Groq -> ${targetModel}`);
-            const res = await fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
-                model: targetModel,
-                messages: [
-                    { role: 'system', content: systemPrompt }, 
-                    ...history.map(h => ({ role: h.role as any, content: h.content })),
-                    { role: 'user', content: prompt }
-                ],
-                temperature: 0.8,
-                max_tokens: 4096
-            }, { 
-                headers: { 
-                    'Authorization': `Bearer ${GROQ_KEY}`, 
-                    'Content-Type': 'application/json' 
-                }, 
-                timeout: 15000 
-            });
+    for (const provider of providerOrder) {
+        if (provider === 'nvidia' && NVIDIA_KEY) {
+            const models = [
+                targetModel,
+                'meta/llama-3.3-70b-instruct',
+                'meta/llama-3.1-70b-instruct',
+                'meta/llama-3.1-8b-instruct'
+            ].filter((value, index, array) => array.indexOf(value) === index);
 
-            let text = res.data?.choices?.[0]?.message?.content;
-            const usage = res.data?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
-            
-            if (text) {
-                // CLEANER: Force-remove robotic prefixes and hallucinated labels globally
-                text = text.replace(/^(Karuppu|Assistant|Karuppu CORE|SYSTEM|OPERATOR):\s*/gi, '');
-                text = text.replace(/\n(Karuppu|OPERATOR|Assistant|SYSTEM):\s*/gi, '\n');
-                text = text.replace(/^\[?\d{4}[.\/-]\d{2}[.\/-]\d{2}\]?\s*/gi, ''); // Strip date prefixes
-                text = text.trim();
-
-                lastCycleStatus = `LIVE: Groq (${targetModel})`;
-                return {
-                    content: text,
-                    usage: usage as any,
-                    provider: 'groq',
-                    key_name: 'GROQ_API_KEY'
-                };
-            }
-        } catch (e) { 
-            logFailure(`Groq ${targetModel}`, e);
-            // If the specific requested model fails on Groq, try the basic Groq Llama 3.1 8b as local backup
-            if (targetModel !== 'llama-3.1-8b-instant') {
+            for (const model of models) {
                 try {
-                    console.log(`[Brain] T0-Alt Groq -> llama-3.1-8b-instant`);
-                    const altRes = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-                        model: 'llama-3.1-8b-instant',
+                    console.log(`[Brain] T0 NVIDIA -> ${model}`);
+                    const res = await axios.post('https://integrate.api.nvidia.com/v1/chat/completions', {
+                        model,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            ...history.map(h => ({ role: h.role as any, content: h.content })),
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.8,
+                        max_tokens: 4096,
+                    }, {
+                        headers: {
+                            'Authorization': `Bearer ${NVIDIA_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        timeout: 18000,
+                    });
+
+                    const text = res.data?.choices?.[0]?.message?.content;
+                    if (text) {
+                        lastCycleStatus = `LIVE: NVIDIA (${model})`;
+                        return {
+                            content: text,
+                            usage: res.data?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                            provider: 'nvidia',
+                            key_name: 'NVIDIA_API_KEY'
+                        };
+                    }
+                } catch (e) { logFailure(`NVIDIA ${model}`, e); }
+            }
+        }
+
+        if (provider === 'groq' && GROQ_KEY) {
+            const groqModels = [
+                targetModel,
+                'llama-3.3-70b-versatile',
+                'llama-3.1-8b-instant'
+            ].filter((value, index, array) => array.indexOf(value) === index);
+
+            for (const model of groqModels) {
+                try {
+                    console.log(`[Brain] T1 Groq -> ${model}`);
+                    const res = await fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
+                        model,
                         messages: [
                             { role: 'system', content: systemPrompt }, 
                             ...history.map(h => ({ role: h.role as any, content: h.content })),
                             { role: 'user', content: prompt }
-                        ]
-                    }, { headers: { 'Authorization': `Bearer ${GROQ_KEY}` }, timeout: 10000 });
-                    
-                    if (altRes.data?.choices?.[0]?.message?.content) {
+                        ],
+                        temperature: 0.8,
+                        max_tokens: 4096
+                    }, { 
+                        headers: { 
+                            'Authorization': `Bearer ${GROQ_KEY}`, 
+                            'Content-Type': 'application/json' 
+                        }, 
+                        timeout: 15000 
+                    });
+
+                    let text = res.data?.choices?.[0]?.message?.content;
+                    const usage = res.data?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+                    if (text) {
+                        text = text.replace(/^(Karuppu|Assistant|Karuppu CORE|SYSTEM|OPERATOR):\s*/gi, '');
+                        text = text.replace(/\n(Karuppu|OPERATOR|Assistant|SYSTEM):\s*/gi, '\n');
+                        text = text.replace(/^\[?\d{4}[.\/-]\d{2}[.\/-]\d{2}\]?\s*/gi, '');
+                        text = text.trim();
+
+                        lastCycleStatus = `LIVE: Groq (${model})`;
                         return {
-                            content: altRes.data.choices[0].message.content,
-                            usage: altRes.data.usage,
+                            content: text,
+                            usage: usage as any,
                             provider: 'groq',
                             key_name: 'GROQ_API_KEY'
                         };
                     }
-                } catch (altErr) { logFailure(`Groq Alt`, altErr); }
+                } catch (e) {
+                    logFailure(`Groq ${model}`, e);
+                }
+            }
+        }
+
+        if (provider === 'gemini' && GEMINI_KEY) {
+            const geminiModels = [
+                targetModel,
+                'gemini-2.0-flash',
+                'gemini-1.5-flash',
+                'gemini-2.5-flash'
+            ].filter((value, index, array) => array.indexOf(value) === index && !value.startsWith('meta/'));
+
+            for (const model of geminiModels) {
+                try {
+                    console.log(`[Brain] T2 Gemini -> ${model}`);
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
+                    const contents = history.map(h => ({
+                        role: h.role === 'user' ? 'user' : 'model',
+                        parts: [{ text: h.content }]
+                    }));
+                    contents.push({ role: 'user', parts: [{ text: prompt }] });
+
+                    const res = await fetchWithRetry(url, {
+                        contents,
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    }, { timeout: 15000 }, 3, 2000);
+
+                    const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) {
+                        lastCycleStatus = `LIVE: Gemini (${model})`;
+                        return {
+                            content: text,
+                            usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } as any,
+                            provider: 'gemini',
+                            key_name: 'GEMINI_API_KEY'
+                        };
+                    }
+                } catch (e) { logFailure(`Gemini ${model}`, e); }
             }
         }
     }
 
-    // --- TIER 1: NVIDIA/NIM (FAST FALLBACK) ---
-    if (NVIDIA_KEY && shouldUseNvidia) {
-        const models = [
-            targetModel,
-            'meta/llama-3.3-70b-instruct',
-            'meta/llama-3.1-70b-instruct',
-            'meta/llama-3.1-8b-instruct'
-        ].filter((value, index, array) => array.indexOf(value) === index);
-        for (const model of models) {
-            try {
-                console.log(`[Brain] T1 NVIDIA -> ${model}`);
-                const res = await axios.post('https://integrate.api.nvidia.com/v1/chat/completions', {
-                    model,
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        ...history.map(h => ({ role: h.role as any, content: h.content })),
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0.8,
-                    max_tokens: 4096,
-                }, {
-                    headers: {
-                        'Authorization': `Bearer ${NVIDIA_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 18000,
-                });
-
-                const text = res.data?.choices?.[0]?.message?.content;
-                if (text) {
-                    lastCycleStatus = `LIVE: NVIDIA (${model})`;
-                    return {
-                        content: text,
-                        usage: res.data?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
-                        provider: 'nvidia',
-                        key_name: 'NVIDIA_API_KEY'
-                    };
-                }
-            } catch (e) { logFailure(`NVIDIA ${model}`, e); }
-        }
-    }
-
-    // --- TIER 2: NATIVE GEMINI (DEFERRED BACKUP) ---
-    if (GEMINI_KEY && shouldUseGemini) {
-        const models = [
-            targetModel,
-            'gemini-2.0-flash-lite-preview-02-05',
-            'gemini-1.5-flash'
-        ].filter((value, index, array) => array.indexOf(value) === index);
-        for (const model of models) {
-            try {
-                console.log(`[Brain] T2 Gemini -> ${model}`);
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
-                
-                // Map history to Gemini format (user/model roles)
-                const contents = history.map(h => ({
-                    role: h.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: h.content }]
-                }));
-                contents.push({ role: 'user', parts: [{ text: prompt }] });
-
-                const res = await fetchWithRetry(url, {
-                    contents,
-                    systemInstruction: { parts: [{ text: systemPrompt }] }
-                }, { timeout: 15000 }, 3, 2000);
-
-                const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) {
-                    lastCycleStatus = `LIVE: Gemini (${model})`;
-                    return {
-                        content: text,
-                        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } as any,
-                        provider: 'gemini',
-                        key_name: 'GEMINI_API_KEY'
-                    };
-                }
-            } catch (e) { logFailure(`Gemini ${model}`, e); }
-        }
-    }
+    lastCycleStatus = `OFFLINE: All tiers failed. Check logs.`;
+    return {
+        content: `Operator, the neural grid is currently under extreme load. Groq and legacy fallbacks are reporting congestion. I'm maintaining local buffers. Try again in 30 seconds.`,
+        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } as any,
+        provider: 'unavailable',
+        key_name: 'NONE'
+    };
 
     lastCycleStatus = `OFFLINE: All tiers failed. Check logs.`;
     return {

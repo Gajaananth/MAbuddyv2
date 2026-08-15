@@ -313,7 +313,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         const finalMetadata = {
             ...(metadata || {}),
             usage: openClawResponse.usage,
-            model: model || 'llama-3.3-70b-versatile',
+            model: model || 'meta/llama-3.1-70b-instruct',
             provider: openClawResponse.provider || 'unknown',
             key_name: openClawResponse.key_name || 'UNKNOWN_KEY'
         };
