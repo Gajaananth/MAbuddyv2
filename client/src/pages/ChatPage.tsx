@@ -21,7 +21,7 @@ const ChatPage: React.FC = () => {
     const [editContent, setEditContent] = useState('');
     const [showModeMenu, setShowModeMenu] = useState(false);
     const [showModelMenu, setShowModelMenu] = useState(false);
-    const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite-preview-02-05');
+    const [selectedModel, setSelectedModel] = useState('meta/llama-3.1-70b-instruct');
     const [publishToMoltbook, setPublishToMoltbook] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [showScrollButton, setShowScrollButton] = useState(false);
@@ -44,9 +44,9 @@ const ChatPage: React.FC = () => {
     };
 
     const liveModels = [
-        { label: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash-lite-preview-02-05', provider: 'gemini', icon: <Sparkles size={14} /> },
-        { label: 'Groq Llama 3.3 70B', id: 'llama-3.3-70b-versatile', provider: 'groq', icon: <Cpu size={14} /> },
         { label: 'NVIDIA Llama 3.1 70B', id: 'meta/llama-3.1-70b-instruct', provider: 'nvidia', icon: <Zap size={14} /> },
+        { label: 'Groq Llama 3.3 70B', id: 'llama-3.3-70b-versatile', provider: 'groq', icon: <Cpu size={14} /> },
+        { label: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash-lite-preview-02-05', provider: 'gemini', icon: <Sparkles size={14} /> },
     ];
 
     const modes = [

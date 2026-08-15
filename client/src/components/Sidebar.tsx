@@ -54,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { icon: <Brain size={18} />, label: 'Learning Outcomes', path: '/learning' },
         { icon: <BarChart3 size={18} />, label: 'Reports Archive', path: '/reports' },
         { icon: <UserCheck size={18} />, label: 'Agent Network', path: '/agents' },
+        { icon: <BarChart3 size={18} />, label: 'Token Tracker', path: '/security' },
         { icon: <Lock size={18} />, label: 'Security Grid', path: '/security' },
     ];
 
