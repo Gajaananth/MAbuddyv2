@@ -156,12 +156,41 @@ function logFailure(tier: string, error: any) {
     lastCycleStatus = log;
 }
 
-function getProviderForModel(model?: string): 'groq' | 'gemini' | 'nvidia' | 'auto' {
+export function getProviderForModel(model?: string): 'groq' | 'gemini' | 'nvidia' | 'auto' {
     if (!model) return 'auto';
     const normalized = model.toLowerCase();
     if (normalized.includes('gemini')) return 'gemini';
     if (normalized.includes('meta/') || normalized.includes('nvidia') || normalized.includes('llama-3.1')) return 'nvidia';
     return 'groq';
+}
+
+export function normalizeModelForProvider(provider: 'groq' | 'gemini' | 'nvidia', requestedModel?: string): string {
+    const candidate = requestedModel?.trim();
+
+    if (provider === 'gemini') {
+        if (!candidate) return 'gemini-2.0-flash';
+        const normalized = candidate.toLowerCase();
+        if (normalized.includes('gemini')) {
+            if (normalized.includes('2.5')) return 'gemini-2.0-flash';
+            if (normalized.includes('2.0')) return 'gemini-2.0-flash';
+            if (normalized.includes('1.5')) return 'gemini-1.5-flash';
+        }
+        return 'gemini-2.0-flash';
+    }
+
+    if (provider === 'nvidia') {
+        if (!candidate) return 'meta/llama-3.1-70b-instruct';
+        const normalized = candidate.toLowerCase();
+        if (normalized.includes('meta/') || normalized.includes('nvidia')) return 'meta/llama-3.1-70b-instruct';
+        if (normalized.includes('llama-3.3')) return 'meta/llama-3.1-70b-instruct';
+        return 'meta/llama-3.1-70b-instruct';
+    }
+
+    if (!candidate) return 'llama-3.3-70b-versatile';
+    const normalized = candidate.toLowerCase();
+    if (normalized.includes('llama-3.3')) return 'llama-3.3-70b-versatile';
+    if (normalized.includes('llama-3.1')) return 'llama-3.3-70b-versatile';
+    return 'llama-3.3-70b-versatile';
 }
 
 export async function think(
@@ -175,7 +204,9 @@ export async function think(
     const NVIDIA_KEY = process.env.NVIDIA_API_KEY;
     
     const requestedProvider = getProviderForModel(options.model);
-    const targetModel = options.model || 'meta/llama-3.1-70b-instruct';
+    const targetModel = options.model
+        ? normalizeModelForProvider(requestedProvider === 'auto' ? 'nvidia' : requestedProvider, options.model)
+        : normalizeModelForProvider('nvidia');
 
     // Personality Dispatcher
     let modeInstruction = "IDENTITY 1: PRIVATE PARTNER (Direct Chat)";

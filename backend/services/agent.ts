@@ -44,7 +44,7 @@ export class Agent extends EventEmitter<AgentEvents> {
         this.client = new OpenRouter({ apiKey: config.apiKey });
         this.config = {
             apiKey: config.apiKey,
-            model: config.model ?? 'google/gemini-2.0-flash-lite-preview-02-05:free',
+            model: config.model ?? 'google/gemini-2.0-flash-001',
             instructions: config.instructions ?? 'You are Karuppu, a strategic AI partner and agentic buddy aligned with the Operator\'s core mission.',
             tools: config.tools ?? [],
             maxSteps: config.maxSteps ?? 5,

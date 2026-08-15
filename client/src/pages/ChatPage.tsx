@@ -46,7 +46,7 @@ const ChatPage: React.FC = () => {
     const liveModels = [
         { label: 'NVIDIA Llama 3.1 70B', id: 'meta/llama-3.1-70b-instruct', provider: 'nvidia', icon: <Zap size={14} /> },
         { label: 'Groq Llama 3.3 70B', id: 'llama-3.3-70b-versatile', provider: 'groq', icon: <Cpu size={14} /> },
-        { label: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash-lite-preview-02-05', provider: 'gemini', icon: <Sparkles size={14} /> },
+        { label: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash', provider: 'gemini', icon: <Sparkles size={14} /> },
     ];
 
     const modes = [
