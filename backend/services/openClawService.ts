@@ -156,6 +156,14 @@ function logFailure(tier: string, error: any) {
     lastCycleStatus = log;
 }
 
+function getProviderForModel(model?: string): 'groq' | 'gemini' | 'nvidia' | 'auto' {
+    if (!model) return 'auto';
+    const normalized = model.toLowerCase();
+    if (normalized.includes('gemini')) return 'gemini';
+    if (normalized.includes('meta/') || normalized.includes('nvidia') || normalized.includes('llama-3.1')) return 'nvidia';
+    return 'groq';
+}
+
 export async function think(
     prompt: string,
     history: {role: string, content: string}[] = [],
@@ -164,10 +172,9 @@ export async function think(
 ): Promise<OpenClawResponse> {
     const GROQ_KEY = process.env.GROQ_API_KEY;
     const GEMINI_KEY = process.env.GEMINI_API_KEY;
-    const OPENAI_KEY = process.env.OPENAI_API_KEY;
-    const QWEN_KEY = process.env.QWEN_API_KEY;
+    const NVIDIA_KEY = process.env.NVIDIA_API_KEY;
     
-    // Requested model or default
+    const requestedProvider = getProviderForModel(options.model);
     const targetModel = options.model || 'llama-3.3-70b-versatile';
 
     // Personality Dispatcher
@@ -177,7 +184,11 @@ export async function think(
     }
 
     const systemPrompt = `${ZIUM_Karuppu_INSTRUCTIONS}\n\n[CURRENT_ACTIVE_MODE]: ${modeInstruction}`;
-    if (GROQ_KEY) {
+    const shouldUseGroq = requestedProvider === 'auto' || requestedProvider === 'groq';
+    const shouldUseGemini = requestedProvider === 'auto' || requestedProvider === 'gemini';
+    const shouldUseNvidia = requestedProvider === 'auto' || requestedProvider === 'nvidia';
+
+    if (GROQ_KEY && shouldUseGroq) {
         try {
             console.log(`[Brain] T0 Groq -> ${targetModel}`);
             const res = await fetchWithRetry('https://api.groq.com/openai/v1/chat/completions', {
@@ -243,12 +254,58 @@ export async function think(
         }
     }
 
-    // --- TIER 1: NATIVE GEMINI (DEFERRED BACKUP) ---
-    if (GEMINI_KEY && !options.model) {
-        const models = ['gemini-2.0-flash-lite-preview-02-05', 'gemini-1.5-flash'];
+    // --- TIER 1: NVIDIA/NIM (FAST FALLBACK) ---
+    if (NVIDIA_KEY && shouldUseNvidia) {
+        const models = [
+            targetModel,
+            'meta/llama-3.3-70b-instruct',
+            'meta/llama-3.1-70b-instruct',
+            'meta/llama-3.1-8b-instruct'
+        ].filter((value, index, array) => array.indexOf(value) === index);
         for (const model of models) {
             try {
-                console.log(`[Brain] T1 Gemini -> ${model}`);
+                console.log(`[Brain] T1 NVIDIA -> ${model}`);
+                const res = await axios.post('https://integrate.api.nvidia.com/v1/chat/completions', {
+                    model,
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        ...history.map(h => ({ role: h.role as any, content: h.content })),
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.8,
+                    max_tokens: 4096,
+                }, {
+                    headers: {
+                        'Authorization': `Bearer ${NVIDIA_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 18000,
+                });
+
+                const text = res.data?.choices?.[0]?.message?.content;
+                if (text) {
+                    lastCycleStatus = `LIVE: NVIDIA (${model})`;
+                    return {
+                        content: text,
+                        usage: res.data?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+                        provider: 'nvidia',
+                        key_name: 'NVIDIA_API_KEY'
+                    };
+                }
+            } catch (e) { logFailure(`NVIDIA ${model}`, e); }
+        }
+    }
+
+    // --- TIER 2: NATIVE GEMINI (DEFERRED BACKUP) ---
+    if (GEMINI_KEY && shouldUseGemini) {
+        const models = [
+            targetModel,
+            'gemini-2.0-flash-lite-preview-02-05',
+            'gemini-1.5-flash'
+        ].filter((value, index, array) => array.indexOf(value) === index);
+        for (const model of models) {
+            try {
+                console.log(`[Brain] T2 Gemini -> ${model}`);
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
                 
                 // Map history to Gemini format (user/model roles)
@@ -275,55 +332,6 @@ export async function think(
                 }
             } catch (e) { logFailure(`Gemini ${model}`, e); }
         }
-    }
-
-    // --- TIER 2: NATIVE QWEN (DEFERRED BACKUP) ---
-    if (QWEN_KEY && !options.model) {
-        try {
-            const model = 'qwen-max';
-            console.log(`[Brain] T2 Qwen -> ${model}`);
-            const res = await axios.post('https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', {
-                model,
-                messages: [
-                    { role: 'system', content: systemPrompt }, 
-                    ...history.map(h => ({ role: h.role as any, content: h.content })),
-                    { role: 'user', content: prompt }
-                ]
-            }, { headers: { 'Authorization': `Bearer ${QWEN_KEY}` }, timeout: 12000 });
-
-            if (res.data?.choices?.[0]?.message?.content) {
-                return {
-                    content: res.data.choices[0].message.content,
-                    usage: res.data.usage,
-                    provider: 'qwen',
-                    key_name: 'QWEN_API_KEY'
-                };
-            }
-        } catch (e) { logFailure(`Qwen`, e); }
-    }
-
-    // --- TIER 3: OPENAI (PAID FALLBACK) ---
-    if (OPENAI_KEY && !options.model) {
-        try {
-            const model = 'gpt-4o-mini';
-            const res = await axios.post('https://api.openai.com/v1/chat/completions', {
-                model,
-                messages: [
-                    { role: 'system', content: systemPrompt }, 
-                    ...history.map(h => ({ role: h.role as any, content: h.content })),
-                    { role: 'user', content: prompt }
-                ]
-            }, { headers: { 'Authorization': `Bearer ${OPENAI_KEY}` }, timeout: 15000 });
-
-            if (res.data?.choices?.[0]?.message?.content) {
-                return {
-                    content: res.data.choices[0].message.content,
-                    usage: res.data.usage,
-                    provider: 'openai',
-                    key_name: 'OPENAI_API_KEY'
-                };
-            }
-        } catch (e) { logFailure(`OpenAI`, e); }
     }
 
     lastCycleStatus = `OFFLINE: All tiers failed. Check logs.`;

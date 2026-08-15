@@ -1,7 +1,7 @@
 import { KaruppuLogo } from '../components/KaruppuLogo';
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Send, Terminal, User, Square, Pencil, ChevronDown, Cpu, Zap, BarChart3, RefreshCcw } from 'lucide-react';
+import { Send, Terminal, User, Square, Pencil, ChevronDown, Cpu, Zap, BarChart3, RefreshCcw, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { chatService, memoryService } from '../services/api';
@@ -21,7 +21,7 @@ const ChatPage: React.FC = () => {
     const [editContent, setEditContent] = useState('');
     const [showModeMenu, setShowModeMenu] = useState(false);
     const [showModelMenu, setShowModelMenu] = useState(false);
-    const [selectedModel, setSelectedModel] = useState('llama-3.3-70b-versatile');
+    const [selectedModel, setSelectedModel] = useState('gemini-2.0-flash-lite-preview-02-05');
     const [publishToMoltbook, setPublishToMoltbook] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [showScrollButton, setShowScrollButton] = useState(false);
@@ -43,11 +43,10 @@ const ChatPage: React.FC = () => {
         setShowScrollButton(!isNearBottom);
     };
 
-    const groqModels = [
-        { label: 'GPT OSS 120B', id: 'llama-3.3-70b-versatile', icon: <Cpu size={14} /> },
-        { label: 'Llama 4 Scout', id: 'llama-3.1-8b-instant', icon: <Zap size={14} /> },
-        { label: 'Qwen 3 32B', id: 'mixtral-8x7b-32768', icon: <BarChart3 size={14} /> },
-        { label: 'Llama 3.3 70B', id: 'llama-3.3-70b-versatile', icon: <Cpu size={14} /> },
+    const liveModels = [
+        { label: 'Gemini 2.0 Flash', id: 'gemini-2.0-flash-lite-preview-02-05', provider: 'gemini', icon: <Sparkles size={14} /> },
+        { label: 'Groq Llama 3.3 70B', id: 'llama-3.3-70b-versatile', provider: 'groq', icon: <Cpu size={14} /> },
+        { label: 'NVIDIA Llama 3.1 70B', id: 'meta/llama-3.1-70b-instruct', provider: 'nvidia', icon: <Zap size={14} /> },
     ];
 
     const modes = [
@@ -477,17 +476,17 @@ const ChatPage: React.FC = () => {
                             className="flex items-center gap-2 px-4 py-2 rounded-xl glass border border-nova-accent/30 text-[10px] font-black uppercase tracking-widest hover:border-nova-accent transition-all active:scale-95 shadow-[0_0_20px_rgba(0,242,255,0.05)]"
                         >
                             <Zap size={12} className="text-nova-accent" />
-                            <span>{groqModels.find(m => m.id === selectedModel)?.label || 'Select Model'}</span>
+                            <span>{liveModels.find(m => m.id === selectedModel)?.label || 'Select Model'}</span>
                             <ChevronDown size={12} className={`transition-transform duration-300 ${showModelMenu ? 'rotate-180' : ''}`} />
                         </button>
 
                         {showModelMenu && (
                             <div className="absolute left-0 bottom-full mb-3 w-64 glass border-2 border-nova-border rounded-2xl overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
                                 <div className="p-3 border-b border-white/5 bg-white/5">
-                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-nova-text-dim">Groq Neural Engines</p>
+                                    <p className="text-[9px] font-black uppercase tracking-[0.2em] text-nova-text-dim">Active Neural Engines</p>
                                 </div>
                                 <div className="divide-y divide-white/5">
-                                    {groqModels.map((model) => (
+                                    {liveModels.map((model) => (
                                         <button
                                             key={model.id}
                                             onClick={() => { setSelectedModel(model.id); setShowModelMenu(false); }}

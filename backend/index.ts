@@ -76,11 +76,13 @@ import { getBrainStatus } from './services/openClawService.js';
 app.get('/api/health', async (_req, res) => {
     const brainLevel = await getBrainStatus();
     const brainStatus = {
+        groq: !!process.env.GROQ_API_KEY,
         gemini: !!process.env.GEMINI_API_KEY,
-        qwen: !!process.env.QWEN_API_KEY,
-        openai: !!process.env.OPENAI_API_KEY,
+        nvidia: !!process.env.NVIDIA_API_KEY,
         moltbook: !!process.env.MOLTBOOK_API_KEY,
     };
+
+    const hasLiveKey = Object.values(brainStatus).some(Boolean);
 
     res.json({
         status: 'online',
@@ -88,9 +90,9 @@ app.get('/api/health', async (_req, res) => {
         version: 'v6.0.0',
         brain_status: brainStatus,
         last_brain_cycle: brainLevel,
-        mode: brainStatus.gemini || brainStatus.qwen || brainStatus.openai ? 'live' : 'MOCK_ONLY_RED_ALERT',
-        message: (!brainStatus.gemini && !brainStatus.qwen && !brainStatus.openai) 
-            ? 'CRITICAL: No API keys found! Brain is disabled.' 
+        mode: hasLiveKey ? 'live' : 'MOCK_ONLY_RED_ALERT',
+        message: !hasLiveKey
+            ? 'CRITICAL: No AI provider keys found in this deployment. Add them to Vercel Environment Variables.'
             : 'Brain is initialized.',
         timestamp: new Date().toISOString(),
     });
