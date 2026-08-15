@@ -313,7 +313,9 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         const finalMetadata = {
             ...(metadata || {}),
             usage: openClawResponse.usage,
-            model: model || 'llama-3.3-70b-versatile'
+            model: model || 'llama-3.3-70b-versatile',
+            provider: openClawResponse.provider || 'unknown',
+            key_name: openClawResponse.key_name || 'UNKNOWN_KEY'
         };
         // Store Karuppu's response
         const savedKaruppuMessage = await db.addMessage(convId, 'nova', content, finalMetadata);

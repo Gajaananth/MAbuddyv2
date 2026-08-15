@@ -69,7 +69,7 @@ async function runDiagnostics() {
             }, {
                 headers: { 
                     'Authorization': `Bearer ${openRouterKey}`,
-                    'HTTP-Referer': 'https://ma-buddy.vercel.app',
+                    'HTTP-Referer': 'https://m-abuddyv2.vercel.app',
                     'X-Title': 'Karuppu Diagnostics'
                 },
                 timeout: 10000

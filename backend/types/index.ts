@@ -99,6 +99,8 @@ export interface OpenClawRequest {
 
 export interface OpenClawResponse {
     content: string;
+    provider?: string;
+    key_name?: string;
     usage?: {
         prompt_tokens: number;
         completion_tokens: number;

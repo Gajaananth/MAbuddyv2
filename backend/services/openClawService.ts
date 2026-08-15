@@ -198,7 +198,7 @@ export async function think(
             });
 
             let text = res.data?.choices?.[0]?.message?.content;
-            const usage = res.data?.usage || { total_tokens: 0 };
+            const usage = res.data?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
             
             if (text) {
                 // CLEANER: Force-remove robotic prefixes and hallucinated labels globally
@@ -208,7 +208,12 @@ export async function think(
                 text = text.trim();
 
                 lastCycleStatus = `LIVE: Groq (${targetModel})`;
-                return { content: text, usage: usage as any };
+                return {
+                    content: text,
+                    usage: usage as any,
+                    provider: 'groq',
+                    key_name: 'GROQ_API_KEY'
+                };
             }
         } catch (e) { 
             logFailure(`Groq ${targetModel}`, e);
@@ -226,7 +231,12 @@ export async function think(
                     }, { headers: { 'Authorization': `Bearer ${GROQ_KEY}` }, timeout: 10000 });
                     
                     if (altRes.data?.choices?.[0]?.message?.content) {
-                        return { content: altRes.data.choices[0].message.content, usage: altRes.data.usage };
+                        return {
+                            content: altRes.data.choices[0].message.content,
+                            usage: altRes.data.usage,
+                            provider: 'groq',
+                            key_name: 'GROQ_API_KEY'
+                        };
                     }
                 } catch (altErr) { logFailure(`Groq Alt`, altErr); }
             }
@@ -256,7 +266,12 @@ export async function think(
                 const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (text) {
                     lastCycleStatus = `LIVE: Gemini (${model})`;
-                    return { content: text, usage: { total_tokens: 0 } as any };
+                    return {
+                        content: text,
+                        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } as any,
+                        provider: 'gemini',
+                        key_name: 'GEMINI_API_KEY'
+                    };
                 }
             } catch (e) { logFailure(`Gemini ${model}`, e); }
         }
@@ -277,7 +292,12 @@ export async function think(
             }, { headers: { 'Authorization': `Bearer ${QWEN_KEY}` }, timeout: 12000 });
 
             if (res.data?.choices?.[0]?.message?.content) {
-                return { content: res.data.choices[0].message.content, usage: res.data.usage };
+                return {
+                    content: res.data.choices[0].message.content,
+                    usage: res.data.usage,
+                    provider: 'qwen',
+                    key_name: 'QWEN_API_KEY'
+                };
             }
         } catch (e) { logFailure(`Qwen`, e); }
     }
@@ -296,7 +316,12 @@ export async function think(
             }, { headers: { 'Authorization': `Bearer ${OPENAI_KEY}` }, timeout: 15000 });
 
             if (res.data?.choices?.[0]?.message?.content) {
-                return { content: res.data.choices[0].message.content, usage: res.data.usage };
+                return {
+                    content: res.data.choices[0].message.content,
+                    usage: res.data.usage,
+                    provider: 'openai',
+                    key_name: 'OPENAI_API_KEY'
+                };
             }
         } catch (e) { logFailure(`OpenAI`, e); }
     }
@@ -304,7 +329,9 @@ export async function think(
     lastCycleStatus = `OFFLINE: All tiers failed. Check logs.`;
     return {
         content: `Operator, the neural grid is currently under extreme load. Groq and legacy fallbacks are reporting congestion. I'm maintaining local buffers. Try again in 30 seconds.`,
-        usage: { total_tokens: 0 } as any
+        usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 } as any,
+        provider: 'unavailable',
+        key_name: 'NONE'
     };
 }
 

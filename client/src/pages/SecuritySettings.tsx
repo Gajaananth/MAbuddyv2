@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { startRegistration } from '@simplewebauthn/browser';
 import { formatTimestamp } from '../utils/formatUtils';
 import { KaruppuLogo } from '../components/KaruppuLogo';
+import UsageDashboard from '../components/UsageDashboard';
 
 interface AuditLog {
     id: string;
@@ -195,6 +196,10 @@ const SecuritySettings: React.FC = () => {
                     <p className="text-[9px] sm:text-[10px] text-nova-text-dim font-black uppercase tracking-wider mb-1">Total Events</p>
                     <p className="text-xl sm:text-2xl font-black text-white">{auditLogs.length}</p>
                 </div>
+            </div>
+
+            <div className="mb-8">
+                <UsageDashboard />
             </div>
 
             <div className="flex flex-col md:flex-row gap-4 md:gap-6">

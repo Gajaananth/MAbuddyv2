@@ -21,6 +21,7 @@ import authRoutes from './routes/auth.js';
 import tasksRoutes from './routes/tasks.js';
 import earningRoutes from './modules/earning-engine/routes.js';
 import learningRoutes from './routes/learning.js';
+import usageRoutes from './routes/usage.js';
 import { authenticate } from './middleware/auth.js';
 import { initRaidingSchedule } from './services/raidingService.js';
 import { autonomyService } from './services/autonomyService.js';
@@ -55,7 +56,7 @@ app.use(cors({
             'http://localhost:5174',
             'http://localhost:5175',
             'http://localhost:3000',
-            'https://ma-buddy.vercel.app',
+            'https://m-abuddyv2.vercel.app',
             process.env.FRONTEND_URL,
         ];
 
@@ -128,6 +129,7 @@ app.use(['/api/intelligence', '/api/intel'], authenticate, intelligenceRoutes);
 app.use('/api/notifications', authenticate, notificationRoutes);
 app.use('/api/tasks', authenticate, tasksRoutes);
 app.use('/api/learning', authenticate, learningRoutes);
+app.use('/api/usage', authenticate, usageRoutes);
 app.use('/api/earning', authenticate, earningRoutes);
 
 // ─── Global Error Handler ──────────────────────────────────────
