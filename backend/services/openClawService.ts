@@ -1,6 +1,5 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import https from 'https';
 import { OpenClawResponse } from '../types/index.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,9 +11,8 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
 
-const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
-});
+// NOTE: Removed unused httpsAgent with rejectUnauthorized: false for security.
+// TLS verification is enforced by default.
 
 /**
  * Karuppu CORE SYSTEM INSTRUCTIONS
@@ -156,15 +154,19 @@ function logFailure(tier: string, error: any) {
     lastCycleStatus = log;
 }
 
-export function getProviderForModel(model?: string): 'groq' | 'gemini' | 'nvidia' | 'auto' {
+export function getProviderForModel(model?: string): 'groq' | 'gemini' | 'nvidia' | 'mistral' | 'cloudflare' | 'huggingface' | 'sambanova' | 'auto' {
     if (!model) return 'auto';
     const normalized = model.toLowerCase();
     if (normalized.includes('gemini')) return 'gemini';
     if (normalized.includes('meta/') || normalized.includes('nvidia') || normalized.includes('llama-3.1')) return 'nvidia';
+    if (normalized.includes('mistral')) return 'mistral';
+    if (normalized.includes('cloudflare')) return 'cloudflare';
+    if (normalized.includes('huggingface')) return 'huggingface';
+    if (normalized.includes('sambanova')) return 'sambanova';
     return 'groq';
 }
 
-export function normalizeModelForProvider(provider: 'groq' | 'gemini' | 'nvidia', requestedModel?: string): string {
+export function normalizeModelForProvider(provider: 'groq' | 'gemini' | 'nvidia' | 'mistral' | 'cloudflare' | 'huggingface' | 'sambanova', requestedModel?: string): string {
     const candidate = requestedModel?.trim();
 
     if (provider === 'gemini') {
@@ -186,10 +188,31 @@ export function normalizeModelForProvider(provider: 'groq' | 'gemini' | 'nvidia'
         return 'meta/llama-3.1-70b-instruct';
     }
 
+    if (provider === 'mistral') {
+        if (!candidate) return 'mistral-large';
+        return candidate;
+    }
+
+    if (provider === 'cloudflare') {
+        if (!candidate) return 'cf/meta/llama-3.1-70b-instruct';
+        return candidate;
+    }
+
+    if (provider === 'huggingface') {
+        if (!candidate) return 'huggingface/default-model';
+        return candidate;
+    }
+
+    if (provider === 'sambanova') {
+        if (!candidate) return 'sambanova/default-model';
+        return candidate;
+    }
+
     if (!candidate) return 'llama-3.3-70b-versatile';
     const normalized = candidate.toLowerCase();
     if (normalized.includes('llama-3.3')) return 'llama-3.3-70b-versatile';
     if (normalized.includes('llama-3.1')) return 'llama-3.3-70b-versatile';
+    return 'llama-3.3-70b-versatile';
     return 'llama-3.3-70b-versatile';
 }
 
@@ -215,8 +238,8 @@ export async function think(
     }
 
     const systemPrompt = `${ZIUM_Karuppu_INSTRUCTIONS}\n\n[CURRENT_ACTIVE_MODE]: ${modeInstruction}`;
-    const providerOrder: Array<'nvidia' | 'groq' | 'gemini'> = requestedProvider === 'auto'
-        ? ['nvidia', 'groq', 'gemini']
+    const providerOrder: Array<string> = requestedProvider === 'auto'
+        ? ['nvidia', 'groq', 'gemini', 'mistral', 'cloudflare', 'huggingface', 'sambanova']
         : [requestedProvider];
 
     for (const provider of providerOrder) {
@@ -262,6 +285,23 @@ export async function think(
             }
         }
 
+        // Placeholder handling for additional providers – currently no dedicated SDKs, fallback to Groq logic if possible
+        if (provider === 'mistral' && process.env.MISTRAL_API_KEY) {
+            // TODO: Implement actual Mistral API call
+            console.log('[Brain] MISTRAL provider selected but not implemented – skipping');
+        }
+        if (provider === 'cloudflare' && process.env.CLOUDFLARE_API_KEY) {
+            // TODO: Implement Cloudflare Workers AI call
+            console.log('[Brain] CLOUDFLARE provider selected but not implemented – skipping');
+        }
+        if (provider === 'huggingface' && process.env.HUGGINGFACE_API_KEY) {
+            // TODO: Implement Hugging Face inference API call
+            console.log('[Brain] HUGGINGFACE provider selected but not implemented – skipping');
+        }
+        if (provider === 'sambanova' && process.env.SAMBANOVA_API_KEY) {
+            // TODO: Implement SambaNova API call
+            console.log('[Brain] SAMBANOVA provider selected but not implemented – skipping');
+        }
         if (provider === 'groq' && GROQ_KEY) {
             const groqModels = [
                 targetModel,

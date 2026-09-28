@@ -1,10 +1,8 @@
 import dotenv from 'dotenv';
 // Load environment variables immediately
 dotenv.config();
-
 // TLS verification is enforced. Removed NODE_TLS_REJECT_UNAUTHORIZED bypass for security.
 // If local self-signed certs are needed, configure proper CA instead of disabling verification.
-
 import express from 'express';
 import cors from 'cors';
 import { initDatabase } from './db/connection.js';
@@ -23,17 +21,12 @@ import { authenticate } from './middleware/auth.js';
 import { initRaidingSchedule } from './services/raidingService.js';
 import { autonomyService } from './services/autonomyService.js';
 import { monitorService } from './services/monitorService.js';
-import path from 'path';
 import rateLimit from 'express-rate-limit';
-
 // Rate limit is configured but heartbeat will start after DB is ready
-
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
-
 // Trust Vercel Proxy for express-rate-limit
 app.set('trust proxy', 1);
-
 // ─── Rate Limiting ───────────────────────────────────────────
 // Limit each IP to 100 requests per 15 minutes
 const limiter = rateLimit({
@@ -43,7 +36,6 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
 });
-
 // ─── Middleware ────────────────────────────────────────────────
 app.use(limiter);
 app.use(cors({
@@ -56,19 +48,17 @@ app.use(cors({
             'https://m-abuddyv2.vercel.app',
             process.env.FRONTEND_URL,
         ];
-
         if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
             callback(null, true);
-        } else {
+        }
+        else {
             callback(null, false);
         }
     },
     credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
-
 import { getBrainStatus } from './services/openClawService.js';
-
 // ─── Health Check ─────────────────────────────────────────────
 app.get('/api/health', async (_req, res) => {
     const brainLevel = await getBrainStatus();
@@ -77,10 +67,12 @@ app.get('/api/health', async (_req, res) => {
         gemini: !!process.env.GEMINI_API_KEY,
         nvidia: !!process.env.NVIDIA_API_KEY,
         moltbook: !!process.env.MOLTBOOK_API_KEY,
+        mistral: !!process.env.MISTRAL_API_KEY,
+        cloudflare: !!process.env.CLOUDFLARE_API_KEY,
+        huggingface: !!process.env.HUGGINGFACE_API_KEY,
+        sambanova: !!process.env.SAMBANOVA_API_KEY,
     };
-
     const hasLiveKey = Object.values(brainStatus).some(Boolean);
-
     res.json({
         status: 'online',
         agent: 'Karuppu',
@@ -94,18 +86,17 @@ app.get('/api/health', async (_req, res) => {
         timestamp: new Date().toISOString(),
     });
 });
-
-
 // ─── Resilience Middleware ────────────────────────────────────
 // Ensures database is initialized before processing any API requests
 // but allows the app to boot instantly.
 app.use(async (req, res, next) => {
-    if (req.path === '/api/health' || req.path === '/api/auth/diag') return next();
-
+    if (req.path === '/api/health' || req.path === '/api/auth/diag')
+        return next();
     try {
         await initDatabase();
         next();
-    } catch (err: any) {
+    }
+    catch (err) {
         console.error('[Resilience] Critical Grid Failure at path:', req.path);
         console.error('[Resilience] Error:', err.message);
         res.status(503).json({
@@ -115,10 +106,8 @@ app.use(async (req, res, next) => {
         });
     }
 });
-
 // ─── Routes ───────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
-
 // Protected Routes
 app.use('/api/chat', authenticate, chatRoutes);
 app.use('/api/trends', authenticate, trendsRoutes);
@@ -130,9 +119,8 @@ app.use('/api/tasks', authenticate, tasksRoutes);
 app.use('/api/learning', authenticate, learningRoutes);
 app.use('/api/usage', authenticate, usageRoutes);
 app.use('/api/earning', authenticate, earningRoutes);
-
 // ─── Global Error Handler ──────────────────────────────────────
-app.use((err: any, req: any, res: any, next: any) => {
+app.use((err, req, res, next) => {
     console.error('[Global Error HANDLER]', err);
     res.status(500).json({
         success: false,
@@ -141,28 +129,23 @@ app.use((err: any, req: any, res: any, next: any) => {
         stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
 });
-
 // ─── Export for Serverless ────────────────────────────────────
 // ─── Export for Serverless ────────────────────────────────────
 export default app;
-
 // ─── Start Server (Local Only) ────────────────────────────────
 async function start() {
     await initDatabase();
     initRaidingSchedule();
     monitorService.initMonitor();
-    
     if (!process.env.VERCEL) {
         autonomyService.startHeartbeat(30);
     }
-
     if (!process.env.VERCEL) {
         app.listen(PORT, () => {
             console.log('[Karuppu] Mission Grid v6.0.0 | GRID RECLAMATION PROTOCOL ACTIVE');
         });
     }
 }
-
 if (!process.env.VERCEL) {
     start().catch(console.error);
 }
