@@ -28,10 +28,17 @@ export interface MessageMetadata {
         overall: number;
     };
     flags?: string[];
-    action_type?: string;
     approved?: boolean;
     stopped?: boolean;
     model?: string;
+    provider?: string;
+    key_name?: string;
+    fallback?: boolean;
+    usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        total_tokens?: number;
+    };
 }
 
 export interface FilterScores {

@@ -11,6 +11,7 @@ test('login recovers by replacing oldest device when identifiers verify and quot
   const originalRemoveDevice = authQueries.removeDevice;
   const originalRegisterDevice = authQueries.registerDevice;
   const originalFindDevice = authQueries.findDevice;
+  const originalGetDevicesByUserId = authQueries.getDevicesByUserId;
   const originalResetFailedAttempts = authQueries.resetFailedAttempts;
   const originalPoolDescriptor = Object.getOwnPropertyDescriptor(db, 'pool');
 
@@ -31,7 +32,7 @@ test('login recovers by replacing oldest device when identifiers verify and quot
       lock_until: null,
     });
 
-    authQueries.getDeviceCountByUserId = async () => 3;
+    authQueries.getDeviceCountByUserId = async () => 10; // New limit is 10 for standard operators
     authQueries.getOldestDeviceByUserId = async () => ({
       id: 'old-device-1',
       user_id: 'user-1',
@@ -47,6 +48,8 @@ test('login recovers by replacing oldest device when identifiers verify and quot
       registeredDevice = device;
     };
     authQueries.findDevice = async () => null;
+    // Return empty array so the relaxed OR-lookup in auto-link phase finds no existing device
+    authQueries.getDevicesByUserId = async () => [];
     authQueries.resetFailedAttempts = async () => {};
 
     const result = await authService.login({
@@ -77,6 +80,7 @@ test('login recovers by replacing oldest device when identifiers verify and quot
     authQueries.removeDevice = originalRemoveDevice;
     authQueries.registerDevice = originalRegisterDevice;
     authQueries.findDevice = originalFindDevice;
+    authQueries.getDevicesByUserId = originalGetDevicesByUserId;
     authQueries.resetFailedAttempts = originalResetFailedAttempts;
   }
 });

@@ -10,7 +10,8 @@ const MAX_USERS = 5;
 const LOCKOUT_MINUTES = 10;
 const MAX_FAILED_ATTEMPTS = 5;
 
-// Lead Admin gets 5 devices, standard operators get 3.
+// Lead Admin gets 20 devices, standard operators get 10.
+// Raised from 5/3 to accommodate multiple browsers & profiles on the same physical machine.
 async function getDeviceLimit(userId: string): Promise<number> {
     try {
         const users = await authQueries.getAllUsers();
@@ -20,11 +21,11 @@ async function getDeviceLimit(userId: string): Promise<number> {
         );
 
         if (sortedUsers.length > 0 && sortedUsers[0].id === userId) {
-            return 5;
+            return 20;
         }
-        return 3;
+        return 10;
     } catch {
-        return 3; // Fallback to safe minimum
+        return 10; // Fallback to safe minimum
     }
 }
 
@@ -101,14 +102,18 @@ export async function register(u: {
             throw new Error('IDENTIFICATION CONFLICT: Security identifiers match an existing user, but PIN is incorrect.');
         }
 
-        // PIN matches -> Check if device is already registered to THIS user
-        const existingDevice = await authQueries.findDevice(user.id, u.device.fingerprint);
+        // PIN matches -> Check if device is already registered to THIS user (relaxed: match fingerprint OR identifier)
+        const userDevices = await authQueries.getDevicesByUserId(user.id);
+        const existingDevice = userDevices.find((d: any) =>
+            (u.device?.fingerprint && d.fingerprint === u.device.fingerprint) ||
+            (u.device?.identifier && d.device_identifier === u.device.identifier)
+        );
         if (existingDevice) {
             return { success: true, userId: user.id, message: 'DEVICE_ALREADY_LINKED' };
         }
 
         // Check Per-User Device Quota
-        const userDeviceCount = await authQueries.getDeviceCountByUserId(user.id);
+        const userDeviceCount = userDevices.length;
         const userLimit = await getDeviceLimit(user.id);
         if (userDeviceCount >= userLimit) {
             throw new Error(`DEVICE QUOTA REACHED: Maximum of ${userLimit} devices allowed for your clearance level.`);
@@ -191,11 +196,26 @@ export async function login(c: {
         const users = await authQueries.getUserByPin('');
         for (const user of users) {
             const devices = await authQueries.getDevicesByUserId(user.id);
-            const found = devices.find(d => d.device_identifier === c.device.identifier && d.fingerprint === c.device.fingerprint);
+            const found = devices.find(d => 
+                (c.device?.identifier && d.device_identifier === c.device.identifier) || 
+                (c.device?.fingerprint && d.fingerprint === c.device.fingerprint)
+            );
             if (found) {
                 matchedUser = user;
                 registeredDevice = found;
                 break;
+            }
+        }
+
+        // Direct Operator PIN Identification (Cross-browser / New Profile fallback)
+        // If device was not recognized yet, but PIN is provided: check if PIN matches any operator
+        if (!matchedUser && c.pin) {
+            for (const user of users) {
+                const isMatch = await compareValue(c.pin, user.pin_hash);
+                if (isMatch) {
+                    matchedUser = user;
+                    break;
+                }
             }
         }
     }
@@ -232,8 +252,13 @@ export async function login(c: {
     await authQueries.resetFailedAttempts(matchedUser.id);
 
     if (!registeredDevice) {
-        // Recognition successful via Identifiers -> Auto-Link the device now
-        const existingDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
+        // Recognition successful (via PIN or Identifiers) -> Auto-Link the device now
+        const userDevices = await authQueries.getDevicesByUserId(matchedUser.id);
+        const existingDevice = userDevices.find((d: any) => 
+            (c.device?.fingerprint && d.fingerprint === c.device.fingerprint) ||
+            (c.device?.identifier && d.device_identifier === c.device.identifier)
+        );
+
         if (!existingDevice) {
             const deviceCount = await authQueries.getDeviceCountByUserId(matchedUser.id);
             const userLimit = await getDeviceLimit(matchedUser.id);
@@ -255,7 +280,8 @@ export async function login(c: {
                 os_type: c.device.os || 'unknown'
             });
             // Re-find to get the ID for the token
-            registeredDevice = await authQueries.findDevice(matchedUser.id, c.device.fingerprint);
+            registeredDevice = (await authQueries.findDevice(matchedUser.id, c.device.fingerprint)) ||
+                (await authQueries.getDevicesByUserId(matchedUser.id)).find((d: any) => d.device_identifier === c.device.identifier);
         } else {
             registeredDevice = existingDevice;
         }
@@ -297,9 +323,27 @@ export async function loginBiometric(c: {
     origin: string,
     rpID: string
 }) {
-    // 1. Identify device and user directly
-    const device = await authQueries.getDeviceByIdentifierAndFingerprint(c.device.identifier, c.device.fingerprint);
+    // 1. Identify device and user directly (relaxed: try exact match first, then by identifier or fingerprint alone)
+    let device = await authQueries.getDeviceByIdentifierAndFingerprint(c.device.identifier, c.device.fingerprint);
     
+    if (!device) {
+        // Relaxed lookup: try by fingerprint across all devices
+        const allUsers = await authQueries.getAllUsers();
+        for (const u of allUsers) {
+            const devices = await authQueries.getDevicesByUserId(u.id);
+            const found = devices.find(d => 
+                d.public_key && d.credential_id && (
+                    (c.device?.fingerprint && d.fingerprint === c.device.fingerprint) ||
+                    (c.device?.identifier && d.device_identifier === c.device.identifier)
+                )
+            );
+            if (found) {
+                device = found;
+                break;
+            }
+        }
+    }
+
     if (!device || !device.public_key || !device.credential_id) {
         throw new Error('ACCESS_DENIED: Biometrics not enrolled for this device.');
     }

@@ -67,15 +67,21 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 
-import { getBrainStatus } from './services/openClawService.js';
+import { getBrainStatus, getAvailableModels, getProviderStatus } from './services/openClawService.js';
 
 // ─── Health Check ─────────────────────────────────────────────
 app.get('/api/health', async (_req, res) => {
     const brainLevel = await getBrainStatus();
+    const providers = getProviderStatus();
     const brainStatus = {
-        groq: !!process.env.GROQ_API_KEY,
-        gemini: !!process.env.GEMINI_API_KEY,
-        nvidia: !!process.env.NVIDIA_API_KEY,
+        groq: providers.groq.configured,
+        gemini: providers.gemini.configured,
+        nvidia: providers.nvidia.configured,
+        mistral: providers.mistral.configured,
+        sambanova: providers.sambanova.configured,
+        huggingface: providers.huggingface.configured,
+        cloudflare: providers.cloudflare.configured,
+        openrouter: providers.openrouter.configured,
         moltbook: !!process.env.MOLTBOOK_API_KEY,
     };
 
@@ -84,23 +90,35 @@ app.get('/api/health', async (_req, res) => {
     res.json({
         status: 'online',
         agent: 'Karuppu',
-        version: 'v6.0.0',
+        version: 'v6.2.0',
         brain_status: brainStatus,
         last_brain_cycle: brainLevel,
         mode: hasLiveKey ? 'live' : 'MOCK_ONLY_RED_ALERT',
         message: !hasLiveKey
             ? 'CRITICAL: No AI provider keys found in this deployment. Add them to Vercel Environment Variables.'
-            : 'Brain is initialized.',
+            : 'Multi-Provider Neural Grid is initialized.',
+        total_models: getAvailableModels().length,
         timestamp: new Date().toISOString(),
     });
 });
 
+app.get('/api/models', async (_req, res) => {
+    res.json({
+        success: true,
+        data: {
+            models: getAvailableModels(),
+            providers: getProviderStatus(),
+            defaultModel: 'auto',
+            totalModels: getAvailableModels().length
+        }
+    });
+});
 
 // ─── Resilience Middleware ────────────────────────────────────
 // Ensures database is initialized before processing any API requests
 // but allows the app to boot instantly.
 app.use(async (req, res, next) => {
-    if (req.path === '/api/health' || req.path === '/api/auth/diag') return next();
+    if (req.path === '/api/health' || req.path === '/api/models' || req.path === '/api/auth/diag') return next();
 
     try {
         await initDatabase();

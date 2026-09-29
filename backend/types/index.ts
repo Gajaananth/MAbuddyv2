@@ -100,7 +100,9 @@ export interface OpenClawRequest {
 export interface OpenClawResponse {
     content: string;
     provider?: string;
+    model?: string;
     key_name?: string;
+    fallback?: boolean;
     usage?: {
         prompt_tokens: number;
         completion_tokens: number;

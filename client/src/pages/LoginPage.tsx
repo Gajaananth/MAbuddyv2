@@ -46,7 +46,8 @@ const LoginPage: React.FC = () => {
             const msg = typeof rawMsg === 'string' ? rawMsg : JSON.stringify(rawMsg);
             
             if (msg.includes('DEVICE_UNRECOGNIZED')) {
-                setError('NEW DEVICE DETECTED: Identify yourself to establish binding.');
+                // PIN didn't match any user either — fall back to identity verification
+                setError('PIN not recognized. Verify your identity to continue.');
                 setIsEnrollMode(true);
             } else {
                 setError(msg);

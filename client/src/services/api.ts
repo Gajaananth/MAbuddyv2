@@ -38,6 +38,8 @@ export const chatService = {
         api.post('/chat', { message, conversation_id, publish_to_moltbook, model }, { signal }),
     pollMessages: (conversation_id: string, since?: string) =>
         api.get('/chat/poll', { params: { conversation_id, since } }),
+    getModels: () =>
+        api.get('/chat/models'),
 };
 
 export const trendService = {

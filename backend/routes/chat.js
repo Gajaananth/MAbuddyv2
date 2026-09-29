@@ -7,6 +7,31 @@ import { missionService } from '../services/missionService.js';
 import db from '../db/queries.js';
 import { authenticate } from '../middleware/auth.js';
 const router = Router();
+
+/**
+ * GET /api/chat/models
+ * Retrieve all 35+ available models and active provider statuses.
+ */
+router.get('/models', async (_req, res) => {
+    try {
+        const { getAvailableModels, getProviderStatus } = await import('../services/openClawService.js');
+        const models = getAvailableModels();
+        const providers = getProviderStatus();
+        res.json({
+            success: true,
+            data: {
+                models,
+                providers,
+                defaultModel: 'auto',
+                totalModels: models.length
+            },
+            timestamp: new Date().toISOString()
+        });
+    } catch (e) {
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
+
 /**
  * GET /api/chat/poll
  * Poll for new messages in a specific conversation since a given timestamp.
@@ -288,13 +313,14 @@ router.post('/', authenticate, async (req, res) => {
             console.log('[Chat] Strategic mode. Skipping metrics.');
         }
         console.log('[Chat] Storing Karuppu response...');
-        // Merge token usage and model into metadata for tracking
         const finalMetadata = {
             ...(metadata || {}),
             usage: openClawResponse.usage,
-            model: model || 'meta/llama-3.1-70b-instruct',
+            model: openClawResponse.model || model || 'auto',
+            requested_model: model || 'auto',
             provider: openClawResponse.provider || 'unknown',
-            key_name: openClawResponse.key_name || 'UNKNOWN_KEY'
+            key_name: openClawResponse.key_name || 'UNKNOWN_KEY',
+            fallback: openClawResponse.fallback || false
         };
         // Store Karuppu's response
         const savedKaruppuMessage = await db.addMessage(convId, 'nova', content, finalMetadata);
