@@ -1,8 +1,8 @@
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
-// NOTE: TLS verification is now enforced. Remove NODE_TLS_REJECT_UNAUTHORIZED bypass.
-// Global SSL Bypass removed for security.
+// Global SSL Bypass: Required for Supabase connection pooler certificate chains on Vercel
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 let isPostgresActive = false;
 let isInitializing = false;
 // Ensure DATABASE_URL is present before initializing the pool to prevent startup crashes.
@@ -50,7 +50,7 @@ function getPool() {
     // Explicitly force SSL for Supabase if URL contains it or if not on Vercel
     if (connectionString.includes('supabase.com') || connectionString.includes('supabase.co') || !process.env.VERCEL) {
         dbConfig.ssl = {
-            rejectUnauthorized: true
+            rejectUnauthorized: false
         };
     }
     pool = new Pool(dbConfig);
