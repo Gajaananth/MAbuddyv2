@@ -110,18 +110,26 @@ export function summarizeUsageByProvider(rows: UsageRow[]) {
 
 export async function getUsageSummaryForUser(userId: string, days: number = 30) {
   const pool = db.pool;
+  let providerStatus: Record<string, any> = {};
+  try {
+    const { getProviderStatus } = await import('./openClawService.js');
+    providerStatus = getProviderStatus();
+  } catch {}
+
   if (!pool) {
     return {
       total_requests: 0,
       total_tokens: 0,
       by_provider: [],
+      recent_calls: [],
+      provider_status: providerStatus,
       window_days: days,
     };
   }
 
   const result = await pool.query(
     `
-      SELECT m.metadata
+      SELECT m.id, m.created_at, m.metadata, c.title as conversation_title
       FROM messages m
       JOIN conversations c ON c.id = m.conversation_id
       WHERE c.user_id = $1
@@ -134,8 +142,29 @@ export async function getUsageSummaryForUser(userId: string, days: number = 30) 
   );
 
   const rows = result.rows.map((row: any) => ({ metadata: row.metadata || {} }));
+  const summary = summarizeUsageByProvider(rows);
+
+  const recentCalls = result.rows.slice(0, 40).map((r: any) => {
+    let meta = r.metadata;
+    if (typeof meta === 'string') {
+      try { meta = JSON.parse(meta); } catch {}
+    }
+    return {
+      id: r.id,
+      created_at: r.created_at,
+      conversation_title: r.conversation_title,
+      provider: meta?.provider || 'unknown',
+      model: meta?.model || 'auto',
+      fallback: meta?.fallback || false,
+      usage: meta?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+      key_name: meta?.key_name || `${(meta?.provider || 'LLM').toUpperCase()}_API_KEY`
+    };
+  });
+
   return {
-    ...summarizeUsageByProvider(rows),
+    ...summary,
+    recent_calls: recentCalls,
+    provider_status: providerStatus,
     window_days: days,
   };
 }

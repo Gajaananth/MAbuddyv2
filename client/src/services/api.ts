@@ -160,3 +160,8 @@ export const learningService = {
     getImprovements: (limit = 30) => api.get(`/learning/improvements?limit=${limit}`),
     getSummary: () => api.get('/learning/summary'),
 };
+
+export const usageService = {
+    getSummary: (days = 30) => api.get(`/usage/summary?days=${days}`),
+};
+

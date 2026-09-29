@@ -1,4 +1,5 @@
 import db from '../db/connection.js';
+
 function toNumber(value) {
     if (typeof value === 'number' && Number.isFinite(value))
         return value;
@@ -9,6 +10,7 @@ function toNumber(value) {
     }
     return 0;
 }
+
 export function summarizeUsageByProvider(rows) {
     const providerMap = new Map();
     for (const row of rows) {
@@ -72,18 +74,27 @@ export function summarizeUsageByProvider(rows) {
         by_provider: byProvider,
     };
 }
+
 export async function getUsageSummaryForUser(userId, days = 30) {
     const pool = db.pool;
+    let providerStatus = {};
+    try {
+        const { getProviderStatus } = await import('./openClawService.js');
+        providerStatus = getProviderStatus();
+    } catch {}
+
     if (!pool) {
         return {
             total_requests: 0,
             total_tokens: 0,
             by_provider: [],
+            recent_calls: [],
+            provider_status: providerStatus,
             window_days: days,
         };
     }
     const result = await pool.query(`
-      SELECT m.metadata
+      SELECT m.id, m.created_at, m.metadata, c.title as conversation_title
       FROM messages m
       JOIN conversations c ON c.id = m.conversation_id
       WHERE c.user_id = $1
@@ -93,8 +104,29 @@ export async function getUsageSummaryForUser(userId, days = 30) {
       ORDER BY m.created_at DESC
     `, [userId, days]);
     const rows = result.rows.map((row) => ({ metadata: row.metadata || {} }));
+    const summary = summarizeUsageByProvider(rows);
+
+    const recentCalls = result.rows.slice(0, 40).map((r) => {
+        let meta = r.metadata;
+        if (typeof meta === 'string') {
+            try { meta = JSON.parse(meta); } catch {}
+        }
+        return {
+            id: r.id,
+            created_at: r.created_at,
+            conversation_title: r.conversation_title,
+            provider: meta?.provider || 'unknown',
+            model: meta?.model || 'auto',
+            fallback: meta?.fallback || false,
+            usage: meta?.usage || { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+            key_name: meta?.key_name || `${(meta?.provider || 'LLM').toUpperCase()}_API_KEY`
+        };
+    });
+
     return {
-        ...summarizeUsageByProvider(rows),
+        ...summary,
+        recent_calls: recentCalls,
+        provider_status: providerStatus,
         window_days: days,
     };
 }

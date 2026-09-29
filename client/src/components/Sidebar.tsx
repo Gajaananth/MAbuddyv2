@@ -4,7 +4,7 @@ import { NavLink } from 'react-router-dom';
 import NotificationPanel from './NotificationPanel';
 import { memoryService } from '../services/api';
 import {
-     Shield, TrendingUp, X, Database, PlusCircle, Brain, Lock, BarChart3, UserCheck
+     Shield, TrendingUp, X, Database, PlusCircle, Brain, Lock, BarChart3, UserCheck, Activity
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { icon: <Brain size={18} />, label: 'Learning Outcomes', path: '/learning' },
         { icon: <BarChart3 size={18} />, label: 'Reports Archive', path: '/reports' },
         { icon: <UserCheck size={18} />, label: 'Agent Network', path: '/agents' },
-        { icon: <BarChart3 size={18} />, label: 'Token Tracker', path: '/security' },
+        { icon: <Activity size={18} />, label: 'LLM Usage', path: '/usage' },
         { icon: <Lock size={18} />, label: 'Security Grid', path: '/security' },
     ];
 

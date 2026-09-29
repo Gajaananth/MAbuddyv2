@@ -17,6 +17,7 @@ import { IntelligenceProvider } from './context/IntelligenceContext';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import SecuritySettings from './pages/SecuritySettings';
+import UsagePage from './pages/UsagePage';
 import { KaruppuLogo } from './components/KaruppuLogo';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -83,6 +84,7 @@ function App() {
                         <Route path="/intelligence" element={<IntelligenceDashboard />} />
                         <Route path="/learning" element={<LearningPage />} />
                         <Route path="/reports" element={<ReportsPage />} />
+                        <Route path="/usage" element={<UsagePage />} />
                         <Route path="/security" element={<SecuritySettings />} />
                       </Routes>
                     </div>
