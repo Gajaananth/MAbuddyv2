@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification enforced - removed NODE_TLS_REJECT_UNAUTHORIZED bypass
 import { initDatabase } from './db/connection.js';
 
 import fs from 'fs';

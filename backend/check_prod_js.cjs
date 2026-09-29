@@ -1,12 +1,12 @@
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
 dotenv.config();
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification enforced - removed NODE_TLS_REJECT_UNAUTHORIZED bypass
 
 const connectionString = (process.env.DATABASE_URL || '').trim();
 const pool = new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: true }
 });
 
 async function check() {

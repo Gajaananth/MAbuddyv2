@@ -1,8 +1,15 @@
 import { Pool } from 'pg';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 async function run() {
-    const connectionString = "postgresql://postgres:gajaan0898%21@db.nyltgmuxvxockuqsqank.supabase.co:5432/postgres";
-    const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: false } });
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+        console.error('DATABASE_URL is not set');
+        process.exit(1);
+    }
+    const pool = new Pool({ connectionString, ssl: { rejectUnauthorized: true } });
     
     try {
         console.log('--- REMOTE DATABASE DIAGNOSTIC (Vercel Env) ---');

@@ -1,11 +1,20 @@
 import pkg from 'pg';
 const { Pool } = pkg;
+import dotenv from 'dotenv';
 
-// URL-encoding !! as %21%21
-const connectionString = 'postgresql://postgres:2026%21%21Buddy26@db.xotpvugfzaqjcdsyctng.supabase.co:6543/postgres?sslmode=require';
+dotenv.config();
+
+// TLS verification enforced - removed hardcoded connection string with password
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+    console.error('DATABASE_URL is not set');
+    process.exit(1);
+}
 
 const pool = new Pool({
     connectionString,
+    ssl: { rejectUnauthorized: true },
     connectionTimeoutMillis: 10000,
 });
 

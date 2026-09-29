@@ -1,14 +1,13 @@
-import pkg from 'pg';
-const { Pool } = pkg;
-import dotenv from 'dotenv';
+import { Pool } from 'pg';
+import * as dotenv from 'dotenv';
 dotenv.config();
 
-// SSL Bypass for Supabase remote connection
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification enforced - removed SSL bypass
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED removed
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: true }
 });
 
 async function verify() {
@@ -52,7 +51,7 @@ async function verify() {
     console.log('✅ User sync complete.');
 
   } catch (e) {
-    console.error('Error during remote migration:', e.message);
+    console.error('Error during remote migration:', e);
   } finally {
     await pool.end();
   }

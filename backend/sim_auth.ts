@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
 dotenv.config();
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// TLS verification enforced - removed NODE_TLS_REJECT_UNAUTHORIZED bypass
 
 // Simulation of hashing logic
 function deterministicHash(val: string): string {
@@ -12,7 +12,7 @@ function deterministicHash(val: string): string {
 const connectionString = (process.env.DATABASE_URL || '').trim();
 const pool = new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: true }
 });
 
 async function simulateLogin() {

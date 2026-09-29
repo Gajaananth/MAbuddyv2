@@ -5,7 +5,7 @@ dotenv.config();
 const connectionString = (process.env.DATABASE_URL || '').trim();
 const pool = new Pool({
     connectionString,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: true }
 });
 
 async function check() {

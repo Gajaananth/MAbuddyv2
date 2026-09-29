@@ -22,9 +22,9 @@ async function runDiagnostics() {
     // 2. Test Database Connection
     if (dbUrl) {
         console.log('\n[DB] Testing PostgreSQL Grid...');
-        const pool = new Pool({ 
+        const pool = new Pool({
             connectionString: dbUrl,
-            ssl: { rejectUnauthorized: false }
+            ssl: { rejectUnauthorized: true }
         });
         try {
             const res = await pool.query('SELECT NOW() as now, current_database() as db');

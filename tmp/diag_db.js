@@ -4,7 +4,7 @@ dotenv.config();
 
 const dbConfig = {
   connectionString: (process.env.DATABASE_URL || '').trim(),
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: true }
 };
 
 if (!dbConfig.connectionString) {

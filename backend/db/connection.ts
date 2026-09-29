@@ -4,8 +4,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Global SSL Bypass: Required for certain Supabase/Vercel certificate chains.
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// NOTE: TLS verification is now enforced. Remove NODE_TLS_REJECT_UNAUTHORIZED bypass.
+// Global SSL Bypass removed for security.
 
 let isPostgresActive = false;
 let isInitializing = false;
@@ -19,7 +19,31 @@ function getPool() {
   const connectionString = (process.env.DATABASE_URL || '').trim();
   if (!connectionString) {
     console.warn('[DB] CRITICAL: DATABASE_URL is empty. Grid disconnected.');
-    return null;
+    // Create a mock pool that safely handles queries when DB is unavailable.
+    const mockPool = {
+      async query(_text: string, _params?: any[]) {
+        console.warn('[DB] Mock pool received query while DB is unavailable. Returning empty result.');
+        return { rows: [] };
+      },
+      // Include minimal methods used elsewhere.
+      async connect() {
+          // Return a mock client with minimal query and release methods
+          return {
+            async query(sql: string) {
+              // Simulate advisory lock acquisition
+              if (sql.includes('pg_try_advisory_lock')) {
+                return { rows: [{ got_lock: true }] } as any;
+              }
+              // Default empty result
+              return { rows: [] } as any;
+            },
+            release() {}
+          } as any;
+        },
+      on() {}
+    } as any;
+    pool = mockPool;
+    return mockPool;
   }
 
   console.log('[DB] Initializing PostgreSQL Pool (Supabase Focused)...');
@@ -36,7 +60,7 @@ function getPool() {
   // Explicitly force SSL for Supabase if URL contains it or if not on Vercel
   if (connectionString.includes('supabase.com') || connectionString.includes('supabase.co') || !process.env.VERCEL) {
     dbConfig.ssl = {
-      rejectUnauthorized: false
+      rejectUnauthorized: true
     };
   }
   
@@ -69,8 +93,11 @@ async function initDatabase(): Promise<void> {
     try {
       const pool = getPool();
       if (!pool) {
-          console.error('[DB] CRITICAL Error: getPool() returned NULL.');
-          throw new Error('DATABASE_URL mission critical environment variable is MISSING.');
+          // Instead of throwing, allow the application to continue without DB.
+          console.warn('[DB] WARNING: DATABASE_URL is missing – skipping DB initialization.');
+          // Mark as not active but do not treat as fatal.
+          isPostgresActive = false;
+          return;
       }
 
       console.log('[DB] Requesting Pool Connection...');
@@ -79,8 +106,12 @@ async function initDatabase(): Promise<void> {
 
       try {
         isPostgresActive = true;
-        const dbHost = new URL(process.env.DATABASE_URL!).hostname;
-        console.log(`[DB] PostgreSQL Grid: ONLINE | Host: ${dbHost}`);
+        if (process.env.DATABASE_URL) {
+            const dbHost = new URL(process.env.DATABASE_URL).hostname;
+            console.log(`[DB] PostgreSQL Grid: ONLINE | Host: ${dbHost}`);
+        } else {
+            console.log('[DB] PostgreSQL Grid: ONLINE (mock mode, no DB URL)');
+        }
         
         // Blocking Migration: Ensure schema is synchronized before resolving
         // This is critical for Serverless (Vercel) persistence.

@@ -13,7 +13,7 @@ async function setupSupabaseCron() {
 
     const pool = new Pool({
         connectionString,
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: true }
     });
 
     try {

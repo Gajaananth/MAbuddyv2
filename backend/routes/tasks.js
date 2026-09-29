@@ -1,0 +1,132 @@
+import { Router } from 'express';
+import db from '../db/queries.js';
+import { authenticate } from '../middleware/auth.js';
+const router = Router();
+/**
+ * GET /api/tasks
+ * Retrieve Command Center tasks for the authenticated user.
+ */
+router.get('/', authenticate, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        const showArchived = req.query.archived === 'true';
+        const tasks = await db.getTasks(userId, showArchived);
+        const response = {
+            success: true,
+            data: tasks,
+            timestamp: new Date().toISOString(),
+        };
+        res.json(response);
+    }
+    catch (error) {
+        console.error('[Tasks] Error retrieving tasks:', error);
+        res.status(500).json({ success: false, error: 'Failed to retrieve Command Center tasks' });
+    }
+});
+/**
+ * PATCH /api/tasks/:id
+ * Update a specific task's status or details.
+ */
+router.patch('/:id', authenticate, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        const id = String(req.params.id);
+        const { status, notes } = req.body;
+        const updatedTask = await db.updateTaskStatus(userId, id, status, notes);
+        res.json({
+            success: true,
+            data: updatedTask,
+            timestamp: new Date().toISOString(),
+        });
+    }
+    catch (error) {
+        console.error('[Tasks] Update Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to update task' });
+    }
+});
+/**
+ * PATCH /api/tasks/:id/archive
+ */
+router.patch('/:id/archive', authenticate, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        const id = String(req.params.id);
+        const { is_archived } = req.body;
+        const updatedTask = await db.archiveTask(userId, id, is_archived);
+        res.json({ success: true, data: updatedTask });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to archive task' });
+    }
+});
+/**
+ * PATCH /api/tasks/:id/assign
+ */
+router.patch('/:id/assign', authenticate, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        const id = String(req.params.id);
+        const { assigned_to } = req.body;
+        const updatedTask = await db.updateTaskAssignment(userId, id, assigned_to);
+        res.json({ success: true, data: updatedTask });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, error: 'Failed to update assignment' });
+    }
+});
+/**
+ * DELETE /api/tasks/:id
+ * Remove a mission from the grid.
+ */
+router.delete('/:id', authenticate, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        const id = String(req.params.id);
+        await db.deleteTask(id, userId);
+        res.json({
+            success: true,
+            data: { id },
+            timestamp: new Date().toISOString(),
+        });
+    }
+    catch (error) {
+        console.error('[Tasks] Delete Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to delete task' });
+    }
+});
+/**
+ * POST /api/tasks/bulk-delete
+ * Bulk delete multiple mission objectives.
+ */
+router.post('/bulk-delete', authenticate, async (req, res) => {
+    try {
+        const userId = req.user?.userId;
+        if (!userId)
+            return res.status(401).json({ success: false, error: 'Unauthorized' });
+        const { ids } = req.body;
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'Invalid or empty IDs array' });
+        }
+        await db.bulkDeleteTasks(ids, userId);
+        res.json({
+            success: true,
+            message: `${ids.length} mission objectives purged`,
+            timestamp: new Date().toISOString(),
+        });
+    }
+    catch (error) {
+        console.error('[Tasks] Bulk Delete Error:', error);
+        res.status(500).json({ success: false, error: 'Failed to purge mission objectives' });
+    }
+});
+export default router;
