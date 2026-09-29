@@ -11,7 +11,8 @@
         "moduleResolution": "bundler",
         "allowImportingTsExtensions": false,
         "resolveJsonModule": true,
-        "isolatedModules": true
+        "isolatedModules": true,
+        "noEmit": true
     },
     "include": [
         "backend/**/*",

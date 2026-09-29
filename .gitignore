@@ -33,3 +33,5 @@ Thumbs.db
 .vercel
 .env*.local
 .env*
+*.tsbuildinfo
+api/*.js
