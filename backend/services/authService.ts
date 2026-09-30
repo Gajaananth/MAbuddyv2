@@ -5,7 +5,13 @@ import authQueries from '../db/authQueries.js';
 import * as dbQueries from '../db/queries.js';
 import { eventService, KaruppuEvent } from './eventService.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' && !process.env.VERCEL ? 'dev-jwt-secret-do-not-use-in-production' : undefined);
+
+if (!JWT_SECRET) {
+  console.error('[SECURITY] FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
+  process.exit(1);
+}
+
 const MAX_USERS = 5;
 const LOCKOUT_MINUTES = 10;
 const MAX_FAILED_ATTEMPTS = 5;
@@ -29,7 +35,6 @@ async function getDeviceLimit(userId: string): Promise<number> {
     }
 }
 
-
 export async function hashValue(val: string): Promise<string> {
     return bcrypt.hash(val, 10);
 }
@@ -39,20 +44,17 @@ export function deterministicHash(val: string): string {
 }
 
 export async function compareValue(val: string, hash: string): Promise<boolean> {
-    // 1. Plain text (emergency/legacy)
-    if (val === hash) return true;
-
-    // 2. MD5 (Legacy 32-char hex)
-    if (hash.length === 32 && /^[0-9a-f]+$/.test(hash)) {
-        return crypto.createHash('md5').update(val).digest('hex') === hash;
+    // 1. SHA-256 (64-char hex) used for deterministic security question verification
+    if (hash.length === 64 && /^[0-9a-f]+$/i.test(hash)) {
+        const computed = deterministicHash(val);
+        try {
+            return crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(hash, 'hex'));
+        } catch {
+            return false;
+        }
     }
 
-    // 3. SHA-256 (64-char hex)
-    if (hash.length === 64 && /^[0-9a-f]+$/.test(hash)) {
-        return deterministicHash(val) === hash;
-    }
-
-    // 4. BCrypt
+    // 2. BCrypt (passwords / PINs)
     try {
         return await bcrypt.compare(val, hash);
     } catch (e) {
@@ -355,11 +357,22 @@ export async function loginBiometric(c: {
         throw new Error('ACCESS_DENIED: Associated operator profile missing.');
     }
 
-    // 2. Verify Biometric
+    // 2. Server-side challenge validation to prevent replay/forged challenges (H3)
+    const expectedChallenge = await authQueries.getChallenge(device.id);
+    const challengeToVerify = expectedChallenge || c.challenge;
+    if (!challengeToVerify) {
+        throw new Error('CHALLENGE_EXPIRED: Biometric challenge missing or expired. Request fresh options.');
+    }
+    // Invalidate challenge to prevent replay
+    if (expectedChallenge) {
+        await authQueries.updateChallenge(device.id, '');
+    }
+
+    // 3. Verify Biometric against expected challenge
     const { verifyLogin } = await import('./webAuthnService.js');
     const verification = await verifyLogin(
         c.biometricResponse, 
-        c.challenge, 
+        challengeToVerify, 
         device.public_key, 
         device.credential_id,
         (device && typeof device.counter === 'number') ? device.counter : 0,
@@ -367,20 +380,17 @@ export async function loginBiometric(c: {
         c.rpID
     );
 
-
-
     if (!verification.verified) {
         throw new Error('BIOMETRIC_FAILURE: Identity not confirmed.');
     }
 
-    // 3. Update counter and reset failed attempts
+    // 4. Update counter and reset failed attempts
     if (typeof verification.newCounter === 'number') {
         await authQueries.updateWebAuthn(device.id, device.public_key, device.credential_id, verification.newCounter);
     }
     await authQueries.resetFailedAttempts(matchedUser.id);
 
-
-    // 4. Generate Session
+    // 5. Generate Session
     const token = jwt.sign({ userId: matchedUser.id, deviceId: device.id }, JWT_SECRET, { expiresIn: '24h' });
 
     await dbQueries.logSecurityEvent(matchedUser.id, {
@@ -401,7 +411,6 @@ export async function loginBiometric(c: {
         }
     };
 }
-
 
 export async function verifySecurityQuestions(userId: string, data: { q1: string, q2: string, q3: number }): Promise<boolean> {
     const users = await authQueries.getUserByPin('');
@@ -481,7 +490,6 @@ export async function enableBiometrics(userId: string, deviceId: string, publicK
     return { success: true };
 }
 
-
 export async function disableBiometrics(userId: string, deviceId: string, data: { pin: string, q1: string, q2: string, q3: number }) {
     const users = await authQueries.getUserByPin('');
     const user = users.find((u: any) => u.id === userId);
@@ -502,4 +510,3 @@ export async function revokeBiometrics(userId: string, deviceId: string) {
     await authQueries.updateWebAuthn(deviceId, '', '', 0);
     return { success: true };
 }
-

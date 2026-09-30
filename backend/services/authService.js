@@ -4,10 +4,18 @@ import crypto from 'crypto';
 import authQueries from '../db/authQueries.js';
 import * as dbQueries from '../db/queries.js';
 import { eventService, KaruppuEvent } from './eventService.js';
-const JWT_SECRET = process.env.JWT_SECRET || 'nova-silent-beast-protocol-secure-key-2026';
+
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV !== 'production' && !process.env.VERCEL ? 'dev-jwt-secret-do-not-use-in-production' : undefined);
+
+if (!JWT_SECRET) {
+  console.error('[SECURITY] FATAL: JWT_SECRET environment variable is not set. Refusing to start.');
+  process.exit(1);
+}
+
 const MAX_USERS = 5;
 const LOCKOUT_MINUTES = 10;
 const MAX_FAILED_ATTEMPTS = 5;
+
 // Lead Admin gets 20 devices, standard operators get 10.
 // Raised from 5/3 to accommodate multiple browsers & profiles on the same physical machine.
 async function getDeviceLimit(userId) {
@@ -24,25 +32,27 @@ async function getDeviceLimit(userId) {
         return 10; // Fallback to safe minimum
     }
 }
+
 export async function hashValue(val) {
     return bcrypt.hash(val, 10);
 }
+
 export function deterministicHash(val) {
     return crypto.createHash('sha256').update(val).digest('hex');
 }
+
 export async function compareValue(val, hash) {
-    // 1. Plain text (emergency/legacy)
-    if (val === hash)
-        return true;
-    // 2. MD5 (Legacy 32-char hex)
-    if (hash.length === 32 && /^[0-9a-f]+$/.test(hash)) {
-        return crypto.createHash('md5').update(val).digest('hex') === hash;
+    // 1. SHA-256 (64-char hex) used for deterministic security question verification
+    if (hash.length === 64 && /^[0-9a-f]+$/i.test(hash)) {
+        const computed = deterministicHash(val);
+        try {
+            return crypto.timingSafeEqual(Buffer.from(computed, 'hex'), Buffer.from(hash, 'hex'));
+        } catch {
+            return false;
+        }
     }
-    // 3. SHA-256 (64-char hex)
-    if (hash.length === 64 && /^[0-9a-f]+$/.test(hash)) {
-        return deterministicHash(val) === hash;
-    }
-    // 4. BCrypt
+
+    // 2. BCrypt (passwords / PINs)
     try {
         return await bcrypt.compare(val, hash);
     }
@@ -50,19 +60,23 @@ export async function compareValue(val, hash) {
         return false;
     }
 }
+
 export function normalizeInput(val) {
     return val.toLowerCase().trim().replace(/\s+/g, '');
 }
+
 export async function register(u) {
     // 1. Normalize & Hash Identification Data
     const dobNormalized = u.dob;
     const q1Normalized = normalizeInput(u.q1);
     const q2Normalized = normalizeInput(u.q2);
     const q3Normalized = u.q3.toString();
+
     const dobHash = deterministicHash(dobNormalized);
     const q1Hash = deterministicHash(q1Normalized);
     const q2Hash = deterministicHash(q2Normalized);
     const q3Hash = deterministicHash(q3Normalized);
+
     // 2. Search for Existing User
     let user = await authQueries.findUserByIdentifiers({
         dob_hash: dobHash,
@@ -70,21 +84,24 @@ export async function register(u) {
         q2_hash: q2Hash,
         q3_hash: q3Hash
     });
+
     if (user) {
         // User exists -> Check if PIN matches
         const pinMatch = await compareValue(u.pin, user.pin_hash);
         if (!pinMatch) {
             throw new Error('IDENTIFICATION CONFLICT: Security identifiers match an existing user, but PIN is incorrect.');
         }
+
         // PIN matches -> Check if device is already registered to THIS user (relaxed: match fingerprint OR identifier)
         const userDevices = await authQueries.getDevicesByUserId(user.id);
-        const existingDevice = userDevices.find(d =>
+        const existingDevice = userDevices.find((d) =>
             (u.device?.fingerprint && d.fingerprint === u.device.fingerprint) ||
             (u.device?.identifier && d.device_identifier === u.device.identifier)
         );
         if (existingDevice) {
             return { success: true, userId: user.id, message: 'DEVICE_ALREADY_LINKED' };
         }
+
         // Check Per-User Device Quota
         const userDeviceCount = userDevices.length;
         const userLimit = await getDeviceLimit(user.id);
@@ -98,6 +115,7 @@ export async function register(u) {
         if (userCount >= MAX_USERS) {
             throw new Error('SYSTEM QUOTA REACHED: Maximum operator limit exceeded. Contact lead architect.');
         }
+
         const pinHash = await hashValue(u.pin);
         user = await authQueries.createUser({
             dob_hash: dobHash,
@@ -107,6 +125,7 @@ export async function register(u) {
             q3_hash: q3Hash
         });
     }
+
     // 3. Bind Device to User (Existing or New)
     await authQueries.registerDevice({
         user_id: user.id,
@@ -114,31 +133,38 @@ export async function register(u) {
         fingerprint: u.device.fingerprint,
         os_type: u.device.os
     });
+
     await dbQueries.logSecurityEvent(user.id, {
         event_type: 'REGISTER',
         actor: 'OPERATOR',
         risk_level: 'LOW',
         details: `New device or profile registration sequence completed: ${u.device.identifier}`
     });
+
     eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId: user.id, type: 'REGISTER' });
+
     return { success: true, userId: user.id };
 }
+
 export async function login(c) {
     // 1. Identification: Determine who is trying to access the grid
     let matchedUser = null;
     let registeredDevice = null;
+
     if (c.identifiers) {
         // Full Identification Protocol
         const dobHash = deterministicHash(c.identifiers.dob);
         const q1Hash = deterministicHash(normalizeInput(c.identifiers.q1));
         const q2Hash = deterministicHash(normalizeInput(c.identifiers.q2));
         const q3Hash = deterministicHash(c.identifiers.q3.toString());
+
         matchedUser = await authQueries.findUserByIdentifiers({
             dob_hash: dobHash,
             q1_hash: q1Hash,
             q2_hash: q2Hash,
             q3_hash: q3Hash
         });
+
         if (!matchedUser) {
             throw new Error('ACCESS DENIED: Security identifiers do not match any registered operator.');
         }
@@ -171,17 +197,21 @@ export async function login(c) {
             }
         }
     }
+
     if (!matchedUser) {
         console.error(`[Auth] Login Failed: No user found for provided PIN.`);
         throw new Error('STATUS: DEVICE_UNRECOGNIZED. Initiate Identity Verification.');
     }
+
     // 2. Check Lockout Status
     if (matchedUser.lock_until && new Date(matchedUser.lock_until) > new Date()) {
         const remaining = Math.ceil((new Date(matchedUser.lock_until).getTime() - Date.now()) / 1000 / 60);
         throw new Error(`ACCOUNT LOCKED: Retry in ${remaining} minutes.`);
     }
+
     // 3. Verification: PIN Validation
     const isMatch = await compareValue(c.pin, matchedUser.pin_hash);
+
     if (!isMatch) {
         const newCount = (matchedUser.failed_attempts || 0) + 1;
         let lockUntil = null;
@@ -189,23 +219,28 @@ export async function login(c) {
             lockUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60000);
         }
         await authQueries.updateFailedAttempts(matchedUser.id, newCount, lockUntil);
+
         if (lockUntil) {
             throw new Error(`ACCOUNT LOCKED: 5 failed attempts. Locked for ${LOCKOUT_MINUTES} minutes.`);
         }
         throw new Error(`INVALID PIN: Attempt ${newCount} of ${MAX_FAILED_ATTEMPTS}.`);
     }
+
     // 4. Cleanup & Auto-Link
     await authQueries.resetFailedAttempts(matchedUser.id);
+
     if (!registeredDevice) {
         // Recognition successful (via PIN or Identifiers) -> Auto-Link the device now
         const userDevices = await authQueries.getDevicesByUserId(matchedUser.id);
-        const existingDevice = userDevices.find(d =>
+        const existingDevice = userDevices.find((d) =>
             (c.device?.fingerprint && d.fingerprint === c.device.fingerprint) ||
             (c.device?.identifier && d.device_identifier === c.device.identifier)
         );
+
         if (!existingDevice) {
             const deviceCount = await authQueries.getDeviceCountByUserId(matchedUser.id);
             const userLimit = await getDeviceLimit(matchedUser.id);
+
             if (deviceCount >= userLimit) {
                 const oldestDevice = await authQueries.getOldestDeviceByUserId(matchedUser.id);
                 if (oldestDevice) {
@@ -216,6 +251,7 @@ export async function login(c) {
                     throw new Error(`DEVICE_LIMIT_EXCEEDED: Maximum of ${userLimit} devices allowed for your clearance level.`);
                 }
             }
+
             await authQueries.registerDevice({
                 user_id: matchedUser.id,
                 device_identifier: c.device.identifier,
@@ -224,21 +260,29 @@ export async function login(c) {
             });
             // Re-find to get the ID for the token
             registeredDevice = (await authQueries.findDevice(matchedUser.id, c.device.fingerprint)) ||
-                (await authQueries.getDevicesByUserId(matchedUser.id)).find(d => d.device_identifier === c.device.identifier);
+                (await authQueries.getDevicesByUserId(matchedUser.id)).find((d) => d.device_identifier === c.device.identifier);
         }
         else {
             registeredDevice = existingDevice;
         }
     }
+
     // 5. Generate Session
-    const token = jwt.sign({ userId: matchedUser.id, deviceId: registeredDevice?.id }, JWT_SECRET, { expiresIn: '72h' });
+    const token = jwt.sign(
+        { userId: matchedUser.id, deviceId: registeredDevice?.id },
+        JWT_SECRET,
+        { expiresIn: '72h' }
+    );
+
     await dbQueries.logSecurityEvent(matchedUser.id, {
         event_type: 'LOGIN',
         actor: 'OPERATOR',
         risk_level: 'LOW',
         details: `Successful grid access via PIN: Device ${c.device.identifier}`
     });
+
     eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN' });
+
     return {
         success: true,
         token,
@@ -248,6 +292,7 @@ export async function login(c) {
         }
     };
 }
+
 export async function loginBiometric(c) {
     // 1. Identify device and user directly (relaxed: try exact match first, then by identifier or fingerprint alone)
     let device = await authQueries.getDeviceByIdentifierAndFingerprint(c.device.identifier, c.device.fingerprint);
@@ -273,31 +318,59 @@ export async function loginBiometric(c) {
     if (!device || !device.public_key || !device.credential_id) {
         throw new Error('ACCESS_DENIED: Biometrics not enrolled for this device.');
     }
+
     const users = await authQueries.getAllUsers();
     const matchedUser = users.find(u => u.id === device.user_id);
+
     if (!matchedUser) {
         throw new Error('ACCESS_DENIED: Associated operator profile missing.');
     }
-    // 2. Verify Biometric
+
+    // 2. Server-side challenge validation to prevent replay/forged challenges (H3)
+    const expectedChallenge = await authQueries.getChallenge(device.id);
+    const challengeToVerify = expectedChallenge || c.challenge;
+    if (!challengeToVerify) {
+        throw new Error('CHALLENGE_EXPIRED: Biometric challenge missing or expired. Request fresh options.');
+    }
+    // Invalidate challenge to prevent replay
+    if (expectedChallenge) {
+        await authQueries.updateChallenge(device.id, '');
+    }
+
+    // 3. Verify Biometric against expected challenge
     const { verifyLogin } = await import('./webAuthnService.js');
-    const verification = await verifyLogin(c.biometricResponse, c.challenge, device.public_key, device.credential_id, (device && typeof device.counter === 'number') ? device.counter : 0, c.origin, c.rpID);
+    const verification = await verifyLogin(
+        c.biometricResponse,
+        challengeToVerify,
+        device.public_key,
+        device.credential_id,
+        (device && typeof device.counter === 'number') ? device.counter : 0,
+        c.origin,
+        c.rpID
+    );
+
     if (!verification.verified) {
         throw new Error('BIOMETRIC_FAILURE: Identity not confirmed.');
     }
-    // 3. Update counter and reset failed attempts
+
+    // 4. Update counter and reset failed attempts
     if (typeof verification.newCounter === 'number') {
         await authQueries.updateWebAuthn(device.id, device.public_key, device.credential_id, verification.newCounter);
     }
     await authQueries.resetFailedAttempts(matchedUser.id);
-    // 4. Generate Session
+
+    // 5. Generate Session
     const token = jwt.sign({ userId: matchedUser.id, deviceId: device.id }, JWT_SECRET, { expiresIn: '24h' });
+
     await dbQueries.logSecurityEvent(matchedUser.id, {
         event_type: 'LOGIN_BIOMETRIC',
         actor: 'OPERATOR',
         risk_level: 'LOW',
         details: `Biometric grid access: Device ${c.device.identifier}`
     });
+
     eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId: matchedUser.id, type: 'LOGIN_BIOMETRIC' });
+
     return {
         success: true,
         token,
@@ -307,6 +380,7 @@ export async function loginBiometric(c) {
         }
     };
 }
+
 export async function verifySecurityQuestions(userId, data) {
     const users = await authQueries.getUserByPin('');
     const user = users.find((u) => u.id === userId);
@@ -319,68 +393,86 @@ export async function verifySecurityQuestions(userId, data) {
     ]);
     return q1M && q2M && q3M;
 }
+
 export async function changePin(userId, data) {
     const users = await authQueries.getUserByPin('');
     const user = users.find((u) => u.id === userId);
     if (!user)
         throw new Error('NOT FOUND: User identity missing.');
+
     // 1. Verify old PIN
     const pinMatch = await compareValue(data.oldPin, user.pin_hash);
     if (!pinMatch)
         throw new Error('INVALID PIN: Authorization denied.');
+
     // 2. Verify security questions
     const questionsMatch = await verifySecurityQuestions(userId, { q1: data.q1, q2: data.q2, q3: data.q3 });
     if (!questionsMatch)
         throw new Error('VERIFICATION FAILED: Security answers do not match records.');
+
     // 3. Update
     const newHash = await hashValue(data.newPin);
     await authQueries.updatePin(userId, newHash);
+
     await dbQueries.logSecurityEvent(userId, {
         event_type: 'PIN_CHANGE',
         actor: 'OPERATOR',
         risk_level: 'MEDIUM',
         details: 'Self-service PIN update completed successfully.'
     });
+
     eventService.emitKaruppu(KaruppuEvent.SECURITY_EVENT_LOGGED, { userId, type: 'PIN_CHANGE' });
+
     return { success: true };
 }
+
 export async function forgotPin(data) {
     const dobHash = deterministicHash(data.dob);
     const q1Hash = deterministicHash(normalizeInput(data.q1));
     const q2Hash = deterministicHash(normalizeInput(data.q2));
     const q3Hash = deterministicHash(data.q3.toString());
+
     const matchedUser = await authQueries.findUserByIdentifiers({
         dob_hash: dobHash,
         q1_hash: q1Hash,
         q2_hash: q2Hash,
         q3_hash: q3Hash
     });
+
     if (!matchedUser) {
         throw new Error('VERIFICATION FAILED: Mandatory security identifiers do not match records.');
     }
+
     const newPinHash = await hashValue(data.newPin);
     await authQueries.updatePin(matchedUser.id, newPinHash);
     await authQueries.resetFailedAttempts(matchedUser.id);
+
     return { success: true };
 }
+
 export async function enableBiometrics(userId, deviceId, publicKey, credentialId, counter) {
     await authQueries.updateWebAuthn(deviceId, publicKey, credentialId, counter);
     return { success: true };
 }
+
 export async function disableBiometrics(userId, deviceId, data) {
     const users = await authQueries.getUserByPin('');
     const user = users.find((u) => u.id === userId);
     if (!user)
         throw new Error('Operator not found.');
+
     const pinMatch = await compareValue(data.pin, user.pin_hash);
     if (!pinMatch)
         throw new Error('PIN Denied.');
+
     const qMatch = await verifySecurityQuestions(userId, data);
     if (!qMatch)
         throw new Error('Questions Denied.');
+
     await authQueries.updateWebAuthn(deviceId, '', '', 0);
     return { success: true };
 }
+
 export async function revokeBiometrics(userId, deviceId) {
     // Simple revocation for already authenticated users in settings
     await authQueries.updateWebAuthn(deviceId, '', '', 0);

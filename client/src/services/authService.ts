@@ -86,7 +86,13 @@ export const authService = {
     },
 
     async getBiometricOptions() {
-        const response = await api.get('/auth/biometrics/login-options');
+        const device = getDeviceInfo();
+        const response = await api.get('/auth/biometrics/login-options', {
+            params: {
+                identifier: device.identifier,
+                fingerprint: device.fingerprint
+            }
+        });
         return response.data;
     },
 

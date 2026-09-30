@@ -30,8 +30,8 @@ router.get('/models', async (_req, res: Response) => {
             },
             timestamp: new Date().toISOString()
         });
-    } catch (e: any) {
-        res.status(500).json({ success: false, error: e.message });
+    } catch {
+        res.status(500).json({ success: false, error: 'Failed to retrieve available models.' });
     }
 });
 
@@ -66,12 +66,10 @@ router.get('/poll', authenticate, async (req: AuthRequest, res: Response) => {
                     timestamp: new Date().toISOString()
                 });
             } catch (dbError: any) {
-                console.error('[Chat] DB Poll Error:', dbError);
+                console.error('[Chat] DB Poll Error:', dbError.message);
                 return res.status(500).json({ 
                     success: false, 
-                    error: 'Database error during polling', 
-                    detail: dbError.message,
-                    stack: dbError.stack
+                    error: 'Database error during polling'
                 });
             }
         }
@@ -98,21 +96,18 @@ router.get('/poll', authenticate, async (req: AuthRequest, res: Response) => {
                 timestamp: new Date().toISOString()
             });
         } catch (detailError: any) {
-            console.error('[Chat] Detail Error:', detailError);
+            console.error('[Chat] Detail Error:', detailError.message);
             return res.status(500).json({ 
                 success: false, 
-                error: 'Failed to retrieve conversation details',
-                detail: detailError.message
+                error: 'Failed to retrieve conversation details'
             });
         }
 
     } catch (error: any) {
-        console.error('[Chat] Global Poll Error:', error);
+        console.error('[Chat] Global Poll Error:', error.message);
         res.status(500).json({ 
             success: false, 
-            error: 'Failed to poll messages',
-            detail: error.message,
-            stack: error.stack
+            error: 'Failed to poll messages'
         });
     }
 });
@@ -138,7 +133,6 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         }
 
         let convId = conversation_id;
-        let memoryContext = '';
 
         // Retrieve or create conversation
         if (!convId) {
@@ -157,6 +151,15 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
                     console.error('[Chat] Auto-tagging failed:', e);
                 }
             }, 0);
+        } else {
+            // IDOR Protection: Verify that user owns the conversation (H6)
+            const existingConv = await db.getConversationById(convId, userId);
+            if (!existingConv) {
+                return res.status(403).json({
+                    success: false,
+                    error: 'ACCESS_DENIED: Conversation not found or access denied.'
+                });
+            }
         }
 
         console.log('[Chat] Adding user message...');
@@ -195,7 +198,7 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         const history = await db.getRecentMemory(userId, 15);
 
         console.log('[Chat] Thinking...');
-        // Send to Karuppu's brain (Groq / Gemini / OpenAI)
+        // Send to Karuppu's brain (Groq / Gemini / OpenAI / OpenRouter)
         const { model } = req.body;
         const openClawResponse = await think(message, history, { model }, userId);
 
@@ -219,7 +222,6 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
             if (lowerMessage.includes('opportunity score above')) {
                 filters.min_score = parseInt(lowerMessage.match(/above (\d+)/i)?.[1] || '0');
             }
-            // Logic for date range would go here...
 
             const reports = await db.filterReports(userId, filters);
             let content = `### Intelligence Archive Search Results\n\n`;
@@ -349,8 +351,6 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
         missionService.parseAndSaveTasksFromChat(userId, content).catch(e => console.error('[Chat] Task sync failed:', e));
 
         // ── EARNING INTENT DETECTION ────────────────────────────────────────
-        // When operator mentions financial struggle or asks to start earning,
-        // create 3 real earning tasks in DB + fire a real notification.
         const earningTriggers = [
             /earn(ing)? by (her|him|my)self/i,
             /start (to )?earn/i,
@@ -413,7 +413,6 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
                 console.error('[Chat] Failed to create earning notification:', e.message);
             }
         }
-        // ── END EARNING INTENT DETECTION ────────────────────────────────────
 
         // Optional: Post to Moltbook if strategic alignment is high
         if (publish_to_moltbook && (metadata?.production_scores?.overall > 70 || !analyticsRequested)) {
@@ -434,12 +433,10 @@ router.post('/', authenticate, async (req: AuthRequest, res: Response) => {
 
         res.json(response);
     } catch (error: any) {
-        console.error('[Chat] Error:', error);
-        const response: ApiResponse & { stack?: string, detail_message?: string } = {
+        console.error('[Chat] Error:', error.message);
+        const response: ApiResponse = {
             success: false,
-            error: error.message || 'Internal server error',
-            detail_message: error.message,
-            stack: error.stack,
+            error: 'An error occurred while processing your message. Please try again.',
             timestamp: new Date().toISOString(),
         };
         res.status(500).json(response);

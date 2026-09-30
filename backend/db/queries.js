@@ -53,8 +53,21 @@ export async function getUnreadMessageCount(userId) {
     const result = await db.pool.query('SELECT COUNT(*) FROM messages m JOIN conversations c ON m.conversation_id = c.id WHERE c.user_id = $1 AND m.role = \'nova\' AND m.is_read = FALSE', [userId]);
     return parseInt(result.rows[0].count, 10);
 }
-export async function markMessagesRead(conversationId) {
-    await db.pool.query('UPDATE messages SET is_read = TRUE WHERE conversation_id = $1 AND role = \'nova\'', [conversationId]);
+export async function markMessagesRead(conversationId, userId) {
+    if (userId) {
+        await db.pool.query(
+            `UPDATE messages m 
+             SET is_read = TRUE 
+             FROM conversations c 
+             WHERE m.conversation_id = c.id 
+               AND c.id = $1 
+               AND c.user_id = $2 
+               AND m.role = 'nova'`,
+            [conversationId, userId]
+        );
+    } else {
+        await db.pool.query('UPDATE messages SET is_read = TRUE WHERE conversation_id = $1 AND role = \'nova\'', [conversationId]);
+    }
 }
 export async function markAllMessagesRead(userId) {
     await db.pool.query('UPDATE messages m SET is_read = TRUE FROM conversations c WHERE m.conversation_id = c.id AND c.user_id = $1 AND m.role = \'nova\'', [userId]);

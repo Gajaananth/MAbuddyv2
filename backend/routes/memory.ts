@@ -68,7 +68,7 @@ router.post('/conversations/:id/read', authenticate, async (req: AuthRequest, re
         if (!userId) return res.status(401).json({ success: false, error: 'Unauthorized' });
 
         const id = req.params.id as string;
-        await db.markMessagesRead(id);
+        await db.markMessagesRead(id, userId);
         res.json({ success: true, message: 'Messages marked read' });
     } catch (error) {
         console.error('[Memory] Mark Read Error:', error);

@@ -16,6 +16,17 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+.env*.local
+.env*
+*.env
+*.env.production
+
+# Secrets & Credentials
+vapid.json
+vercel_envs*.txt
+tmp/.env*
+*.pem
+*.key
 
 # Database
 zium_nova.sqlite
@@ -31,7 +42,5 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 .vercel
-.env*.local
-.env*
 *.tsbuildinfo
 api/*.js

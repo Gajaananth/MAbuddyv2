@@ -99,9 +99,23 @@ export async function getUnreadMessageCount(userId: string): Promise<number> {
     return parseInt(result.rows[0].count, 10);
 }
 
-export async function markMessagesRead(conversationId: string): Promise<void> {
-    await db.pool.query('UPDATE messages SET is_read = TRUE WHERE conversation_id = $1 AND role = \'nova\'', [conversationId]);
+export async function markMessagesRead(conversationId: string, userId?: string): Promise<void> {
+    if (userId) {
+        await db.pool.query(
+            `UPDATE messages m 
+             SET is_read = TRUE 
+             FROM conversations c 
+             WHERE m.conversation_id = c.id 
+               AND c.id = $1 
+               AND c.user_id = $2 
+               AND m.role = 'nova'`,
+            [conversationId, userId]
+        );
+    } else {
+        await db.pool.query('UPDATE messages SET is_read = TRUE WHERE conversation_id = $1 AND role = \'nova\'', [conversationId]);
+    }
 }
+
 
 export async function markAllMessagesRead(userId: string): Promise<void> {
     await db.pool.query(

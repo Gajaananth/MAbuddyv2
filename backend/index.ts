@@ -57,7 +57,9 @@ app.use(cors({
             process.env.FRONTEND_URL,
         ];
 
-        if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+        const isAllowedVercelPreview = /^https:\/\/m-abuddyv2(-[a-z0-9-]+)?\.vercel\.app$/.test(origin || '');
+
+        if (!origin || allowedOrigins.includes(origin) || isAllowedVercelPreview) {
             callback(null, true);
         } else {
             callback(null, false);

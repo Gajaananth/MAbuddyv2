@@ -6,7 +6,7 @@ import { autonomyService } from '../backend/services/autonomyService.js';
 /**
  * Karuppu Karuppu — Vercel Cron Heartbeat
  * Runs every 30 minutes to keep Karuppu alive and proactive.
- * Protected by CRON_SECRET environment variable.
+ * Protected by CRON_SECRET environment variable (fail-closed).
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Vercel automatically sends Authorization header for cron jobs
@@ -18,8 +18,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
-        console.warn('[Cron] Unauthorized attempt blocked.');
+    // Fail-closed: Reject if CRON_SECRET is not configured or does not match
+    if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+        console.warn('[Cron] Unauthorized or unconfigured cron attempt blocked.');
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
@@ -54,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         console.error('[Cron] ❌ Heartbeat failure:', error.message);
         return res.status(500).json({
             success: false,
-            error: error.message,
+            error: 'Heartbeat execution failed.',
             timestamp: new Date().toISOString(),
         });
     }
